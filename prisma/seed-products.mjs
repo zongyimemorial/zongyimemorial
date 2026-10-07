@@ -14,7 +14,9 @@ const products = [
   ["free-fruit", "免费供果", "tribute_item", 0, "basic", "both", true, "免费供奉时令果盘，追忆往昔。"],
   ["free-tea", "免费清茶", "tribute_item", 0, "basic", "both", true, "免费敬一杯清茶，淡淡茶香诉思念。"],
   ["free-message", "免费留言追思", "tribute_item", 0, "basic", "civilized", true, "免费写下一段追思留言，字字真情。"],
-  ["free-letter", "天堂信箱", "tribute_item", 0, "basic", "civilized", true, "给天堂的亲人写一封信，见字如面。"],
+  // free-letter（天堂信箱）不在本清单：已转收费 ¥8，唯一定义在 seed-product-tiers.mjs 的
+  // PAID_RITUALS（注册在 seed-free-offerings.mjs 的 RITUAL_META）。历史上本文件按免费、
+  // tiers 按收费两处打架（谁后跑谁生效），审计后收敛为收费。见 docs/产品体系审计.md §1。
   ["free-clean", "虚拟擦拭墓碑", "tribute_item", 0, "basic", "civilized", true, "免费为虚拟墓碑拂尘擦拭，维护整洁。"],
   ["free-music", "免费追思音乐", "tribute_item", 0, "ceremony", "both", true, "免费播放一段追思音乐，寄托哀思。"],
 
@@ -52,6 +54,21 @@ const products = [
   ["dongzhi-dumpling", "冬至限定·饺子", "tribute_item", 200, "basic", "both", false, "节日限定：冬至的饺子，北方风味。"],
   ["duanwu-zongzi", "端午限定·粽子", "tribute_item", 200, "basic", "both", false, "节日限定：端午的粽子，南方风味。"],
 ];
+
+/*
+ * 审计结论（docs/产品体系审计.md §2 簇A）：装修系统（lib/hall-decor.ts 的
+ * TEMPLATES / KITS / BUNDLES，商城 decor-* 商品）已完整覆盖"模板 / 风格定制"诉求，
+ * 以下三件老风格商品与它功能重叠，且走人工受理（isServiceProduct）徒增运营负担，
+ * 2026-10 审计后全部下架。
+ * 必须在本文件显式写 inactive，而不是依赖 seed.mjs 对 memorial_hall 的扫尾：
+ * 本文件可能在 seed.mjs 之后执行，全新环境会先在这里把 hall-template-elegant
+ * 建成 active，扫尾管不到（漏网 bug，验证脚本 verify-product-pricing §2c 会红）。
+ */
+const DECOR_OVERLAP_INACTIVE = new Set([
+  "hall-template-elegant", // 名为模板、实际触发付费建馆（建馆已免费）
+  "tombstone-style",       // 与装修模板/套件重叠
+  "homepage-style",        // 与装修模板/套件重叠
+]);
 
 const CATEGORY_SLUGS = { virtual: "虚拟纪念", supplies: "祭祀用品" };
 
@@ -91,7 +108,11 @@ async function main() {
       // 注意：价格 / isFree / pointsPrice 的最终裁决权在 seed-product-tiers.mjs，
       // 这里只在**首次创建**时给个初值。若在 update 里写 isFree/price，
       // 与 seed-free-offerings.mjs 同时存在时会互相覆盖（谁后跑谁生效）。
-      update: { tier, ritualMode: mode },
+      update: {
+        tier,
+        ritualMode: mode,
+        ...(DECOR_OVERLAP_INACTIVE.has(slug) ? { status: "inactive" } : {}),
+      },
       create: {
         slug,
         name,
@@ -103,7 +124,7 @@ async function main() {
         isRitual: isFree,
         description,
         categoryId: virtualCat.id,
-        status: "active",
+        status: DECOR_OVERLAP_INACTIVE.has(slug) ? "inactive" : "active",
         stockType: "unlimited",
         pointsPrice: price > 0 ? price : null,
       },

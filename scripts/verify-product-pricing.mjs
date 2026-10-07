@@ -177,6 +177,40 @@ console.log("\n=== 2c. 建馆免费：付费建馆商品全部下架 ===");
   check("商城不再出售任何建馆商品", Number(mallVisible) === 0, `实际 ${mallVisible}`);
 }
 
+// ---------------------------------------------------------------------------
+// 2d. 产品体系审计执行（2026-10，docs/产品体系审计.md）
+// ---------------------------------------------------------------------------
+// 审计结论固化：
+//   a) 天堂信箱（free-letter）是**收费礼器 ¥8**，唯一定义在 seed-product-tiers 的
+//      PAID_RITUALS；seed-products 的免费清单已移除该 slug（历史上两处打架）。
+//   b) 风格类商品 tombstone-style / homepage-style 与装修系统（decor-*）重叠，已下架。
+console.log("\n=== 2d. 产品体系审计：天堂信箱收费 & 风格类下架 ===");
+{
+  const letter = psql(
+    `SELECT "isFree"::text || '|' || price FROM "Product" WHERE slug='free-letter';`,
+  );
+  const [letterFree, letterPrice] = letter.split("|");
+  check(
+    "天堂信箱为收费礼器（isFree=false 且 ¥8）",
+    letterFree === "false" && Number(letterPrice) === 800,
+    `实际 ${letterFree}/${letterPrice}`,
+  );
+
+  const styleInactive = Number(
+    psql(`SELECT count(*) FROM "Product" WHERE slug IN ('tombstone-style','homepage-style') AND status='inactive';`),
+  );
+  check(
+    "风格类商品已下架（tombstone-style / homepage-style）",
+    styleInactive === 2,
+    `inactive=${styleInactive}/2`,
+  );
+
+  const styleVisible = Number(
+    psql(`SELECT count(*) FROM "Product" WHERE slug IN ('tombstone-style','homepage-style') AND status='active';`),
+  );
+  check("商城不再出售任何风格类商品", styleVisible === 0, `active=${styleVisible}`);
+}
+
 // 悄悄话商品不应变成礼器
 const whisperRitual = psql(
   `SELECT count(*) FROM "Product" WHERE slug LIKE 'whisper-%' AND "isRitual"=true;`,
