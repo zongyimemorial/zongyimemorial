@@ -93,6 +93,27 @@ COMMIT;
 
 ---
 
+## 宗祠建立审核烟测（scripts/smoke-clan-review.mjs）
+
+与纪念馆烟测同构，但验证**宗祠**建立审核闭环：
+
+```
+建馆(standard 通道，填基本信息 + 至少一项宗祠佐证材料)
+  → 后台「宗祠设立审核」通过并公开
+  → 公页 /clan/halls/[id] 对非创建者可见
+```
+
+- 6 项断言：`/clan/halls/new` 加载 → 提交成功跳控制台 → **审批前公页对非创建者不可见（先审后显）** → 后台队列出现该待审宗祠 → 点「通过并公开」→ 公页可见（含馆名 + 堂号）。
+- 截图：`clan-01-new-form.png` … `clan-06-public-visible.png`（共 6 张）。
+- 运行（需 dev server 在 `BASE`，默认 `:3000`；令牌签发见上文「运行步骤」）：
+
+```bash
+BASE=http://localhost:3000 OWNER_TOKEN="<owner>" ADMIN_TOKEN="<admin>" \
+  node scripts/smoke-clan-review.mjs
+```
+
+- 清理：测试会在 `ClanHall` 写入一条记录（及其可能的子表 `ClanTribute` / `CommunityMember` / `CommunityPost` / `HallReport` / `OfferingOnAltar`，均经 `clanHallId` 外键引用），测试后按上文「测试数据清理」同法 DELETE。
+
 ## 截图走 Git LFS
 
 `.smoke/*.png` 经 `.gitattributes` 纳入 **Git LFS**（仓库只存指针）。clone 后需：
