@@ -1,0 +1,50 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# next.js
+.next/
+out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env
+.env
+.env*.local
+
+# prisma
+prisma/migrations/dev.db*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# 验收脚本的临时探针（跑完即删，防误提交）
+.probe/
+.shots/
+
+# 含真实密钥的备份（绝不可入库；.env.example 是占位符模板，可入库）
+.env.bak
+.env*.bak
+
+# 代理工作目录与一次性交付产物（非项目源码）
+.codebuddy/
+_delivery/
+
+# 浏览器自动化日志与验收截图产物（运行期生成，勿入库）
+.playwright-cli/
+shots/

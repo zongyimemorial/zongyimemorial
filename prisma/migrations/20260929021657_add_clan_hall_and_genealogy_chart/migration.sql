@@ -1,0 +1,4 @@
+-- 本迁移原 SQL 与 baseline_sync 完全重复（ClanHall 表、User.premiumUntil、
+-- Genealogy.chartConfig/chartType/chartUnlocked 均已在 baseline_sync 中创建），
+-- 导致 shadow-DB replay 报「列已存在」。真实库已记录本迁移为 applied 不会重跑，
+-- 故此处置为 no-op 以修复 shadow replay（不影响真实库）。

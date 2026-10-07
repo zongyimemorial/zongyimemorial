@@ -1,0 +1,37 @@
+# 本地/生产一键部署：应用 + PostgreSQL
+# 使用：docker compose up -d --build
+# 生产请把 AUTH_SECRET / AUTH_URL 等写入同目录 .env（docker compose 会自动读取）
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: memorial
+      POSTGRES_PASSWORD: memorial
+      POSTGRES_DB: memorial
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://memorial:memorial@db:5432/memorial?schema=public
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
+      NEXT_PUBLIC_SITE_NAME: ${NEXT_PUBLIC_SITE_NAME:-云纪念}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      PAY_CHANNEL: ${PAY_CHANNEL:-SIMULATE}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:

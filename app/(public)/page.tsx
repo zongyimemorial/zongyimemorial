@@ -1,0 +1,604 @@
+import Link from "next/link";
+import Image from "next/image";
+import { listPublishedArticles } from "@/lib/articles";
+import { prisma } from "@/lib/db";
+import { fubFromFen } from "@/lib/fortune";
+import Price from "@/components/shop/Price";
+import { nextFestival, festivalCountdownLabel } from "@/lib/festivals";
+import {
+  IconMemorial,
+  IconClan,
+  IconLive,
+  IconNews,
+  IconOffering,
+} from "@/components/site/FeatureIcons";
+
+export default async function HomePage() {
+  const [articles, products, lives] = await Promise.all([
+    listPublishedArticles({ take: 3 }),
+    // 首页「热门数字纪念服务」只展示付费商品：
+    // 免费礼器的入口在纪念馆祭拜面板，摆在这里会显示成 ¥0.00。
+    prisma.product.findMany({
+      where: { status: "active", isFree: false },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+    }),
+    prisma.liveSession.findMany({
+      where: { isPublic: true, status: { in: ["live", "scheduled"] } },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    }),
+  ]);
+
+  const festival = nextFestival();
+
+  return (
+    <>
+      {/* Hero */}
+      <section className="relative overflow-hidden bg-brand-800 text-white">
+        <Image
+          src="/assets/hero.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-90"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-900/40 to-brand-900/70" />
+        <div className="container-page relative py-24 text-center md:py-32">
+          <p className="mb-4 text-sm tracking-[0.3em] text-amber-200">
+            数字纪念 · 生命文化传承
+          </p>
+          <h1 className="mx-auto max-w-3xl text-3xl font-bold leading-tight md:text-5xl">
+            以数字方式，留存思念，传递敬意
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-base leading-7 text-brand-100 md:text-lg">
+            宗忆堂提供新闻资讯、数字纪念馆、云祭扫与虚拟献花服务，
+            让缅怀跨越时空，让文化得以延续。
+          </p>
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/mall"
+              className="rounded-md bg-accent-500 px-6 py-3 text-sm font-medium text-white hover:bg-accent-600"
+            >
+              浏览虚拟祭品
+            </Link>
+            <Link
+              href="/news"
+              className="rounded-md border border-white/40 px-6 py-3 text-sm font-medium text-white hover:bg-white/10"
+            >
+              查看新闻资讯
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 信任徽章条（P0 信任改造：先回答「这里靠谱吗」，再讲功能） */}
+      <section className="border-b border-brand-100 bg-brand-50">
+        <div className="container-page grid grid-cols-2 gap-4 py-6 text-center md:grid-cols-4">
+          <TrustBadge
+            icon="✓"
+            title="建馆实名审核"
+            desc="每座纪念馆经人工核验建馆证明后开通"
+          />
+          <TrustBadge
+            icon="🔒"
+            title="隐私加密存储"
+            desc="实名与证件信息加密保存，公页一律脱敏展示"
+          />
+          <TrustBadge
+            icon="✎"
+            title="内容人工终审"
+            desc="公开内容先审后显，机器预筛加人工复核"
+          />
+          <TrustBadge
+            icon="∞"
+            title="长期保存承诺"
+            desc="纪念馆数据多重备份，随时可导出带走"
+          />
+        </div>
+      </section>
+
+      {/* 数据条 */}
+      <section className="border-b border-gray-100 bg-white">
+        <div className="container-page grid grid-cols-2 gap-6 py-8 text-center md:grid-cols-4">
+          <Stat num="16+" label="篇生命文化资讯" />
+          <Stat num="80" label="项数字纪念服务" />
+          <Stat num="100%" label="内容人工审核" />
+          <Stat num="加密" label="实名信息安全存储" />
+        </div>
+      </section>
+
+      {/* 临近节日横幅（P0 节日框架：给思念一个「快到了」的提醒入口） */}
+      {festival && (
+        <section className="border-b border-gray-100 bg-white">
+          <div className="container-page flex flex-wrap items-center justify-center gap-x-4 gap-y-2 py-4 text-center">
+            <span className="rounded-full bg-brand-800 px-3 py-1 text-xs font-medium text-amber-200">
+              即将到来
+            </span>
+            <Link
+              href="/festivals"
+              className="text-sm text-brand-700 hover:underline"
+            >
+              <strong className="text-brand-900">{festival.spec.name}</strong>
+              （{festival.date.getMonth() + 1} 月 {festival.date.getDate()} 日 ·{" "}
+              {festivalCountdownLabel(festival.daysUntil)}）——
+              了解习俗，为思念安排一段时间
+            </Link>
+          </div>
+        </section>
+      )}
+
+      {/* 服务板块 */}
+      <section className="container-page py-16">
+        <SectionTitle
+          title="我们提供的服务"
+          sub="围绕“纪念”这一核心，提供从资讯到仪式的完整数字服务"
+        />
+        {/*
+          五个板块：lg 下排成 3 + 2（每行三张，第二行两张居中），
+          md 下 2 列，手机单列 —— 4 列网格塞 5 张会在第二行留一个空洞，很难看。
+        */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-6">
+          <FeatureCard
+            className="lg:col-span-2"
+            tone="memorial"
+            toneColor="#4d7168"
+            icon={<IconMemorial />}
+            title="数字纪念馆"
+            desc="为逝者建立可永久访问的纪念空间，家人朋友可远程追思留言。"
+            href="/halls"
+          />
+          <FeatureCard
+            className="lg:col-span-2"
+            tone="clan"
+            toneColor="#a0473a"
+            icon={<IconClan />}
+            title="宗亲文化"
+            desc="设立宗祠、续修族谱、记载字辈派语，让宗族谱系在数字空间延续。"
+            href="/clan"
+          />
+          <FeatureCard
+            className="lg:col-span-2"
+            tone="live"
+            toneColor="#a55710"
+            icon={<IconLive />}
+            title="云直播"
+            desc="公祭仪式、生态安葬、宗祠落成、祭祖大典等重大活动的直播与回放。"
+            href="/live"
+          />
+          <FeatureCard
+            className="lg:col-span-3"
+            tone="news"
+            toneColor="#445872"
+            icon={<IconNews />}
+            title="新闻资讯"
+            desc="殡葬政策解读、传统节日文化、行业动态，理性、克制、有温度的内容。"
+            href="/news"
+          />
+          <FeatureCard
+            className="lg:col-span-3"
+            tone="offering"
+            toneColor="#856432"
+            icon={<IconOffering />}
+            title="虚拟祭品"
+            desc="免费上香献花到专属纪念馆模板，文明祭扫与传统模式自主切换。"
+            href="/mall"
+          />
+        </div>
+      </section>
+
+      {/* 云直播板块（独立板块入口） */}
+      <section className="container-page py-16">
+        <SectionTitle
+          title="云直播"
+          sub="重大事件直播 · 宗亲宗族活动直播 · 直播回放与数字档案"
+        />
+        <div className="grid gap-6 md:grid-cols-3">
+          {lives.map((l) => (
+            <Link
+              key={l.id}
+              href={`/live/${l.id}`}
+              className="group relative overflow-hidden rounded-xl border border-gray-100 bg-brand-900 shadow-sm transition hover:shadow-md"
+            >
+              <div className="relative aspect-video w-full overflow-hidden">
+                {l.coverImage ? (
+                  <Image
+                    src={l.coverImage}
+                    alt={l.title}
+                    fill
+                    sizes="(min-width: 768px) 33vw, 100vw"
+                    className="object-cover opacity-80 transition group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-brand-900" />
+                )}
+                <span
+                  className={
+                    l.status === "live"
+                      ? "absolute left-3 top-3 flex items-center gap-1.5 rounded bg-red-600 px-2 py-0.5 text-xs text-white"
+                      : "absolute left-3 top-3 rounded bg-black/50 px-2 py-0.5 text-xs text-white"
+                  }
+                >
+                  {l.status === "live" ? "● 直播中" : "预告"}
+                </span>
+              </div>
+              <div className="p-4">
+                {l.category && <div className="text-xs text-amber-300">{l.category}</div>}
+                <h3 className="mt-1 line-clamp-1 text-base font-semibold text-white">
+                  {l.title}
+                </h3>
+              </div>
+            </Link>
+          ))}
+          {lives.length === 0 && (
+            <Link
+              href="/live"
+              className="col-span-full flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center transition hover:border-brand-300"
+            >
+              <span className="text-base font-semibold text-brand-900">进入云直播大厅</span>
+              <span className="text-sm text-brand-500">
+                公祭仪式、生态安葬、宗祠落成、祭祖大典等直播与回放
+              </span>
+            </Link>
+          )}
+        </div>
+        <div className="mt-6 text-center">
+          <Link href="/live" className="text-sm font-medium text-brand-700 hover:underline">
+            进入云直播大厅 →
+          </Link>
+        </div>
+      </section>
+
+      {/* 精选资讯 */}
+      <section className="bg-white py-16">
+        <div className="container-page">
+          <SectionTitle title="最新资讯" sub="编辑精选 · 经人工审核后发布" />
+          <div className="grid gap-6 md:grid-cols-3">
+            {articles.map((a) => (
+              <Link
+                key={a.id}
+                href={`/news/${a.slug}`}
+                className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
+              >
+                <div className="relative aspect-[16/9] w-full overflow-hidden bg-brand-100">
+                  {a.coverImage ? (
+                    <Image
+                      src={a.coverImage}
+                      alt={a.title}
+                      fill
+                      sizes="(min-width: 768px) 33vw, 100vw"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full bg-brand-100" />
+                  )}
+                </div>
+                <div className="p-5">
+                  <div className="mb-2 text-xs text-brand-400">
+                    {a.category?.name ?? "未分类"} ·{" "}
+                    {a.publishedAt &&
+                      new Date(a.publishedAt).toLocaleDateString("zh-CN")}
+                  </div>
+                  <h3 className="line-clamp-2 text-base font-semibold text-brand-900 group-hover:text-brand-600">
+                    {a.title}
+                  </h3>
+                  {a.summary && (
+                    <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                      {a.summary}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              href="/news"
+              className="text-sm font-medium text-brand-700 hover:underline"
+            >
+              查看全部资讯 →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 精选服务 */}
+      <section className="container-page py-16">
+        <SectionTitle title="热门数字纪念服务" sub="即买即开通，心意随时可达" />
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {products.map((p) => (
+            <Link
+              key={p.id}
+              href={`/mall/${p.slug}`}
+              className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
+            >
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-brand-100">
+                {p.coverImage ? (
+                  <Image
+                    src={p.coverImage}
+                    alt={p.name}
+                    fill
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="h-full w-full bg-brand-100" />
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="line-clamp-1 text-sm font-semibold text-brand-900">
+                  {p.name}
+                </h3>
+                <div className="mt-2">
+                  <Price fub={fubFromFen(p.price)} />
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* 使用流程 */}
+      <section className="bg-white py-16">
+        <div className="container-page">
+          <SectionTitle title="三步，为思念安一个家" sub="" />
+          <Image
+            src="/assets/illus-process.jpg"
+            alt="服务流程"
+            width={1280}
+            height={853}
+            className="mx-auto h-auto w-full max-w-2xl"
+          />
+          <div className="mt-8 grid gap-6 text-center md:grid-cols-3">
+            <Step n="1" t="注册并实名" d="注册账号并完成实名，守护真实的缅怀。" />
+            <Step n="2" t="创建纪念馆" d="建立专属纪念空间，上传生平与照片。" />
+            <Step n="3" t="追思与缅怀" d="献花、点灯、留言，邀亲友共同追忆。" />
+          </div>
+        </div>
+      </section>
+
+      {/* 故事位（P0 信任改造：用真实场景回答「别人怎么用」） */}
+      <section className="container-page py-16">
+        <SectionTitle
+          title="他们正在这样纪念"
+          sub="三种最常见的追思方式，都从一炷香的时间开始"
+        />
+        <div className="grid gap-6 md:grid-cols-3">
+          <StoryCard
+            quote="父亲走后我在外地工作，清明回不去。那晚在纪念馆给他点了一盏灯，把想说的话都写了进去。"
+            scene="异乡人的清明"
+          />
+          <StoryCard
+            quote="奶奶的拿手菜味道我们一直记得。把她的生平整理成时间线，孩子们想她的时候就去翻一翻。"
+            scene="一家的记忆档案"
+          />
+          <StoryCard
+            quote="族里修谱找了很久的老家谱。现在宗祠在网上了，字辈诗挂在堂号下面，晚辈随手就能查。"
+            scene="宗祠的数字传承"
+          />
+        </div>
+        <p className="mt-6 text-center text-xs text-brand-400">
+          以上为典型使用场景的示意改写，已隐去可识别信息。
+        </p>
+      </section>
+
+      {/* 价值 / 合规 */}
+      <section className="container-page py-16">
+        <div className="grid items-center gap-10 rounded-2xl bg-brand-50 p-8 md:grid-cols-2 md:p-12">
+          <div>
+            <h2 className="text-2xl font-semibold text-brand-900">
+              克制，是对思念最大的尊重
+            </h2>
+            <p className="mt-4 leading-7 text-brand-600">
+              本平台为文化传播与数字纪念技术服务，不涉及线下殡葬服务经营。
+              所有公开内容均经过机器预筛与人工终审，纪念馆与虚拟服务需实名后使用，
+              用户隐私与证件信息加密存储。
+            </p>
+            <Link
+              href="/about"
+              className="mt-6 inline-block rounded-md bg-brand-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-800"
+            >
+              了解平台与合规
+            </Link>
+          </div>
+          <Image
+            src="/assets/illus-about.jpg"
+            alt="关于宗忆堂"
+            width={1280}
+            height={853}
+            className="mx-auto h-auto w-full max-w-sm"
+          />
+        </div>
+      </section>
+
+      {/* FAQ 引导 */}
+      <section className="bg-white py-16">
+        <div className="container-page grid items-center gap-8 md:grid-cols-[1fr_auto]">
+          <div>
+            <h2 className="text-2xl font-semibold text-brand-900">
+              关于纪念服务，你可能想问
+            </h2>
+            <p className="mt-3 max-w-xl leading-7 text-brand-500">
+              虚拟祭品是什么？纪念馆如何创建？内容是否合规？我们整理了最常见的问题。
+            </p>
+            <Link
+              href="/faq"
+              className="mt-5 inline-block text-sm font-medium text-accent-600 hover:underline"
+            >
+              查看常见问题 FAQ →
+            </Link>
+          </div>
+          <Image
+            src="/assets/illus-faq.jpg"
+            alt="常见问题"
+            width={1280}
+            height={853}
+            className="mx-auto h-auto w-64"
+          />
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="bg-brand-800 py-14 text-center text-white">
+        <div className="container-page">
+          <h2 className="text-2xl font-semibold">为思念，安一个随时可达的家</h2>
+          <p className="mx-auto mt-3 max-w-xl text-brand-100">
+            注册即可创建你的第一个数字纪念馆，或先浏览我们的数字纪念服务。
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-4">
+            <Link
+              href="/register"
+              className="rounded-md bg-accent-500 px-6 py-3 text-sm font-medium text-white hover:bg-accent-600"
+            >
+              免费注册
+            </Link>
+            <Link
+              href="/halls"
+              className="rounded-md border border-white/40 px-6 py-3 text-sm font-medium text-white hover:bg-white/10"
+            >
+              浏览纪念馆
+            </Link>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function TrustBadge({ icon, title, desc }: { icon: string; title: string; desc: string }) {
+  return (
+    <div className="rounded-xl border border-brand-100 bg-white px-4 py-4">
+      <div className="text-xl">{icon}</div>
+      <div className="mt-1.5 text-sm font-semibold text-brand-900">{title}</div>
+      <div className="mt-1 text-xs leading-5 text-brand-500">{desc}</div>
+    </div>
+  );
+}
+
+function Stat({ num, label }: { num: string; label: string }) {
+  return (
+    <div>
+      <div className="text-2xl font-bold text-brand-900 md:text-3xl">{num}</div>
+      <div className="mt-1 text-sm text-brand-500">{label}</div>
+    </div>
+  );
+}
+
+function SectionTitle({ title, sub }: { title: string; sub?: string }) {
+  return (
+    <div className="mb-10 text-center">
+      <h2 className="text-2xl font-semibold text-brand-900">{title}</h2>
+      {/* 描金短横：把标题收进墨金体系。零布局影响（backgroundImage 而非 border-bottom）。 */}
+      <span
+        aria-hidden
+        className="mt-3 inline-block h-px w-16"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, transparent, var(--color-accent-400, #d4af37), transparent)",
+        }}
+      />
+      {sub && <p className="mt-2 text-brand-500">{sub}</p>}
+    </div>
+  );
+}
+
+/**
+ * 首页「我们提供的服务」板块卡片。
+ *
+ * 五张卡共用同一骨架（顶部渐变条 + 图标 + 标题 + 描述 + 进入），
+ * 只靠 `toneColor` 一个专属主色区分板块 —— 这样五张放在一起是
+ * "一套体系里的五个分支"，而不是五张各画各的卡。
+ *
+ * ⚠️ 主色走**内联 CSS 变量**而不是 5 套 Tailwind class：
+ * `feature-tone-memorial` 这类动态拼出来的类名 Tailwind 静态提取不到，
+ * 构建后是空样式（本仓库踩过，见 AGENTS.md「色阶双角色」一节）。
+ *
+ * 五个 toneColor 的 L\* 收在 36.8–45.4（跨度 8.6），故色相拉开但明度齐平，
+ * 有区分又不刺眼。这些小字用主色着色，压卡片底色（#f2ede4）时最低 4.54:1，
+ * 满足 AA —— **调色时别只看"压白底"，卡片底是暖白而非纯白，要求更严**。
+ */
+function FeatureCard({
+  title,
+  desc,
+  href,
+  tone,
+  toneColor,
+  icon,
+  className = "",
+}: {
+  title: string;
+  desc: string;
+  href: string;
+  /** 板块标识，渲染成 data-feature-tone 供验收脚本断言「五个值两两不同」 */
+  tone: string;
+  /** 该板块专属主色（hex）。见上方注释的明度约束。 */
+  toneColor: string;
+  icon: React.ReactNode;
+  /** 网格跨列（服务板块用 6 列基线做 2/3 分配） */
+  className?: string;
+}) {
+  return (
+    <Link
+      href={href}
+      data-feature-tone={tone}
+      style={
+        {
+          "--tone": toneColor,
+          "--tone-soft": `color-mix(in srgb, ${toneColor} 10%, #ffffff)`,
+        } as React.CSSProperties
+      }
+      className={`group relative block overflow-hidden rounded-xl border border-brand-200 bg-gradient-to-b from-white to-brand-50 p-6 transition hover:-translate-y-0.5 hover:border-accent-400 hover:shadow-md ${className}`}
+    >
+      {/* 顶部 2px 实色条：该卡专属主色的"认色标记"。
+          用实色而非渐变 —— 渐变到两端透明会让五张卡的第一眼观感趋同，
+          而这条恰恰是"一眼分出五个板块"的主要抓手。 */}
+      <span
+        aria-hidden
+        data-tone-bar
+        className="absolute inset-x-0 top-0 h-0.5"
+        style={{ background: "var(--tone)" }}
+      />
+      <div
+        className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg"
+        style={{ background: "var(--tone-soft)", color: "var(--tone)" }}
+      >
+        {icon}
+      </div>
+      {/* 标题与"进入"都用该卡专属主色，让色相在卡片里出现三次
+          （顶条 / 图标 / 文字），否则五张卡的正文观感会趋同。
+          对比度按卡片底色 #f2ede4 校验（≥4.5:1），不是按纯白。 */}
+      <h3 className="mb-2 text-lg font-semibold" style={{ color: "var(--tone)" }}>
+        {title}
+      </h3>
+      <p className="text-sm leading-6 text-brand-500">{desc}</p>
+      <span
+        className="mt-3 inline-flex items-center gap-1 text-sm font-medium opacity-0 transition group-hover:opacity-100"
+        style={{ color: "var(--tone)" }}
+      >
+        进入 <span aria-hidden>→</span>
+      </span>
+    </Link>
+  );
+}
+
+function Step({ n, t, d }: { n: string; t: string; d: string }) {
+  return (
+    <div className="rounded-lg border border-gray-100 bg-white p-5">
+      <div className="mb-2 text-sm font-bold text-accent-600">第 {n} 步</div>
+      <div className="font-semibold text-brand-900">{t}</div>
+      <p className="mt-1 text-sm text-brand-500">{d}</p>
+    </div>
+  );
+}
+
+function StoryCard({ quote, scene }: { quote: string; scene: string }) {
+  return (
+    <figure className="rounded-xl border border-gray-100 bg-white p-6">
+      <blockquote className="text-sm leading-7 text-brand-600">“{quote}”</blockquote>
+      <figcaption className="mt-4 text-xs font-medium text-brand-400">
+        —— {scene}
+      </figcaption>
+    </figure>
+  );
+}
