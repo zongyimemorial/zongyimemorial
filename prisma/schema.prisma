@@ -1,0 +1,1201 @@
+// 殡葬祭祀垂直平台 · 数据模型（PostgreSQL）
+// 覆盖：用户/认证、新闻CMS、虚拟祭品商城、订单支付、数字纪念馆、内容审核
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ 枚举 ============
+enum UserRole {
+  user
+  editor
+  admin
+}
+
+enum UserStatus {
+  active
+  disabled
+}
+
+enum ArticleStatus {
+  draft
+  review
+  published
+  rejected
+}
+
+enum ProductStatus {
+  active
+  inactive
+}
+
+enum ProductType {
+  memorial_hall // 数字纪念馆（创建/续费）
+  cloud_worship // 云祭扫服务
+  virtual_flower // 虚拟献花/点灯
+  tribute_item // 其他纪念物品
+  physical_goods // 实体商品（祭祀用品等）
+  memorial_service // 纪念服务（传记/追思会/视频/讣告/云碑等）
+  subscription // 纪念馆高级功能订阅（大容量存储/专属域名等）
+  whisper_plan // 午夜悄悄话（追思对话）订阅与按次购买
+  decor // 空间装修（纪念馆/宗祠模板与装饰套件，一次性买断）
+  storage // 存储空间容量包（按年订阅，指定某一馆/祠）
+  fortune_topup // 福币充值（用户钱包充值，走与商城同一套模拟支付）
+}
+
+enum StockType {
+  unlimited
+  limited
+}
+
+enum OrderStatus {
+  pending // 待支付
+  paid // 已支付
+  closed // 已关闭（超时/取消）
+  refunded // 已退款
+}
+
+enum PayChannel {
+  wechat
+  alipay
+  simulate
+}
+
+enum PayStatus {
+  init
+  success
+  failed
+  refunded
+}
+
+enum HallStatus {
+  pending // 待审核
+  active // 已开通
+  rejected // 驳回
+}
+
+enum TributeType {
+  flower
+  candle
+  lamp
+  message
+  offering
+  music
+}
+
+// 宗祠祭祀类型（与纪念馆 TributeType 区分，语义独立）
+enum ClanOfferingType {
+  incense // 上香
+  flower // 献花
+  candle // 点烛
+  offering // 供奉（供果/供品）
+  wine // 祭酒
+  message // 祭文/留言
+  music // 乐祭
+}
+
+enum ModerationTarget {
+  article
+  product
+  comment
+  realname
+}
+
+enum ModerationStatus {
+  pending
+  approved
+  rejected
+}
+
+// ============ 模型 ============
+model User {
+  id              String     @id @default(cuid())
+  phone           String?    @unique
+  email           String?    @unique
+  passwordHash    String?
+  realName        String?
+  idCardEncrypted String?
+  idVerified      Boolean    @default(false)
+  role            UserRole   @default(user)
+  status          UserStatus @default(active)
+  points          Int        @default(0) // 积分余额（12 个月有效，见 PointLog.expireAt）
+  // 福币余额：整数福币，语义就是「元」（1 福币 = 1 人民币），不做 /100。
+  // ⚠️ 刻意不叫 fortuneFen —— 本仓库在 priceFen 上踩过「字段是分、代码当元用」的坑
+  //    （AGENTS.md 阶段 5 ④，同一组件连踩两次）。名字里带 fen 就会被后来者当分用，
+  //    而福币没有小数需求（充值面值与赠送额全是整数）。
+  // ⚠️ 福币永不过期（用户真金白银充的），与积分的 12 个月有效期是两套规则。
+  fortuneCoins    Int        @default(0) // 福币余额（1 福币 = 1 人民币，永久有效）
+  premiumUntil    DateTime? // 高级会员到期时间（宗祠装修/族谱图精美版式等）
+  inviteCode      String?    @unique // 我的邀请码（社交裂变）
+  invitedById     String? // 邀请人（注册时填写邀请码）
+  invitedBy       User?      @relation("UserInvites", fields: [invitedById], references: [id])
+  invitees        User[]     @relation("UserInvites")
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  articles         Article[]
+  orders           Order[]
+  memorialHalls    MemorialHall[]
+  tributes         MemorialTribute[]
+  reviewedItems    ModerationQueue[]    @relation("Reviewer")
+  pointLogs        PointLog[]
+  fortuneLogs      FortuneLog[]
+  pointRedemptions PointRedemption[]
+  comments         ArticleComment[]
+  reservations     HallReservation[]
+  genealogies      Genealogy[]
+  clanHalls        ClanHall[]
+  clanTributes     ClanTribute[]
+  clanPosts        ClanPost[]
+  clanSignups      ClanActivitySignup[]
+  clanReplies      ClanPostReply[]
+  whisperProfiles  WhisperProfile[]
+  whisperSessions  WhisperSession[]
+  whisperQuota     WhisperQuota?
+
+  // 供奉体系：祭品库存（消耗式）+ 供台陈列
+  offeringHoldings OfferingHolding[]
+  altarOfferings   OfferingOnAltar[]
+
+  // 交流社区（馆主邀请亲友加入，发帖/回帖）
+  communityMembers CommunityMember[]
+  communityPosts   CommunityPost[]
+  communityReplies CommunityReply[]
+
+  // 第三方登录关联（微信/QQ/抖音/快手/头条）
+  accounts Account[]
+
+  // 站内通知（P0 增长基建）
+  notifications Notification[]
+
+  // 电子讣告（memorial_service / e-obituary 商品的履约产物）
+  obituaries       Obituary[]
+  obituaryQuota    ObituaryQuota?
+  obituaryMessages ObituaryMessage[]
+
+  // 服务受理单（cloud_worship / 非讣告纪念服务 的履约载体）
+  serviceFulfillments ServiceFulfillment[]
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  parentId  String?
+  parent    Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryTree")
+  sort      Int        @default(0)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  articles Article[]
+  products Product[]
+}
+
+model Article {
+  id             String        @id @default(cuid())
+  categoryId     String
+  category       Category      @relation(fields: [categoryId], references: [id])
+  title          String
+  slug           String        @unique
+  coverImage     String?
+  summary        String?
+  body           String        @db.Text
+  seoTitle       String?
+  seoKeywords    String?
+  seoDescription String?
+  authorId       String?
+  author         User?         @relation(fields: [authorId], references: [id])
+  status         ArticleStatus @default(draft)
+  isAiGenerated  Boolean       @default(false)
+  viewCount      Int           @default(0)
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  comments ArticleComment[]
+}
+
+model Product {
+  id             String        @id @default(cuid())
+  name           String
+  slug           String        @unique
+  categoryId     String
+  category       Category      @relation(fields: [categoryId], references: [id])
+  type           ProductType
+  description    String?       @db.Text
+  price          Int // 单位：分（**人民币基准价**，交易账本口径：OrderItem.unitPrice / Payment.amount 都从这里来）
+  // ⚠️ 曾经的 `fubPrice Int?` 派生列**已删除**（2026-10）。
+  //    原因：商品价允许一位小数（如「晨雾青」1.5 元 = 150 分），
+  //    `Int` 装不下 → 它必然落后于真相，沦为「同一个事实的第二个判据」
+  //    （本仓库反复踩：withDark / data-page-skin / premiumUntil / findTemplate）。
+  //    现在展示层一律 `fubFromFen(product.price)` **现算**（见 lib/fortune.ts）。
+  originalPrice  Int?
+  coverImage     String?
+  gallery        Json?
+  status         ProductStatus @default(active)
+  stockType      StockType     @default(unlimited)
+  stock          Int?
+  salesCount     Int           @default(0)
+  seoTitle       String?
+  seoKeywords    String?
+  seoDescription String?
+  pointsPrice    Int? // 积分价（积分「个数」，100 积分 = ¥1）；为空表示不开放积分兑换
+  tier           String? // 产品线分类：basic(基础祭品类) | advanced(进阶供品类) | ceremony(仪式体验类) | custom(场景定制类)
+  ritualMode     String        @default("both") // 文明祭扫：civilized(文明) | traditional(传统) | both
+  isFree         Boolean       @default(false) // 零元祭品：商城标价 0，一键祭拜不走订单
+  // 「能否在纪念馆一键祭拜」与「是否免费」是两件事，必须分开：
+  // 收费祭品（如数字烟花 ¥8）同样是礼器，购买后仍要在祭拜面板里触发对应动效。
+  // 若只用 isFree 做开关，把祭品转收费就等于把它的入口从面板上删掉。
+  isRitual       Boolean       @default(false) // 礼器：可在纪念馆/宗祠一键祭拜（有动效）
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  skus             ProductSku[]
+  orderItems       OrderItem[]
+  tributes         MemorialTribute[]
+  clanTributes     ClanTribute[]
+  pointRedemptions PointRedemption[]
+
+  // 供奉体系
+  holdings       OfferingHolding[]
+  altarOfferings OfferingOnAltar[]
+
+  // 服务受理单（服务类商品，支付/兑换成功后建单；DELETE SET NULL 保留受理记录）
+  serviceFulfillments ServiceFulfillment[]
+}
+
+model ProductSku {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  spec      Json?
+  price     Int
+  stock     Int?
+  code      String?
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNo         String      @unique
+  userId          String
+  user            User        @relation(fields: [userId], references: [id])
+  totalAmount     Int // 分
+  discount        Int         @default(0)
+  payAmount       Int // 分
+  status          OrderStatus @default(pending)
+  payChannel      PayChannel?
+  paidAt          DateTime?
+  expiresAt       DateTime?
+  remark          String?
+  shippingAddress Json? // 实体商品收货信息 { name, phone, address }
+  hallInfo        Json? // 纪念馆建馆信息 { deceasedName, fireProof, applicantIdCard, applicantPhone, relation }
+  shipStatus      String? // 发货状态：pending(待发货) | shipped(已发货) | delivered(已签收) | returned(退货)
+  // 容量包是「指定某一座馆/祠」的，需记录作用对象以便履约回写
+  targetHallId   String? // 容量包作用的馆 id（MemorialHall 或 ClanHall）
+  targetKind     String? // "hall" | "clan"
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items   OrderItem[]
+  payment Payment?
+  hall    MemorialHall?
+
+  // 服务受理单（现金支付的服务类商品，支付成功后建单）
+  serviceFulfillments ServiceFulfillment[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  skuId     String?
+  quantity  Int     @default(1)
+  unitPrice Int
+  snapshot  Json? // 下单时商品快照
+}
+
+model Payment {
+  id        String     @id @default(cuid())
+  orderId   String     @unique
+  order     Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  channel   PayChannel
+  tradeNo   String? // 第三方交易号
+  amount    Int
+  status    PayStatus  @default(init)
+  rawNotify Json?
+  createdAt DateTime   @default(now())
+  paidAt    DateTime?
+}
+
+// 积分流水（获取/兑换/扣减）
+model PointLog {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String // earn(获取) | redeem(兑换扣减) | adjust(后台调整)
+  amount    Int // 正数=收入，负数=支出
+  reason    String
+  refId     String? // 关联订单/兑换记录等
+  expireAt  DateTime? // 积分有效期（发放后 12 个月；仅收入侧有意义）
+  expired   Boolean   @default(false) // 是否已过期作废
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// 福币流水（充值 / 赠送 / 消费 / 人工调整）。
+// ⚠️ 刻意没有 expireAt / expired 字段 —— 福币是用户真金白银充值的，
+//    结构上不允许过期。删掉字段比"填个远大日期"更安全：没有字段就写不出过期逻辑。
+//    （与 PointLog 的 12 个月有效期是两套规则，别把两张表合并。）
+// refId 关联 Order.id；充值/赠送由 lib/pay.ts 的 fortune_topup 分支写入。
+model FortuneLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind      String // topup(充值) | bonus(赠送) | spend(消费) | adjust(后台调整)
+  amount    Int // 正数=收入，负数=支出
+  reason    String
+  refId     String? // 关联订单等
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// 积分兑换记录
+model PointRedemption {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  points    Int
+  status    String   @default("done") // done | revoked
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model MemorialHall {
+  id             String     @id @default(cuid())
+  ownerUserId    String
+  owner          User       @relation(fields: [ownerUserId], references: [id])
+  orderId        String?    @unique
+  order          Order?     @relation(fields: [orderId], references: [id])
+  name           String
+  deceasedName   String
+  birthDate      DateTime?
+  deathDate      DateTime?
+  coverImage     String?
+  description    String?    @db.Text
+  templateConfig Json?
+  sectionOrder   Json?    // 馆主在控制台拖拽重排的「板块顺序」；null = 沿用默认序（= 现状 DOM 顺序），永不删除板块
+  isPublic       Boolean    @default(false)
+  status         HallStatus @default(pending)
+  proofs         Json? // 建馆证明材料 { fireProof(火化证明编号/图片), relation(与逝者关系), relationProof, applicantIdCard, applicantPhone }
+  couplet        Json? // 挽联横版配置 { left(上联), right(下联), horizontal(横批) }
+  archive        Json? // 故人数字档案 { timeline: [{year, event}], photos: [url], epitaph(墓志铭), hometown(籍贯) }
+  premiumUntil   DateTime? // 高级功能订阅到期时间（大容量存储/专属域名等）
+  // —— 存储空间容量：单一判据（与 premium 解耦）——
+  // 免费额度由 lib/storage.ts 常量按 kind 提供（馆 1GB / 祠 2GB），不进库。
+  //
+  // ⚠️ 必须是 BigInt 而非 Int：500GB = 536,870,912,000 字节，远超 Int 上限 2,147,483,647
+  //    （实测写 50GB=53,687,091,200 直接 `integer out of range`）。
+  //    用 Int 会让 200GB/500GB 两档根本存不进去 —— 是"定价表能建、履约即崩"的静默炸弹。
+  storageSubBytes  BigInt     @default(0)       // 已购容量包字节（订阅 add-on）；0 = 仅免费额度
+  storageUsedBytes BigInt     @default(0)       // 当前已用字节（上传 + / 删除 -）
+  storageUntil     DateTime?                   // 容量订阅到期；null = 仅免费额度
+  expireAt       DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  tributes     MemorialTribute[]
+  reservations HallReservation[]
+  whisper      WhisperProfile?
+
+  altarOfferings OfferingOnAltar[]
+
+  // 交流社区
+  communityInviteCode String?           @unique // 馆主分享给亲友的邀请码
+  communityMembers    CommunityMember[]
+  communityPosts      CommunityPost[]
+
+  // 电子讣告：可挂在本馆下（可选；不挂则为独立讣告）
+  obituaries Obituary[]
+}
+
+model MemorialTribute {
+  id        String       @id @default(cuid())
+  hallId    String
+  hall      MemorialHall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  userId    String?
+  user      User?        @relation(fields: [userId], references: [id])
+  productId String?
+  product   Product?     @relation(fields: [productId], references: [id])
+  type      TributeType  @default(flower)
+  message   String?
+  createdAt DateTime     @default(now())
+
+  // 身份快照：写入时冻结，与 ClanTribute 同口径。
+  // 纪念馆是**公开页面**，追思记录里展示献祭者名号必须脱敏 ——
+  // 早先这里没有快照字段，前台只能 include 活用户表去读 realName，等于把完整实名公开展示。
+  // 冻结快照还顺带避免了"用户日后改实名 → 历史记录身份漂移"。
+  displayName  String  @default("匿名宗亲") // 公开展示：脱敏后的名号（与 lib/mask.ts 的兜底文案一致）
+  realNameSnap String? // 仅馆主/管理台可见：完整真实姓名
+  contactSnap  String? // 仅馆主/管理台可见：完整邮箱/手机号
+
+  @@index([hallId, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ModerationQueue {
+  id              String           @id @default(cuid())
+  targetType      ModerationTarget
+  targetId        String
+  contentSnapshot Json?
+  aiResult        Json?
+  status          ModerationStatus @default(pending)
+  reviewerId      String?
+  reviewer        User?            @relation("Reviewer", fields: [reviewerId], references: [id])
+  reason          String?
+  createdAt       DateTime         @default(now())
+  reviewedAt      DateTime?
+}
+
+model SmsOtp {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  purpose   String   @default("login") // login | realname
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  ip        String?
+  createdAt DateTime @default(now())
+}
+
+enum LiveStatus {
+  scheduled // 预告
+  live // 直播中
+  ended // 已结束（回放）
+}
+
+// 重大事件直播（轻量化方案：video=本地/云视频流；iframe=嵌入YouTube Live/Zoom等免费平台）
+model LiveSession {
+  id          String     @id @default(cuid())
+  title       String
+  description String?    @db.Text
+  coverImage  String?
+  category    String? // 直播类型：公祭仪式 | 生态安葬仪式 | 宗祠落成 | 祭祖大典 | 追悼会
+  status      LiveStatus @default(scheduled)
+  embedType   String     @default("video") // video | iframe
+  streamUrl   String? // 播放地址（本地 mp4 / HLS / YouTube Live / Zoom 等）
+  isPublic    Boolean    @default(true)
+  watchCount  Int        @default(0)
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// 文章评论（提交后待审核，审核通过才对外展示）
+model ArticleComment {
+  id        String           @id @default(cuid())
+  articleId String
+  article   Article          @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body      String           @db.Text
+  status    ModerationStatus @default(pending)
+  createdAt DateTime         @default(now())
+
+  @@index([articleId, status])
+}
+
+// 纪念馆祭拜分时预约（清明/冬至等高峰期人流控制）
+model HallReservation {
+  id        String       @id @default(cuid())
+  hallId    String
+  hall      MemorialHall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime // 预约日期
+  timeSlot  String // 时段：09:00-11:00 等
+  name      String // 预约人
+  phone     String
+  status    String       @default("confirmed") // confirmed | cancelled
+  createdAt DateTime     @default(now())
+
+  @@index([hallId, date])
+}
+
+// ============ 板块三：宗亲文化交流 ============
+// 族谱数字化数据库（支持各姓氏族谱上传、数字化存储与检索）
+model Genealogy {
+  id            String           @id @default(cuid())
+  surname       String // 姓氏
+  hallName      String? // 堂号（如"陇西堂"）
+  origin        String? // 祖籍/郡望（如"甘肃陇西"）
+  lineage       String? // 世系/字辈派语
+  migration     String? // 迁徙源流概述
+  membersJson   Json? // 数字化世系成员 [{ gen(世代), name, relation, note }]
+  chartType     String           @default("ou") // 族谱图版式：ou(欧式) | su(苏式) | pagoda(宝塔式) | dieji(牒记式) | miaojin | juanbo | danqing
+  chartConfig   Json? // 族谱图配置（主题、节点布局覆盖等）
+  chartUnlocked String[]         @default([]) // 已解锁的收费版式 id
+  fileUrl       String? // 原始族谱文件（扫描件/文档）
+  coverImage    String?
+  ownerId       String
+  owner         User             @relation(fields: [ownerId], references: [id])
+  isPublic      Boolean          @default(true)
+  status        ModerationStatus @default(pending) // 上传后先审后显
+  viewCount     Int              @default(0)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([surname])
+}
+
+// 宗祠（宗亲文化板块 · 设立宗祠，支持空间装修）
+model ClanHall {
+  id             String     @id @default(cuid())
+  ownerUserId    String
+  owner          User       @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  surname        String // 姓氏
+  hallName       String // 宗祠名称（如"李氏宗祠"）
+  name           String // 堂号（如"敦本堂"）
+  origin         String? // 始迁地 / 郡望
+  ancestorName   String? // 始祖
+  ancestorTitle  String? // 郡望 · 堂号别称
+  description    String?    @db.Text // 祠堂简介
+  generationPoem String?    @db.Text // 字辈诗
+  templateConfig Json? // 装修配置（结构同 HallDecor）
+  sectionOrder   Json?    // 祠主在控制台拖拽重排的「板块顺序」；null = 沿用默认序（= 现状 DOM 顺序），永不删除板块
+  coverImage     String?
+  archive        Json? // { photos: string[], portrait?: string }
+  proofs         Json? // 佐证材料 [{ url, note }]
+  isPublic       Boolean    @default(true)
+  status         HallStatus @default(pending) // 建档后先审后显
+  premiumUntil   DateTime? // 高级会员到期时间
+  // —— 存储空间容量：单一判据（与 premium 解耦）——
+  // 免费额度由 lib/storage.ts 常量按 kind 提供（祠 2GB），不进库。
+  // ⚠️ BigInt 而非 Int —— 见 MemorialHall 同字段注释（500GB 溢出 Int）。
+  storageSubBytes  BigInt     @default(0)       // 已购容量包字节（订阅 add-on）；0 = 仅免费额度
+  storageUsedBytes BigInt     @default(0)       // 当前已用字节（上传 + / 删除 -）
+  storageUntil     DateTime?                   // 容量订阅到期；null = 仅免费额度
+  viewCount      Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  tributes ClanTribute[]
+
+  altarOfferings OfferingOnAltar[]
+
+  // 交流社区
+  communityInviteCode String?           @unique
+  communityMembers    CommunityMember[]
+  communityPosts      CommunityPost[]
+
+  @@index([surname, status])
+  @@index([ownerUserId])
+}
+
+// 宗亲社区帖子（家族事务在线协商，先审后显）
+model ClanPost {
+  id         String           @id @default(cuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id])
+  surname    String // 姓氏圈子
+  topic      String // 主题：寻根问祖 | 家族事务 | 联谊交流 | 字辈讨论
+  title      String
+  body       String           @db.Text
+  status     ModerationStatus @default(pending)
+  replyCount Int              @default(0)
+  createdAt  DateTime         @default(now())
+
+  replies ClanPostReply[]
+
+  @@index([surname, status])
+}
+
+// 宗亲社区回帖
+model ClanPostReply {
+  id        String           @id @default(cuid())
+  postId    String
+  post      ClanPost         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User             @relation(fields: [userId], references: [id])
+  body      String           @db.Text
+  status    ModerationStatus @default(pending)
+  createdAt DateTime         @default(now())
+}
+
+// 宗族活动（线上召集、线下活动联动：祭祖大典/宗亲联谊会/修谱研讨等）
+model ClanActivity {
+  id          String   @id @default(cuid())
+  title       String
+  surname     String? // 面向姓氏（空=全体）
+  kind        String   @default("祭祖大典") // 祭祖大典 | 宗亲联谊 | 修谱研讨 | 家族议事
+  location    String // 活动地点（线上会议链接或线下地址）
+  onlineLink  String? // 线上参与方式
+  coverImage  String?
+  description String?  @db.Text
+  startAt     DateTime
+  capacity    Int      @default(100)
+  signupCount Int      @default(0)
+  status      String   @default("upcoming") // upcoming | ongoing | finished
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  signups ClanActivitySignup[]
+}
+
+// 活动报名
+model ClanActivitySignup {
+  id         String       @id @default(cuid())
+  activityId String
+  activity   ClanActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User         @relation(fields: [userId], references: [id])
+  name       String
+  phone      String
+  note       String?
+  createdAt  DateTime     @default(now())
+
+  @@unique([activityId, userId])
+}
+
+// ============================================================
+// 午夜悄悄话（追思对话装置）
+// 定位：追思辅助工具，非情感陪伴产品。
+// 合规基线：《民法典》994/1019 条、《标识办法》+ GB 45438-2025、
+//          《人工智能拟人化互动服务管理暂行办法》（2026-07-15 施行）
+// ============================================================
+
+/// 追思对话装置：与纪念馆一对一绑定，承载生平资料库与人格配置
+model WhisperProfile {
+  id          String       @id @default(cuid())
+  ownerUserId String
+  owner       User         @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  hallId      String       @unique
+  hall        MemorialHall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+
+  personaName String // 逝者称呼（用于对话中的自称/称谓）
+  personTitle String? // 称谓（如「父亲」「祖父」）
+
+  // ---- 生平资料库（构建人格的事实来源）----
+  bio           String? @db.Text // 生平简介
+  traits        Json? // 性格特征 [String]
+  speechStyle   Json? // 语言风格 { catchphrases: [String], tone, dialect, addressForm }
+  memories      Json? // 记忆条目 [{ id, title, year, content }]
+  relationships Json? // 关系图谱 [{ name, relation, note }]
+
+  // ---- 人格提示词（由资料库生成，可人工编辑覆盖）----
+  systemPrompt  String? @db.Text
+  promptVersion Int     @default(1)
+
+  // ---- 配置 ----
+  voiceId  String? // 当前选用声线 WhisperVoice.id
+  avatarId String? // 当前选用形象 WhisperAvatar.id
+  mode     String  @default("voice") // voice（纯语音）| avatar（语音+形象）
+
+  // ---- 状态：必须通过家属授权 + 人工审核才能开启 ----
+  isPublic Boolean    @default(false)
+  enabled  Boolean    @default(false)
+  status   HallStatus @default(pending)
+
+  // ---- 隐式标识：生成所用的模型与版本，用于元数据溯源 ----
+  engineLabel String? // 如 "mock-1.0" / "deepseek-chat+volcano-tts"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  voices   WhisperVoice[]
+  avatars  WhisperAvatar[]
+  sessions WhisperSession[]
+  consent  WhisperConsent?
+
+  @@index([ownerUserId])
+  @@index([status])
+}
+
+/// 声音克隆音色
+model WhisperVoice {
+  id              String         @id @default(cuid())
+  profileId       String
+  profile         WhisperProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name            String
+  provider        String         @default("mock") // mock | volcano | cosyvoice
+  providerVoiceId String?
+  sampleUrl       String? // 用户上传的样本音频
+  sampleSeconds   Int            @default(0)
+  status          String         @default("pending") // pending | training | ready | failed
+  failReason      String?
+  isDefault       Boolean        @default(false)
+  isPreset        Boolean        @default(false) // 系统预设声线（免费档可用）
+  tier            String         @default("free") // free | points | premium
+  points          Int?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@index([profileId])
+}
+
+/// 数字形象（形象选择；视频为按需生成，非实时）
+model WhisperAvatar {
+  id         String         @id @default(cuid())
+  profileId  String
+  profile    WhisperProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name       String
+  style      String         @default("portrait") // portrait | fullbody | silhouette
+  imageUrl   String?
+  preset     String? // 预设形象 id
+  tier       String         @default("free") // free | points | premium
+  points     Int?
+  isSelected Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+
+  @@index([profileId])
+}
+
+/// 对话会话
+model WhisperSession {
+  id          String         @id @default(cuid())
+  profileId   String
+  profile     WhisperProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mode        String         @default("voice") // voice | avatar | text
+  minutesUsed Int            @default(0)
+  roundsUsed  Int            @default(0)
+  createdAt   DateTime       @default(now())
+  endedAt     DateTime?
+
+  messages WhisperMessage[]
+
+  @@index([profileId, userId])
+  @@index([userId, createdAt])
+}
+
+/// 对话消息（留存 ≥6 个月，符合《标识办法》日志要求）
+model WhisperMessage {
+  id         String         @id @default(cuid())
+  sessionId  String
+  session    WhisperSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role       String // user | assistant
+  text       String         @db.Text
+  audioUrl   String?
+  durationMs Int            @default(0)
+
+  // ---- 显式标识：前端必须渲染「AI 生成」徽标 ----
+  aiGenerated Boolean @default(false)
+  // ---- 隐式标识：写入元数据，供溯源 ----
+  aiLabel     String? // 如 "AI 生成 · mock-1.0 · 2026-09-29T02:00:00Z"
+
+  // ---- 安全：不当内容拦截标记 ----
+  flagged    Boolean @default(false)
+  flagReason String?
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+}
+
+/// 家属授权链（合规必需，不可跳过）
+model WhisperConsent {
+  id        String         @id @default(cuid())
+  profileId String         @unique
+  profile   WhisperProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  applicantName String
+  applicantIdNo String // AES-256 加密存储
+  relation      String // 与逝者关系（近亲属）
+  relationProof String? // 关系证明材料 URL
+  otherHeirsAck Boolean   @default(false) // 其他近亲属无异议
+  deceasedWill  String? // 逝者生前意愿说明
+  agreedAt      DateTime  @default(now())
+  ip            String?
+  revokedAt     DateTime? // 授权撤回时间
+}
+
+/// 配额（订阅 + 按次购买）
+model WhisperQuota {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          String    @default("free") // free | basic | premium
+  monthlyMins   Int       @default(30) // 每周期语音分钟数（free 档给 0，仅文字）
+  usedMins      Int       @default(0)
+  monthlyRounds Int       @default(30) // 文字轮次上限
+  usedRounds    Int       @default(0)
+  extraMins     Int       @default(0) // 按次购买的剩余分钟数
+  periodStart   DateTime  @default(now())
+  periodEnd     DateTime?
+  updatedAt     DateTime  @updatedAt
+}
+
+// ============ 宗祠祭祀 / 消费记录 ============
+
+/// 宗祠祭祀记录（宗亲在宗祠献祭、供奉的流水账）
+/// 说明：不复用 MemorialTribute —— 两者外键目标不同（ClanHall vs MemorialHall），
+/// 且宗祠记录属"宗门账目"需长期留档，并含消费金额/积分字段。
+model ClanTribute {
+  id         String   @id @default(cuid())
+  clanHallId String
+  clanHall   ClanHall @relation(fields: [clanHallId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  type ClanOfferingType @default(incense)
+
+  // 身份快照：写入时冻结，避免用户后续修改 realName 导致历史记录身份漂移
+  displayName  String // 公开展示：脱敏后的名号
+  realNameSnap String? // 仅馆主可见：完整真实姓名
+  contactSnap  String? // 仅馆主可见：完整邮箱/手机号
+
+  // 消费信息（amountFen 恒为 0：现金供奉走商城订单，金额绝不从前端接收）
+  amountFen  Int      @default(0)
+  pointsCost Int      @default(0)
+  message    String?
+  createdAt  DateTime @default(now())
+
+  @@index([clanHallId, createdAt])
+  @@index([userId, createdAt])
+}
+
+// ============ 供奉体系（消耗式库存 + 供台陈列） ============
+
+/// 祭品持有量（消耗式库存）。
+///
+/// 为什么需要这张表：MemorialTribute / ClanTribute 是**只增不改的流水**，
+/// 无法表达"还剩几份"。重构前"是否拥有"是隐式的（查 OrderItem，买过=永久无限用），
+/// 导致同一件祭品可以无限次祭拜。改成消耗制后，拥有关系必须显式落到这张表。
+///
+/// 唯一键 (userId, productId)：一件祭品在每个用户名下只有一行，靠 quantity 表达剩余。
+/// 纪念馆与宗祠**共用**同一行 —— 用户在哪边买的，两边都能用。
+///
+/// 免费祭品也走本表：每日懒补货到 FREE_DAILY_QUOTA 份（见 freeTopUpDate）。
+/// 补货用**覆盖写**（设为配额）而非增量，所以并发双写收敛到配额、不会翻倍。
+model OfferingHolding {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  quantity Int @default(0) // 剩余可用份数（>=0）
+
+  /// 本次免费补货所属的自然日 0 点。
+  /// 与「今天 0 点」相等 → 今天已补过，不再重复补；不等 → 跨日了，补到配额。
+  freeTopUpDate DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+/// 供台陈列：一条记录 = 纪念馆/宗祠供台上的一件祭品。
+///
+/// 为什么不派生自祭拜流水：流水是"谁在何时祭拜了什么"的**历史**，
+/// 无法表达"此刻供台上摆着什么"；而撤供若去改流水，要么违背流水只增不删的设计，
+/// 要么给流水加 clearedAt 字段污染祭祀记录列表的语义。
+/// 独立成表让两个概念各自干净：MemorialTribute/ClanTribute = 事件流，
+/// OfferingOnAltar = 当前陈列状态。
+///
+/// 撤供 = 写 clearedAt（软删除），保留"曾供过"的审计痕迹，与流水只增不删的口径一致。
+/// 本表**只存 productId**，绝不存任何身份字段（实名/联系方式一律不进这里）。
+model OfferingOnAltar {
+  id String @id @default(cuid())
+
+  // 二选一：纪念馆 or 宗祠（与两张流水表的外键口径保持一致）
+  hallId     String?
+  hall       MemorialHall? @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  clanHallId String?
+  clanHall   ClanHall?     @relation(fields: [clanHallId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime  @default(now())
+  clearedAt DateTime? // 撤供时间；null = 仍在供台上
+
+  @@index([hallId, clearedAt, createdAt])
+  @@index([clanHallId, clearedAt, createdAt])
+  @@index([userId])
+}
+
+// ===========================================================================
+// 交流讨论社区（纪念馆 / 宗祠共用，多态外键，范本：OfferingOnAltar）
+// ===========================================================================
+
+// 社区成员（馆主自动为 owner；被邀请的亲友为 member）
+model CommunityMember {
+  id String @id @default(cuid())
+
+  // 多态：hallId 或 clanHallId 二选一
+  hallId     String?
+  hall       MemorialHall? @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  clanHallId String?
+  clanHall   ClanHall?     @relation(fields: [clanHallId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   String @default("member") // "owner" | "member"
+
+  // 身份快照（与 MemorialTribute/ClanTribute 同口径，防身份漂移）
+  displayName  String  @default("匿名宗亲") // 公开展示：脱敏名号
+  realNameSnap String? // 馆主/管理台可见：完整实名
+  contactSnap  String? // 馆主/管理台可见：完整联系方式
+
+  invitedById String? // 邀请人 userId（馆主）
+  joinedAt    DateTime @default(now())
+
+  @@unique([hallId, userId])
+  @@unique([clanHallId, userId])
+  @@index([userId])
+}
+
+// 社区帖子
+model CommunityPost {
+  id String @id @default(cuid())
+
+  // 多态
+  hallId     String?
+  hall       MemorialHall? @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  clanHallId String?
+  clanHall   ClanHall?     @relation(fields: [clanHallId], references: [id], onDelete: Cascade)
+
+  authorId  String?
+  author    User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  content   String  @db.Text
+  mediaUrls Json? // [{ type: "image"|"video", url: "..." }]
+
+  // 身份快照
+  displayName  String  @default("匿名宗亲")
+  realNameSnap String?
+  contactSnap  String?
+
+  createdAt DateTime         @default(now())
+  replies   CommunityReply[]
+
+  @@index([hallId, createdAt])
+  @@index([clanHallId, createdAt])
+  @@index([authorId])
+}
+
+// 社区回复
+model CommunityReply {
+  id       String        @id @default(cuid())
+  postId   String
+  post     CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId String?
+  author   User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  content  String        @db.Text
+
+  // 身份快照
+  displayName  String  @default("匿名宗亲")
+  realNameSnap String?
+  contactSnap  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+}
+
+// 第三方 OAuth 账号关联（微信/QQ/抖音/快手/头条)
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String // "wechat" | "qq" | "douyin" | "kuaishou" | "toutiao"
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  createdAt         DateTime @default(now())
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// ===========================================================================
+// 通知与提醒（P0 增长基建 · 2026-10）
+// ===========================================================================
+//
+// 设计说明：
+//  - 只建 Notification 一张表。忌日/生日从 MemorialHall.birthDate/deathDate 直接派生、
+//    节日从 lib/festivals.ts 派生，无需独立 Reminder 行——「派生数据」不落库，
+//    这与 OfferingOnAltar「当前陈列态不污染流水」是同一条纪律。
+//  - 提醒的生成是**幂等**的：dedupeKey（如 memorial:<hallId>:2026-10-18）
+//    唯一约束，同一事件只生成一条，重复扫描不会刷屏。
+//  - 无 cron 环境（沙箱）采用**惰性触发**：用户访问控制台时扫描未来 7 天
+//    该用户的提醒事项并补生成通知。日后上了 Vercel Cron 改为定时批量调用即可
+//    （lib/notify.ts 的 syncUpcomingReminders 同时适用两种触发方式）。
+//  - Email 通道预留：lib/notify.ts 检查 RESEND_API_KEY，未配置则静默跳过。
+
+/// 站内通知
+model Notification {
+  id     String  @id @default(cuid())
+  userId String
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // tribute(收到献祭/留言) | festival(节日临近) | memorial(忌日/生日临近) | review(审核结果) | system(系统)
+  kind   String
+  title  String
+  body   String? @db.Text
+  // 站内相对跳转路径，如 /halls/xxx
+  link   String?
+
+  // 幂等去重键：同一事件（同一对象+同一日期）只允许生成一条
+  dedupeKey String?  @unique
+
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+}
+
+// ============================================================================
+// 电子讣告（memorial_service / e-obituary 商品的履约产物）
+//
+// 商品「电子讣告发布」购买/用积分兑换后 → 发放发布配额 → 用户在控制台发布 →
+// 生成公开缅怀页（可分享、可设访问密码）。
+//
+// 配额语义：一次购买/兑换 = 可发布 1 份讣告（单次服务，非订阅）。
+// 与 OfferingHolding 同源的「消耗式」范式：购买 increment，发布 decrement。
+// ============================================================================
+
+model Obituary {
+  id          String       @id @default(cuid())
+  ownerUserId String
+  owner       User         @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  // 归属纪念馆（可选）：不挂馆 = 独立讣告。挂馆时发布校验 ownerUserId，防越权挂他人馆。
+  hallId String?
+  hall   MemorialHall? @relation(fields: [hallId], references: [id], onDelete: SetNull)
+
+  // —— 讣告内容 ——
+  deceasedName  String // 逝者姓名（必填）
+  birthDate     DateTime? // 生
+  deathDate     DateTime? // 卒
+  biography     String?   @db.Text // 生平
+  funeralInfo   String?   @db.Text // 告别仪式信息（时间/地点/流程）
+  portraitImage String? // 遗像（复用上传体系）
+  contactInfo   String?   @db.Text // 治丧联系（亲属/治丧委员会）
+
+  // —— 访问控制 ——
+  // 公开链接可分享；设密码则需凭密码令牌访问。
+  // ⚠️ 只存 bcrypt 哈希，绝不存明文；页面永不回显明文（与 User.passwordHash 同纪律）。
+  passwordHash  String?
+  isPublic      Boolean @default(true) // false = 仅持分享令牌可看（不进搜索引擎）
+  allowMessages Boolean @default(true) // 留言区开关
+
+  // published（已发布/公开可见）| unpublished（已下架，仅控制台可见）
+  // ⚠️ 下架 ≠ 退配额：下架只改此字段，配额在 ObituaryQuota 里已扣除，不回退。
+  status    String @default("published")
+  viewCount Int    @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages ObituaryMessage[]
+
+  @@index([ownerUserId, createdAt])
+  @@index([hallId])
+  @@index([status, isPublic])
+}
+
+/// 讣告发布配额（消耗式）。
+/// 剩余 = purchased - used，代码现算，不落派生列（与全站「不做第二个判据」纪律一致）。
+model ObituaryQuota {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  purchased Int @default(0) // 累计购买/兑换份数（只增，审计）
+  used      Int @default(0) // 已发布消耗份数（只增）
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// 讣告留言（allowMessages=true 时启用）。
+/// 身份快照与 MemorialTribute 同口径：公开页展示脱敏名号。
+model ObituaryMessage {
+  id         String   @id @default(cuid())
+  obituaryId String
+  obituary   Obituary @relation(fields: [obituaryId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  content     String  @db.Text
+  displayName String  @default("匿名亲友")
+  createdAt   DateTime @default(now())
+
+  @@index([obituaryId, createdAt])
+}
+
+// ============================================================================
+// 服务受理（人工服务类商品的履约载体）
+//
+// 商品「云祭扫服务」「纪念服务（传记/追思会/视频/云碑等，非电子讣告）」购买/积分兑换后，
+// 平台没有自动履约能力（这些是人工服务），故支付成功后自动建一张 `pending` 受理单，
+// 用户随后在控制台「我的服务」提交需求资料，管理员在后台「服务工单」受理/完成。
+//
+// 范围：isServiceProduct(p) = p.type === "cloud_worship"
+//        || (p.type === "memorial_service" && p.slug !== "e-obituary")
+// 电子讣告（e-obituary）走自身 ObituaryQuota 通道，不在此表。
+//
+// 去规范化：slug / productName / type 冗余落库，便于后台工单展示与路由，无需回 join 商品。
+// redemptionId 不建外键 —— PointRedemption 可能被删，仅存 id 字符串供溯源。
+// ============================================================================
+
+model ServiceFulfillment {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId       String?
+  order         Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  redemptionId  String?
+  productId     String?
+  product       Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  slug        String // 去规范化，便于展示/路由
+  productName String
+  type        String // cloud_worship | memorial_service
+
+  // pending（待提交/待受理）| processing（受理中）| done（已完成）| rejected（已驳回）
+  status    String   @default("pending")
+  intake    String?  @db.Text // 用户提交的需求说明/素材
+  contact   String?  // 可选联系电话
+  adminNote String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([status])
+}
