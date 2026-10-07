@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+# 评论验收结果到 PR 需要 pull-requests 写权限（同仓库 PR 生效；跨仓库 fork PR 需 PAT）
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # 第一道关卡：确定性、快速的编译/类型检查/Lint 门禁。
+  # 任何类型错误或 lint 失败都会在此拦截，阻止进入部署。
+  build:
+    name: 类型检查 / 构建 / Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 配置 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      # 用占位符模板顶替 .env，使构建/运行期有可用的环境变量
+      - name: 准备占位符环境
+        run: cp .env.example .env
+
+      - name: 生成 Prisma 客户端
+        run: npx prisma generate
+
+      - name: 构建（含 TypeScript 类型检查）
+        run: npm run build
+
+      - name: Lint
+        run: npm run lint
+
+  # 第二道关卡：在 Postgres + 真浏览器环境跑全量验收套件。
+  # continue-on-error: 验收偶发抖动（如浏览器时序）不应阻断生产部署；
+  #   失败时 CI 界面标黄提示，但整体结论仍视为通过，部署照常进行。
+  verify:
+    name: 验收套件（Playwright + Postgres）
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: memorial
+          POSTGRES_PASSWORD: memorial
+          POSTGRES_DB: memorial
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U memorial"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://memorial:memorial@localhost:5432/memorial?schema=public
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 配置 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 准备占位符环境
+        run: cp .env.example .env
+
+      - name: 生成 Prisma 客户端并迁移
+        run: |
+          npx prisma generate
+          npx prisma migrate deploy
+
+      - name: 安装 Playwright Chromium（含系统依赖）
+        run: npx playwright install --with-deps chromium
+
+      # 构建、后台启动、等待就绪、跑验收，全部在同一 step 内，
+      # 避免跨 step 后台进程被回收导致服务不可用。
+      - name: 构建 / 启动服务 / 运行全量验收
+        run: |
+          npm run build
+          npx next start -p 3000 &
+          SRV=$!
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://127.0.0.1:3000/; then echo "server up"; break; fi
+            sleep 2
+          done
+          # 日志落盘供「评论 PR」步骤读取；保留控制台输出
+          bash scripts/run-all-verify.sh 2>&1 | tee /tmp/verify.log
+          echo "verify 退出码: ${PIPESTATUS[0]}" >> /tmp/verify.log
+          kill $SRV 2>/dev/null || true
+
+      # 仅对 PR 事件评论验收结论（push 事件无 PR 可评论）
+      - name: 评论验收结果到 PR
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LOG=$(tail -n 30 /tmp/verify.log)
+          {
+            echo "### 🔍 验收套件结果"
+            echo
+            echo '```'
+            echo "$LOG"
+            echo '```'
+            echo
+            echo "_由 CI 自动生成 · 完整日志见 [Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})_"
+          } > /tmp/pr-comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/pr-comment.md

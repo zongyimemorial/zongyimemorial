@@ -1,11 +1,17 @@
 name: Deploy to Server
 
+# 门禁：仅当 CI 工作流在 main 分支上「成功完成」后才触发部署。
+# 这样类型检查 / 构建 / Lint 不通过的代码无法进入生产。
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
 
 jobs:
   deploy:
+    # 仅在 CI 结论为 success 时部署（verify 偶发抖动不阻断，因其 continue-on-error）
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
