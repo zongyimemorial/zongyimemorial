@@ -1,0 +1,16 @@
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const { chromium } = require("/root/.nvm/versions/node/v22.13.1/lib/node_modules/@playwright/cli/node_modules/playwright-core");
+const b = await chromium.launch({ executablePath: "/root/.cache/ms-playwright/chromium-1208/chrome-linux64/chrome", headless: true, chromiumSandbox: false, args: ["--no-sandbox"] });
+const p = await b.newPage();
+await p.goto("http://localhost:3000/quick-login?t=Y211anZvcTI5MDAwMDh1dTZvZXFoNTcwcg.1791354048.EOLSDxSYJKyT3GNdZrOfrEGMf_pi2hLiWuNs31eH2Xo", { waitUntil: "domcontentloaded", timeout: 60000 });
+await p.waitForURL("**/console", {timeout:60000});
+await p.goto("http://localhost:3000/halls/cmuxou1xo0001w6s1pue8k6fh", { waitUntil: "domcontentloaded", timeout: 60000 });
+await new Promise(r=>setTimeout(r,2500));
+const t = await p.evaluate(()=>document.body.innerText);
+console.log("HAS_烟测逝者:", t.includes("烟测逝者"));
+console.log("HAS_烟测逝者纪念馆:", t.includes("烟测逝者纪念馆"));
+console.log("GATED(仅创建者可见):", t.includes("仅创建者可见"));
+console.log("GATED(审核中):", t.includes("审核中") || t.includes("尚在"));
+console.log("TITLE:", (await p.title()));
+await b.close();
