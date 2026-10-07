@@ -42,6 +42,19 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # 构建/类型/lint 任一失败：在 PR 评论失败通知（避免开发者只看到红叉不知原因）。
+      # 使用 PR_TOKEN（若仓库配置了 PAT 密匙）以支持 fork PR；否则回退默认令牌。
+      - name: 构建失败时评论 PR
+        if: failure() && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.PR_TOKEN != '' && secrets.PR_TOKEN || github.token }}
+        run: |
+          {
+            echo "### ❌ 构建 / 类型检查 / Lint 失败"
+            echo
+            echo "本次 PR 的 CI 构建关卡未通过，未进入验收与部署。请查看 [Run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) 日志定位类型错误或 lint 问题。"
+          } | gh pr comment "${{ github.event.pull_request.number }}" --body-file -
+
   # 第二道关卡：在 Postgres + 真浏览器环境跑全量验收套件。
   # continue-on-error: 验收偶发抖动（如浏览器时序）不应阻断生产部署；
   #   失败时 CI 界面标黄提示，但整体结论仍视为通过，部署照常进行。
@@ -109,7 +122,7 @@ jobs:
       - name: 评论验收结果到 PR
         if: github.event_name == 'pull_request'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.PR_TOKEN != '' && secrets.PR_TOKEN || github.token }}
         run: |
           LOG=$(tail -n 30 /tmp/verify.log)
           {
