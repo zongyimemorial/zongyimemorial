@@ -39,6 +39,7 @@ import {
   createClanStorageOrder,
   saveClanHallSectionOrder,
 } from "./actions";
+import { CHANNEL_META, normalizeProofs } from "@/lib/hall-review";
 
 export const metadata = { title: "宗祠管理 · 宗忆堂" };
 
@@ -173,6 +174,36 @@ export default async function ClanHallManagePage({
       </p>
 
       <div className="mt-6 space-y-6">
+        {/* 审核状态横幅（宗祠仅标准通道） */}
+        <div className="rounded-xl border border-gray-100 bg-white p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-brand-900">审核状态：</span>
+            <span
+              className={
+                "rounded px-2 py-0.5 text-xs " +
+                (hall.status === "active"
+                  ? "bg-green-100 text-green-700"
+                  : hall.status === "rejected"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-amber-100 text-amber-700")
+              }
+            >
+              {hall.status === "active" ? "已通过" : hall.status === "rejected" ? "已驳回" : "待审核"}
+            </span>
+            <span className="rounded bg-accent-50 px-2 py-0.5 text-xs text-accent-700">
+              通道：{CHANNEL_META.standard.label}
+            </span>
+            <span className="text-xs text-brand-400">
+              公开状态：{hall.isPublic ? "已公开" : "仅你可见"}
+            </span>
+          </div>
+          {hall.status === "pending" && (
+            <p className="mt-3 text-xs text-brand-400">
+              宗祠先审后显，审核通过后将自动对宗亲公开。已提交佐证材料 {normalizeProofs(hall.proofs)?.materials?.length ?? 0} 项。
+            </p>
+          )}
+        </div>
+
         {/* 1. 宗祠照片：上传 + 主图 + 相册管理 */}
         <HallPhotoManager
           hallId={hall.id}

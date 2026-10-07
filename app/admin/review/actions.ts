@@ -79,7 +79,7 @@ export async function reviewClanHall(formData: FormData) {
   revalidatePath("/clan/halls");
 }
 
-// 纪念馆建馆审核：通过 → active 并公开；驳回 → rejected
+// 纪念馆建馆审核：通过 → active；标准/替代通道 → 公开；特殊申述通道 → 仅创建者可见
 export async function reviewHall(formData: FormData) {
   const user = await getCurrentUser();
   if (!user || user.role !== "admin") redirect("/console");
@@ -89,18 +89,34 @@ export async function reviewHall(formData: FormData) {
   const reason = String(formData.get("reason") || "");
   if (!id || (decision !== "active" && decision !== "rejected")) return;
 
-  await prisma.memorialHall.update({
+  const hall = await prisma.memorialHall.findUnique({
     where: { id },
-    data: {
-      status: decision === "active" ? "active" : "rejected",
-      isPublic: decision === "active",
-    },
+    select: { reviewChannel: true },
   });
+
+  const data: {
+    status: "active" | "rejected";
+    isPublic: boolean;
+    supplementDeadline?: Date | null;
+  } = {
+    status: decision === "active" ? "active" : "rejected",
+    isPublic: false,
+  };
+  if (decision === "active") {
+    if (hall?.reviewChannel === "appeal") {
+      // 特殊申述通道：先「仅创建者可见」，owner 60 天内补传正式材料后转公开
+      data.isPublic = false;
+    } else {
+      data.isPublic = true;
+    }
+  }
+
+  await prisma.memorialHall.update({ where: { id }, data });
 
   await prisma.auditLog.create({
     data: {
       userId: user.id,
-      action: `hall_${decision}`,
+      action: `hall_${decision}${reason ? `:${reason.slice(0, 100)}` : ""}`,
       entity: "MemorialHall",
       entityId: id,
     },
@@ -108,6 +124,38 @@ export async function reviewHall(formData: FormData) {
 
   revalidatePath("/admin/review");
   revalidatePath("/halls");
+}
+
+// 处理建馆审核举报（被举报队列）
+// decision: handled（已处置，如撤馆/下架）| dismissed（驳回误报）
+export async function handleHallReport(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user || user.role !== "admin") redirect("/console");
+
+  const id = String(formData.get("id") || "");
+  const decision = String(formData.get("decision") || "");
+  const note = String(formData.get("note") || "");
+  if (!id || (decision !== "handled" && decision !== "dismissed")) return;
+
+  await prisma.hallReport.update({
+    where: { id },
+    data: {
+      status: decision,
+      handlerId: user.id,
+      handledAt: new Date(),
+    },
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: user.id,
+      action: `hall_report_${decision}${note ? `:${note.slice(0, 100)}` : ""}`,
+      entity: "HallReport",
+      entityId: id,
+    },
+  });
+
+  revalidatePath("/admin/review");
 }
 
 // 文章评论审核：通过 → approved 并展示；驳回 → rejected

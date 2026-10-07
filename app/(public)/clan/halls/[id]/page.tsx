@@ -57,6 +57,8 @@ import { ShareBar } from "@/components/share/ShareBar";
 import { currentOrigin } from "@/lib/origin";
 import { withShareToken } from "@/lib/share";
 import { CLAN_DEFAULT_ORDER, resolveSectionOrder } from "@/lib/section-order";
+import { effectivePublic } from "@/lib/hall-review";
+import { reportClanHall } from "@/app/(public)/halls/[id]/actions";
 
 /**
  * 祠页 SEO（P0）：祠名 + 堂号 + 姓氏进入 title/description。
@@ -66,16 +68,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const hall = await prisma.clanHall.findUnique({
     where: { id },
-    select: { surname: true, hallName: true, name: true, origin: true, ancestorName: true, description: true, coverImage: true, isPublic: true, status: true },
+    select: { surname: true, hallName: true, name: true, origin: true, ancestorName: true, description: true, coverImage: true, isPublic: true, status: true, reviewChannel: true, supplementedAt: true },
   });
-  if (!hall || hall.status !== "active") return { title: "宗祠" };
+  if (!hall || !effectivePublic(hall)) return { title: "宗祠" };
   const title = `${hall.hallName} · ${hall.name}（${hall.surname}氏宗祠）`;
   return {
     title,
     description:
       hall.description?.slice(0, 120) ||
       `${hall.surname}氏宗祠${hall.origin ? `，源于${hall.origin}` : ""}${hall.ancestorName ? `，奉${hall.ancestorName}为始祖` : ""}。上香敬祖、翻阅字辈，宗族谱系在数字空间延续。`,
-    robots: hall.isPublic ? undefined : { index: false, follow: false },
+    robots: effectivePublic(hall) ? undefined : { index: false, follow: false },
     alternates: { canonical: `/clan/halls/${id}` },
     openGraph: {
       title,
@@ -108,8 +110,8 @@ export default async function ClanHallDetailPage({
   if (!hall) notFound();
 
   const isOwner = !!user?.id && hall.ownerUserId === user.id;
-  // 未过审 / 私密的宗祠仅馆主可见
-  if (!isOwner && (hall.status !== "active" || !hall.isPublic)) notFound();
+  // 未过审 / 私密的宗祠仅馆主可见（owner 始终可见自己的祠）
+  if (!isOwner && !effectivePublic(hall)) notFound();
 
   // 分享：带 HMAC 签名令牌（内测期免口令，见 lib/share.ts）。
   // 能走到这里的都是 active 且（公开 或 馆主本人）——
@@ -744,7 +746,7 @@ export default async function ClanHallDetailPage({
 
   return (
     <ClanDecorLayer decor={decor} className="min-h-screen" bottomAnchor="content" skin={pageSkin}>
-      {hall.isPublic && (
+      {effectivePublic(hall) && (
         <script
           type="application/ld+json"
           // 结构化数据（P0 SEO）：只含页面公开信息，不含任何身份快照字段
@@ -805,6 +807,42 @@ export default async function ClanHallDetailPage({
           summary={hall.description?.slice(0, 60) ?? undefined}
           scope="clan"
         />
+
+        {/* 合规底线：一键举报入口 */}
+        <details className="mt-6 rounded-lg border border-gray-100 bg-white p-4">
+          <summary className="cursor-pointer text-sm font-medium text-brand-700">
+            发现违规内容？举报此宗祠
+          </summary>
+          <form action={reportClanHall} className="mt-3 space-y-3">
+            <input type="hidden" name="clanHallId" value={id} />
+            <input type="hidden" name="from" value={`/clan/halls/${id}`} />
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">举报类型</label>
+              <select name="kind" defaultValue="living" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm">
+                <option value="living">活人被祭拜</option>
+                <option value="fake">虚假宗祠</option>
+                <option value="other">其他违规</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">说明（选填）</label>
+              <textarea
+                name="reason"
+                rows={3}
+                maxLength={1000}
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                placeholder="请简述违规情况"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">联系方式（选填）</label>
+              <input name="contact" maxLength={100} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm" placeholder="方便我们回访" />
+            </div>
+            <button type="submit" className="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700">
+              提交举报
+            </button>
+          </form>
+        </details>
       </div>
     </ClanDecorLayer>
   );

@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { currentOrigin } from "@/lib/origin";
 import { tributeTypeOf } from "@/lib/ritual";
 import { consumeOffering, topUpFreeOfferings } from "@/lib/offerings";
 import { identitySnapshot } from "@/lib/identity";
@@ -280,4 +282,65 @@ export async function reserveSlot(
   });
 
   return { ok: true, message: `预约成功：${data.date} ${data.timeSlot}` };
+}
+
+type ReportKind = "living" | "fake" | "other";
+
+function isValidKind(k: string): k is ReportKind {
+  return k === "living" || k === "fake" || k === "other";
+}
+
+/**
+ * 公页举报入口（纪念馆）。
+ * 举报不直接下架，仅进后台「被举报」队列人工复核。
+ * 为防滥用要求登录；reporterId 写入当前用户。
+ */
+export async function reportHall(formData: FormData) {
+  const user = await getCurrentUser();
+  const origin = (await currentOrigin()) ?? "";
+  if (!user?.id)
+    redirect(`${origin}/login?from=${encodeURIComponent(formData.get("from")?.toString() || "/")}`);
+
+  const hallId = String(formData.get("hallId") || "");
+  const kind = String(formData.get("kind") || "other");
+  const reason = String(formData.get("reason") || "").trim().slice(0, 1000);
+  const contact = String(formData.get("contact") || "").trim().slice(0, 100);
+  if (!hallId || !isValidKind(kind)) return;
+
+  const hall = await prisma.memorialHall.findUnique({ where: { id: hallId }, select: { id: true } });
+  if (!hall) return;
+
+  await prisma.hallReport.create({
+    data: { reporterId: user.id, hallId, kind, reason: reason || null, contact: contact || null },
+  });
+
+  revalidatePath(`/halls/${hallId}`);
+  redirect(`${origin}/halls/${hallId}?reported=1`);
+}
+
+/** 公页举报入口（宗祠），逻辑同 reportHall */
+export async function reportClanHall(formData: FormData) {
+  const user = await getCurrentUser();
+  const origin = (await currentOrigin()) ?? "";
+  if (!user?.id)
+    redirect(`${origin}/login?from=${encodeURIComponent(formData.get("from")?.toString() || "/")}`);
+
+  const clanHallId = String(formData.get("clanHallId") || "");
+  const kind = String(formData.get("kind") || "other");
+  const reason = String(formData.get("reason") || "").trim().slice(0, 1000);
+  const contact = String(formData.get("contact") || "").trim().slice(0, 100);
+  if (!clanHallId || !isValidKind(kind)) return;
+
+  const clanHall = await prisma.clanHall.findUnique({
+    where: { id: clanHallId },
+    select: { id: true },
+  });
+  if (!clanHall) return;
+
+  await prisma.hallReport.create({
+    data: { reporterId: user.id, clanHallId, kind, reason: reason || null, contact: contact || null },
+  });
+
+  revalidatePath(`/clan/halls/${clanHallId}`);
+  redirect(`${origin}/clan/halls/${clanHallId}?reported=1`);
 }

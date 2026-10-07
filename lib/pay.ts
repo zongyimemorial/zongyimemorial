@@ -86,12 +86,16 @@ export async function simulatePay(orderNo: string): Promise<Order> {
               description: "建馆申请已提交，证明材料审核通过后对公众展示。",
               isPublic: false,
               status: "pending",
+              // 历史付费订单走「标准通道」兜底：fireProof 升级为新 materials 结构，保持兼容
+              reviewChannel: "standard",
               proofs: {
-                fireProof: info.fireProof || "",
                 applicantIdCard: info.applicantIdCard || "",
                 applicantPhone: info.applicantPhone || "",
                 relation: info.relation || "",
-                realName: true,
+                materials: info.fireProof
+                  ? [{ type: "fireProof", label: "火化证明", value: info.fireProof }]
+                  : [],
+                promiseSigned: false,
               },
               orderId: order.id,
             },

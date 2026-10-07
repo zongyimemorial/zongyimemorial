@@ -39,6 +39,8 @@ import { ShareBar } from "@/components/share/ShareBar";
 import { currentOrigin } from "@/lib/origin";
 import { withShareToken } from "@/lib/share";
 import { HALL_DEFAULT_ORDER, resolveSectionOrder } from "@/lib/section-order";
+import { effectivePublic } from "@/lib/hall-review";
+import { reportHall } from "./actions";
 
 const typeIcon: Record<string, string> = {
   flower: "🌸 献花",
@@ -59,16 +61,16 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params;
   const hall = await prisma.memorialHall.findUnique({
     where: { id },
-    select: { name: true, deceasedName: true, birthDate: true, deathDate: true, description: true, coverImage: true, isPublic: true, status: true },
+    select: { name: true, deceasedName: true, birthDate: true, deathDate: true, description: true, coverImage: true, isPublic: true, status: true, reviewChannel: true, supplementedAt: true },
   });
-  if (!hall || hall.status !== "active") return { title: "纪念馆" };
+  if (!hall || !effectivePublic(hall)) return { title: "纪念馆" };
   const years = hall.birthDate || hall.deathDate
     ? `（${hall.birthDate ? hall.birthDate.getFullYear() : "?"} - ${hall.deathDate ? hall.deathDate.getFullYear() : "?"}）`
     : "";
   return {
     title: `${hall.name} · 纪念${hall.deceasedName}`,
     description: hall.description?.slice(0, 120) || `缅怀 ${hall.deceasedName}${years}。献一束花、点一盏灯，把想说的话留在这里。`,
-    robots: hall.isPublic ? undefined : { index: false, follow: false },
+    robots: effectivePublic(hall) ? undefined : { index: false, follow: false },
     alternates: { canonical: `/halls/${id}` },
     openGraph: {
       title: `${hall.name} · 纪念${hall.deceasedName}`,
@@ -95,22 +97,30 @@ function CoupletColumn({ text, side }: { text: string; side: "left" | "right" })
 
 export default async function HallDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ reported?: string }>;
 }) {
   const { id } = await params;
+  const { reported } = await searchParams;
   const hall = await prisma.memorialHall.findUnique({ where: { id } });
-  if (!hall || hall.status !== "active") notFound();
-
   const user = await getCurrentUser();
-  const isOwner = user?.id === hall.ownerUserId;
+  const isOwner = user?.id === hall?.ownerUserId;
+
+  // 可见性：馆主始终可见自己的馆（满足 appeal 仅创建者可见）；
+  // 非馆主仅当 effectivePublic 为真（active 且按通道规则公开）。
+  if (!hall || (!isOwner && !effectivePublic(hall))) notFound();
+
+  // 有效公开状态（供分享元数据 / 分享栏判定）
+  const pub = effectivePublic(hall);
 
   // 分享：带 HMAC 签名令牌（内测期免口令，见 lib/share.ts）。
   // ⚠️ 隐私口径（与全站一致）：分享卡**只带馆名**，私密馆不进 title 里的逝者名。
   //    公开馆沿用既有口径（分享是传播，馆主本就把逝者名公开挂在页面上）；
   //    私密馆仍可分享（供馆主发给亲友），但卡片不主动外泄逝者姓名。
   const shareUrl = `${(await currentOrigin()) ?? ""}${await withShareToken(`/halls/${id}`, "hall")}`;
-  const shareTitle = hall.isPublic ? `${hall.name} · 纪念${hall.deceasedName}` : hall.name;
+  const shareTitle = pub ? `${hall.name} · 纪念${hall.deceasedName}` : hall.name;
 
   // 进馆即补当日免费祭品配额（幂等，当日只真正写库一次）
   if (user?.id) await topUpFreeOfferings(user.id);
@@ -738,7 +748,7 @@ export default async function HallDetailPage({
 
   return (
     <HallDecorLayer decor={decor} className="min-h-screen" skin={pageSkin}>
-      {hall.isPublic && (
+      {pub && (
         <script
           type="application/ld+json"
           // 结构化数据（P0 SEO）：页面公开展示的信息（馆名/逝者/生卒年）以 WebPage 形式
@@ -763,9 +773,51 @@ export default async function HallDetailPage({
         <ShareBar
           url={shareUrl}
           title={shareTitle}
-          summary={hall.isPublic ? hall.description?.slice(0, 60) ?? undefined : undefined}
+          summary={pub ? hall.description?.slice(0, 60) ?? undefined : undefined}
           scope="hall"
         />
+
+        {reported && (
+          <div className="mt-6 rounded-md border border-green-200 bg-green-50 px-4 py-2.5 text-sm text-green-700">
+            举报已提交，平台将进行人工复核。感谢您共同维护纪念环境的真实与安全。
+          </div>
+        )}
+
+        {/* 合规底线：一键举报入口（活人被祭拜 / 虚假馆 / 其他） */}
+        <details className="mt-6 rounded-lg border border-gray-100 bg-white p-4">
+          <summary className="cursor-pointer text-sm font-medium text-brand-700">
+            发现违规内容？举报此纪念馆
+          </summary>
+          <form action={reportHall} className="mt-3 space-y-3">
+            <input type="hidden" name="hallId" value={id} />
+            <input type="hidden" name="from" value={`/halls/${id}`} />
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">举报类型</label>
+              <select name="kind" defaultValue="living" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm">
+                <option value="living">活人被祭拜</option>
+                <option value="fake">虚假纪念馆</option>
+                <option value="other">其他违规</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">说明（选填）</label>
+              <textarea
+                name="reason"
+                rows={3}
+                maxLength={1000}
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                placeholder="请简述违规情况"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">联系方式（选填）</label>
+              <input name="contact" maxLength={100} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm" placeholder="方便我们回访" />
+            </div>
+            <button type="submit" className="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700">
+              提交举报
+            </button>
+          </form>
+        </details>
 
         <div className="mt-10">
           <BackLink href="/halls">返回纪念馆列表</BackLink>

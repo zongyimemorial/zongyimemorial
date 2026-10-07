@@ -3,7 +3,22 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import DecisionButton from "@/components/admin/DecisionButton";
-import { reviewItem, reviewHall, reviewComment, reviewGenealogy, reviewClanHall, reviewClanContent, reviewWhisper } from "./actions";
+import {
+  CHANNEL_META,
+  appealPendingSupplement,
+  normalizeProofs,
+  supplementDueInDays,
+} from "@/lib/hall-review";
+import {
+  reviewItem,
+  reviewHall,
+  reviewComment,
+  reviewGenealogy,
+  reviewClanHall,
+  reviewClanContent,
+  reviewWhisper,
+  handleHallReport,
+} from "./actions";
 
 export const metadata = { title: "内容审核" };
 
@@ -28,7 +43,7 @@ export default async function ReviewPage() {
   if (!user) redirect("/login");
   if (user.role !== "admin" && user.role !== "editor") redirect("/console");
 
-  const [items, pendingHalls, pendingComments, pendingGenealogies, pendingClanHalls, pendingClanPosts, pendingClanReplies, pendingWhispers] = await Promise.all([
+  const [items, pendingHalls, pendingComments, pendingGenealogies, pendingClanHalls, pendingClanPosts, pendingClanReplies, pendingWhispers, pendingReports] = await Promise.all([
     prisma.moderationQueue.findMany({
       orderBy: [{ status: "asc" }, { createdAt: "desc" }],
       take: 100,
@@ -83,6 +98,16 @@ export default async function ReviewPage() {
         hall: { select: { name: true, deceasedName: true } },
         consent: { select: { id: true, applicantName: true, relation: true, revokedAt: true } },
         _count: { select: { voices: true, avatars: true } },
+      },
+      take: 50,
+    }),
+    prisma.hallReport.findMany({
+      where: { status: "pending" },
+      orderBy: { createdAt: "desc" },
+      include: {
+        hall: { select: { name: true, deceasedName: true } },
+        clanHall: { select: { hallName: true, surname: true } },
+        reporter: { select: { realName: true, email: true } },
       },
       take: 50,
     }),
@@ -251,28 +276,74 @@ export default async function ReviewPage() {
       </p>
       <div className="space-y-4">
         {pendingHalls.map((h) => {
-          const proofs = (h.proofs as {
-            fireProof?: string;
-            applicantIdCard?: string;
-            applicantPhone?: string;
-            relation?: string;
-          }) || {};
-          const maskedId = proofs.applicantIdCard
+          const proofs = normalizeProofs(h.proofs);
+          const channelKey = (h.reviewChannel as keyof typeof CHANNEL_META) || "standard";
+          const channel = CHANNEL_META[channelKey];
+          const maskedId = proofs?.applicantIdCard
             ? proofs.applicantIdCard.replace(/^(.{6}).+(.{4})$/, "$1**********$2")
             : "—";
+          const isAppeal = channelKey === "appeal";
+          const appealPending = appealPendingSupplement(h);
+          const dueDays = supplementDueInDays(h);
+          const materials = proofs?.materials ?? [];
           return (
             <div key={h.id} className="rounded-lg border border-amber-200 bg-white p-4">
-              <div className="text-sm font-semibold text-brand-900">
-                {h.name} <span className="font-normal text-brand-400">/ 逝者 {h.deceasedName}</span>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-sm font-semibold text-brand-900">
+                  {h.name} <span className="font-normal text-brand-400">/ 逝者 {h.deceasedName}</span>
+                </div>
+                <span className="rounded bg-accent-50 px-2 py-0.5 text-xs text-accent-700">
+                  {channel.label}
+                </span>
               </div>
               <div className="mt-2 grid gap-1 rounded bg-gray-50 p-3 text-xs text-brand-600 sm:grid-cols-2">
                 <span>经办人：{h.owner?.realName || h.owner?.email || "—"}</span>
-                <span>与逝者关系：{proofs.relation || "—"}</span>
-                <span>火化证明：{proofs.fireProof || "—"}</span>
+                <span>与逝者关系：{proofs?.relation || "—"}</span>
                 <span>经办人身份证：{maskedId}</span>
-                <span>手机号：{proofs.applicantPhone || "—"}</span>
+                <span>手机号：{proofs?.applicantPhone || "—"}</span>
                 <span>申请时间：{new Date(h.createdAt).toLocaleString("zh-CN")}</span>
+                {isAppeal && (
+                  <span className={appealPending ? "font-medium text-amber-700" : "text-green-700"}>
+                    {appealPending
+                      ? `补传倒计时：${dueDays != null ? `${dueDays} 天` : "—"}（仅创建者可见）`
+                      : "已补传，可转公开"}
+                  </span>
+                )}
               </div>
+
+              <div className="mt-3">
+                <div className="mb-1 text-xs font-medium text-brand-700">
+                  证明材料（{materials.length} 项）
+                </div>
+                {materials.length === 0 ? (
+                  <div className="text-xs text-brand-400">未提交材料</div>
+                ) : (
+                  <ul className="space-y-1">
+                    {materials.map((m, i) => (
+                      <li key={i} className="flex flex-wrap items-center gap-2 rounded bg-gray-50 px-2 py-1 text-xs text-brand-600">
+                        <span className="font-medium text-brand-900">{m.label}</span>
+                        {m.value && <span>{m.value}</span>}
+                        {m.url && (
+                          <a href={m.url} target="_blank" rel="noreferrer" className="text-accent-600 hover:underline">
+                            查看图片
+                          </a>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {isAppeal && proofs?.promiseLetter && (
+                  <a
+                    href={proofs.promiseLetter}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block text-xs text-accent-600 hover:underline"
+                  >
+                    查看真实性承诺书
+                  </a>
+                )}
+              </div>
+
               <form action={reviewHall} className="mt-3 flex items-end gap-2">
                 <input type="hidden" name="id" value={h.id} />
                 <input
@@ -282,7 +353,7 @@ export default async function ReviewPage() {
                 />
                 <DecisionButton
                   value="active"
-                  label="通过并开通"
+                  label={isAppeal ? "通过（仅创建者可见）" : "通过并开通"}
                   className="rounded bg-green-600 px-3 py-1 text-sm text-white hover:bg-green-700"
                 />
                 <DecisionButton
@@ -339,7 +410,10 @@ export default async function ReviewPage() {
         用户设立的宗祠先审后显，通过后进入宗祠名录对宗亲公开展示。
       </p>
       <div className="space-y-4">
-        {pendingClanHalls.map((h) => (
+        {pendingClanHalls.map((h) => {
+          const proofs = normalizeProofs(h.proofs);
+          const materials = proofs?.materials ?? [];
+          return (
           <div key={h.id} className="rounded-lg border border-gray-100 bg-white p-4">
             <div className="text-sm font-semibold text-brand-900">
               {h.hallName}
@@ -352,6 +426,28 @@ export default async function ReviewPage() {
               {h.ancestorName && <div className="mt-1">始祖：{h.ancestorName}</div>}
               {h.origin && <div className="mt-1">始迁地：{h.origin}</div>}
               {h.description && <div className="mt-1 line-clamp-3">简介：{h.description}</div>}
+            </div>
+            <div className="mt-3">
+              <div className="mb-1 text-xs font-medium text-brand-700">
+                宗祠佐证材料（{materials.length} 项）
+              </div>
+              {materials.length === 0 ? (
+                <div className="text-xs text-red-600">未提交佐证材料</div>
+              ) : (
+                <ul className="space-y-1">
+                  {materials.map((m, i) => (
+                    <li key={i} className="flex flex-wrap items-center gap-2 rounded bg-gray-50 px-2 py-1 text-xs text-brand-600">
+                      <span className="font-medium text-brand-900">{m.label}</span>
+                      {m.value && <span>{m.value}</span>}
+                      {m.url && (
+                        <a href={m.url} target="_blank" rel="noreferrer" className="text-accent-600 hover:underline">
+                          查看图片
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <form action={reviewClanHall} className="mt-3 flex gap-2">
               <input type="hidden" name="id" value={h.id} />
@@ -367,7 +463,8 @@ export default async function ReviewPage() {
               />
             </form>
           </div>
-        ))}
+          );
+        })}
         {pendingClanHalls.length === 0 && (
           <p className="text-sm text-brand-400">暂无待审核宗祠。</p>
         )}
@@ -447,6 +544,65 @@ export default async function ReviewPage() {
         ))}
         {pendingClanPosts.length === 0 && pendingClanReplies.length === 0 && (
           <p className="text-sm text-brand-400">暂无待审核社区内容。</p>
+        )}
+      </div>
+
+      {/* 建馆审核举报队列 */}
+      <h2 className="mb-1 mt-10 text-xl font-semibold text-brand-900">建馆举报处理</h2>
+      <p className="mb-4 text-sm text-brand-500">
+        公页「举报」入口提交的工单。举报不直接下架，由人工复核后处置（handled）或驳回误报（dismissed）。
+      </p>
+      <div className="space-y-4">
+        {pendingReports.map((r) => {
+          const target =
+            r.hall
+              ? `纪念馆：${r.hall.name}（逝者 ${r.hall.deceasedName}）`
+              : r.clanHall
+                ? `宗祠：${r.clanHall.hallName}（${r.clanHall.surname}氏）`
+                : "未知对象";
+          const kindLabel: Record<string, string> = {
+            living: "活人被祭拜",
+            fake: "虚假馆",
+            other: "其他",
+          };
+          return (
+            <div key={r.id} className="rounded-lg border border-red-200 bg-white p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-sm font-medium text-brand-900">{target}</div>
+                <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-700">
+                  {kindLabel[r.kind] ?? r.kind}
+                </span>
+              </div>
+              <div className="mt-1 text-xs text-brand-400">
+                举报人：{r.reporter?.realName || r.reporter?.email || "匿名"} · 时间：
+                {new Date(r.createdAt).toLocaleString("zh-CN")}
+              </div>
+              {r.reason && (
+                <div className="mt-2 rounded bg-gray-50 p-2 text-xs text-brand-600">举报说明：{r.reason}</div>
+              )}
+              <form action={handleHallReport} className="mt-3 flex flex-wrap items-center gap-2">
+                <input type="hidden" name="id" value={r.id} />
+                <input
+                  name="note"
+                  placeholder="处理备注（可选）"
+                  className="flex-1 min-w-[200px] rounded border border-gray-200 px-2 py-1 text-sm"
+                />
+                <DecisionButton
+                  value="handled"
+                  label="已处置"
+                  className="rounded bg-orange-600 px-3 py-1 text-sm text-white hover:bg-orange-700"
+                />
+                <DecisionButton
+                  value="dismissed"
+                  label="驳回误报"
+                  className="rounded border border-gray-300 px-3 py-1 text-sm text-brand-600 hover:bg-gray-50"
+                />
+              </form>
+            </div>
+          );
+        })}
+        {pendingReports.length === 0 && (
+          <p className="text-sm text-brand-400">暂无待处理举报。</p>
         )}
       </div>
     </div>

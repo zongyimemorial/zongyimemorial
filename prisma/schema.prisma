@@ -180,6 +180,10 @@ model User {
 
   // 服务受理单（cloud_worship / 非讣告纪念服务 的履约载体）
   serviceFulfillments ServiceFulfillment[]
+
+  // 建馆审核举报（HallReport 多态）：我发起的举报 / 我处理的举报
+  reportsMade     HallReport[] @relation("ReportReporter")
+  reportsHandled  HallReport[] @relation("ReportHandler")
 }
 
 model Category {
@@ -399,7 +403,15 @@ model MemorialHall {
   sectionOrder   Json?    // 馆主在控制台拖拽重排的「板块顺序」；null = 沿用默认序（= 现状 DOM 顺序），永不删除板块
   isPublic       Boolean    @default(false)
   status         HallStatus @default(pending)
-  proofs         Json? // 建馆证明材料 { fireProof(火化证明编号/图片), relation(与逝者关系), relationProof, applicantIdCard, applicantPhone }
+  // —— 建馆审核分层（多渠道替代核验）——
+  reviewChannel  String   @default("standard") // standard | alternative | appeal
+  supplementDeadline DateTime? // appeal 通道：建馆后 60 天补传截止（实时判定，无 cron）
+  supplementedAt DateTime? // owner 声明材料补齐时刻（appeal 补传后转公开）
+  proofs         Json? // 建馆证明材料最新结构：
+                  // { applicantRealName?, applicantIdCard, applicantPhone, relation,
+                  //   relationProof?, materials: [{type,label,value?,url?}],
+                  //   promiseLetter?, promiseSigned? }
+                  // 旧结构 { fireProof, ... } 仍被 lib/hall-review.ts 的 normalizeProofs 向后兼容。
   couplet        Json? // 挽联横版配置 { left(上联), right(下联), horizontal(横批) }
   archive        Json? // 故人数字档案 { timeline: [{year, event}], photos: [url], epitaph(墓志铭), hometown(籍贯) }
   premiumUntil   DateTime? // 高级功能订阅到期时间（大容量存储/专属域名等）
@@ -429,6 +441,9 @@ model MemorialHall {
 
   // 电子讣告：可挂在本馆下（可选；不挂则为独立讣告）
   obituaries Obituary[]
+
+  // 建馆审核举报（HallReport，对应本馆）
+  reports HallReport[]
 }
 
 model MemorialTribute {
@@ -587,8 +602,14 @@ model ClanHall {
   sectionOrder   Json?    // 祠主在控制台拖拽重排的「板块顺序」；null = 沿用默认序（= 现状 DOM 顺序），永不删除板块
   coverImage     String?
   archive        Json? // { photos: string[], portrait?: string }
-  proofs         Json? // 佐证材料 [{ url, note }]
-  isPublic       Boolean    @default(true)
+  proofs         Json? // 宗祠基建佐证材料（标准通道）：
+                  // { applicantRealName?, applicantIdCard, applicantPhone, relation,
+                  //   relationProof?, materials: [{type,label,value?,url?}], promiseSigned? }
+  // —— 建馆审核（宗祠仅标准通道）——
+  reviewChannel  String   @default("standard") // 宗祠恒为 standard
+  supplementDeadline DateTime? // 预留字段（宗祠当前不使用）
+  supplementedAt DateTime? // 预留字段（宗祠当前不使用）
+  isPublic       Boolean    @default(false) // 修正：先审后显，pending 不得直接公开
   status         HallStatus @default(pending) // 建档后先审后显
   premiumUntil   DateTime? // 高级会员到期时间
   // —— 存储空间容量：单一判据（与 premium 解耦）——
@@ -609,6 +630,9 @@ model ClanHall {
   communityInviteCode String?           @unique
   communityMembers    CommunityMember[]
   communityPosts      CommunityPost[]
+
+  // 建馆审核举报（HallReport，对应本祠）
+  reports HallReport[]
 
   @@index([surname, status])
   @@index([ownerUserId])
@@ -1198,4 +1222,33 @@ model ServiceFulfillment {
 
   @@index([userId, createdAt])
   @@index([status])
+}
+
+// ============================================================================
+// 建馆审核举报（多态：对应纪念馆 或 宗祠）
+//
+// 公页「举报」按钮 → 建一条 pending 记录；后台「被举报」队列处理
+// （handled 已处置 / dismissed 驳回误报）。对应馆仍按 effectivePublic 判定可见性，
+// 举报本身不自动下架，仅进人工复核队列。
+// ============================================================================
+model HallReport {
+  id         String   @id @default(cuid())
+  reporterId String?
+  reporter   User?    @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: SetNull)
+  hallId     String?
+  hall       MemorialHall? @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  clanHallId String?
+  clanHall   ClanHall?     @relation(fields: [clanHallId], references: [id], onDelete: Cascade)
+  kind       String   @default("living") // living(活人被祭拜) | fake(虚假馆) | other
+  reason     String?  @db.Text
+  contact    String?
+  status     String   @default("pending") // pending | handled | dismissed
+  handlerId  String?
+  handler    User?     @relation("ReportHandler", fields: [handlerId], references: [id])
+  handledAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([status])
+  @@index([hallId])
+  @@index([clanHallId])
 }

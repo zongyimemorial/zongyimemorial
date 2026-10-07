@@ -2,15 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { createMemorialHall } from "./actions";
 import CreateFlowSteps from "@/components/site/CreateFlowSteps";
+import NewHallForm from "@/components/halls/NewHallForm";
 
 export const metadata = { title: "申请建馆 · 宗忆堂" };
-
-const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
-
-const RELATIONS = ["亲属", "配偶", "子女", "父母", "兄弟姐妹", "朋友", "宗亲", "单位（逝者生平相关）"];
 
 export default async function NewHallPage({
   searchParams,
@@ -85,86 +80,12 @@ export default async function NewHallPage({
         </div>
       )}
 
-      <form action={createMemorialHall} className="mt-6 space-y-6">
-        <section className="rounded-xl border border-gray-100 bg-white p-6">
-          <h2 className="text-sm font-semibold text-brand-900">建馆申请 · 实名材料</h2>
-          <p className="mb-4 mt-1 text-xs text-brand-400">
-            依据《网络祭祀要求》（MZ/T 173—2025）：建馆须提供火化证明、经办人身份证、
-            手机号及逝者关系，经专人审核后方可开通。材料仅用于合规审核，加密存储。
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-brand-700">逝者姓名 *</label>
-              <input
-                name="deceasedName"
-                required
-                maxLength={30}
-                className={field}
-                placeholder="将用作纪念馆名称"
-                disabled={!verified}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-brand-700">
-                火化证明编号 / 火化证电子件编号 *
-              </label>
-              <input
-                name="fireProof"
-                required
-                maxLength={60}
-                className={field}
-                disabled={!verified}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-brand-700">与逝者关系 *</label>
-              <select name="relation" required defaultValue="亲属" className={field} disabled={!verified}>
-                {RELATIONS.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-brand-700">
-                经办人身份证号 *
-              </label>
-              <input
-                name="applicantIdCard"
-                required
-                maxLength={18}
-                className={field}
-                placeholder="18位身份证号（加密存储）"
-                disabled={!verified}
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-brand-700">经办人手机号 *</label>
-              <input
-                name="applicantPhone"
-                required
-                maxLength={11}
-                className={field}
-                placeholder="11位手机号"
-                disabled={!verified}
-              />
-            </div>
-          </div>
-        </section>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            disabled={!verified}
-            className="rounded-md bg-brand-800 px-7 py-2.5 text-sm text-white hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            免费提交建馆申请
-          </button>
-          <Link href="/halls" className="text-sm text-brand-500 hover:text-brand-700">
-            返回纪念馆列表
-          </Link>
-        </div>
-      </form>
+      {/* 通道感知建馆表单（标准 / 替代 / 特殊申述）。未实名时禁用交互由子组件内部自行约束。 */}
+      {verified ? (
+        <NewHallForm />
+      ) : (
+        <p className="mt-6 text-sm text-brand-500">完成实名认证后即可填写建馆材料。</p>
+      )}
     </div>
   );
 }

@@ -158,6 +158,52 @@ export default async function NewClanHallPage({
           </div>
         </section>
 
+        {/* —— 宗祠基础佐证材料（标准通道） —— */}
+        <section className="rounded-xl border border-gray-100 bg-white p-6">
+          <h2 className="text-sm font-semibold text-brand-900">宗祠佐证材料</h2>
+          <p className="mb-4 mt-1 text-xs text-brand-400">
+            依据《网络祭祀要求》（MZ/T 173—2025）及宗祠设立规范，需提供至少一项佐证。
+            可填编号/说明，或上传图片（祠堂历史照片、族谱页、宗族证明等）。
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">宗族关系证明（编号 / 说明）</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input name="mat_clan_relation" maxLength={200} className={field} placeholder="如：族谱记载 / 宗亲会证明编号" disabled={!verified} />
+                <input type="file" name="file_clan_relation" accept="image/*" className="text-xs text-brand-500" disabled={!verified} />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">族谱记载（说明）</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input name="mat_genealogy_record" maxLength={200} className={field} placeholder="如：某版族谱第几卷记载" disabled={!verified} />
+                <input type="file" name="file_genealogy_record" accept="image/*" className="text-xs text-brand-500" disabled={!verified} />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">祠堂历史照片或证明（说明）</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <input name="mat_clan_history_photo" maxLength={200} className={field} placeholder="如：祠堂现状 / 文物保护单位编号" disabled={!verified} />
+                <input type="file" name="file_clan_history_photo" accept="image/*" className="text-xs text-brand-500" disabled={!verified} />
+              </div>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">经办人身份证号</label>
+              <input name="applicantIdCard" maxLength={18} className={field} placeholder="18位（加密存储）" disabled={!verified} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">经办人手机号</label>
+              <input name="applicantPhone" maxLength={11} className={field} placeholder="11位" disabled={!verified} />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-brand-700">经办人姓名（选填）</label>
+              <input name="applicantRealName" maxLength={30} className={field} placeholder="与实名认证一致" disabled={!verified} />
+            </div>
+          </div>
+        </section>
+
         <div className="flex flex-wrap items-center gap-3">
           <button
             disabled={!verified}

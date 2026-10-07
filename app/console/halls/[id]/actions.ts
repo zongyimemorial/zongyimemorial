@@ -1,10 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { spendPoints } from "@/lib/points";
-import { removeHallImage, statManagedUpload } from "@/lib/upload";
+import { removeHallImage, saveHallImage, statManagedUpload } from "@/lib/upload";
+import { MATERIAL_TYPES, normalizeProofs } from "@/lib/hall-review";
 import {
   DEFAULT_DECOR,
   GRANTED_TEMPLATE_PARTS,
@@ -627,4 +629,60 @@ export async function createStorageOrder(
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "下单失败" };
   }
+}
+
+/**
+ * 特殊申述通道补传材料（owner 自办）。
+ * 仅创建者可见期间，owner 在 60 天补传期内提交正式材料 → 置 supplementedAt +
+ * isPublic=true，纪念馆转公开。材料以「追加/更新」方式并入现有 proofs.materials。
+ */
+export async function supplementHallMaterials(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user?.id) redirect("/login");
+  const id = String(formData.get("id") || "");
+  const hall = await prisma.memorialHall.findUnique({ where: { id } });
+  if (!hall) redirect("/console");
+  if (hall.ownerUserId !== user.id) redirect("/console");
+  if (hall.reviewChannel !== "appeal" || hall.status !== "active") return;
+
+  const appealTypes = ["obituary", "old_photo", "tomb_photo", "family_record"] as const;
+  const existing = normalizeProofs(hall.proofs) ?? {
+    applicantIdCard: "",
+    applicantPhone: "",
+    relation: "",
+    materials: [] as { type: string; label: string; value?: string; url?: string }[],
+  };
+  const materials = [...(existing.materials ?? [])];
+  for (const type of appealTypes) {
+    const value = String(formData.get(`sup_${type}`) || "").trim().slice(0, 200);
+    const file = formData.get(`supfile_${type}`);
+    let url: string | undefined;
+    if (file instanceof File && file.size > 0) {
+      try {
+        url = await saveHallImage(file, id, "proofs");
+      } catch {
+        return;
+      }
+    }
+    if (value || url) {
+      const item = { type, label: MATERIAL_TYPES[type].label, value: value || undefined, url: url || undefined };
+      const idx = materials.findIndex((m) => m.type === type);
+      if (idx >= 0) materials[idx] = item;
+      else materials.push(item);
+    }
+  }
+
+  const proofs = { ...existing, materials };
+  await prisma.memorialHall.update({
+    where: { id },
+    data: {
+      proofs: proofs as object,
+      supplementedAt: new Date(),
+      isPublic: true,
+    },
+  });
+
+  revalidatePath(`/console/halls/${id}`);
+  revalidatePath(`/halls/${id}`);
+  redirect(`/console/halls/${id}?supplemented=1`);
 }

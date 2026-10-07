@@ -25,22 +25,40 @@ import {
   STORAGE_PLANS,
   storageSubBytesOf,
 } from "@/lib/storage";
-import { createStorageOrder, saveHallSectionOrder } from "./actions";
+import { createStorageOrder, saveHallSectionOrder, supplementHallMaterials } from "./actions";
+import {
+  CHANNEL_META,
+  MATERIAL_TYPES,
+  appealPendingSupplement,
+  normalizeProofs,
+  supplementDeadlinePassed,
+  supplementDueInDays,
+} from "@/lib/hall-review";
 
 export const metadata = { title: "馆务管理 · 宗忆堂" };
 
 export default async function HallManagePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ supplemented?: string }>;
 }) {
   const { id } = await params;
+  const { supplemented } = await searchParams;
   const user = await getCurrentUser();
   if (!user?.id) redirect("/login");
 
   const hall = await prisma.memorialHall.findUnique({ where: { id } });
   if (!hall) notFound();
   if (hall.ownerUserId !== user.id) redirect("/console");
+
+  const channelKey = (hall.reviewChannel as keyof typeof CHANNEL_META) || "standard";
+  const channel = CHANNEL_META[channelKey];
+  const appealPending = appealPendingSupplement(hall);
+  const deadlinePassed = supplementDeadlinePassed(hall);
+  const dueDays = supplementDueInDays(hall);
+  const proofs = normalizeProofs(hall.proofs);
 
   const archive = (hall.archive as {
     timeline?: { year: string; event: string }[];
@@ -134,6 +152,91 @@ export default async function HallManagePage({
       </p>
 
       <div className="mt-6 space-y-6">
+        {/* 审核状态 / 通道 / 补传横幅 */}
+        <div className="rounded-xl border border-gray-100 bg-white p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium text-brand-900">审核状态：</span>
+            <span
+              className={
+                "rounded px-2 py-0.5 text-xs " +
+                (hall.status === "active"
+                  ? "bg-green-100 text-green-700"
+                  : hall.status === "rejected"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-amber-100 text-amber-700")
+              }
+            >
+              {hall.status === "active" ? "已通过" : hall.status === "rejected" ? "已驳回" : "待审核"}
+            </span>
+            <span className="rounded bg-accent-50 px-2 py-0.5 text-xs text-accent-700">
+              通道：{channel.label}
+            </span>
+            <span className="text-xs text-brand-400">
+              公开状态：{hall.isPublic ? "已公开" : "仅你可见"}
+            </span>
+          </div>
+
+          {supplemented && (
+            <div className="mt-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+              材料已补传，纪念馆已转为公开。感谢配合审核。
+            </div>
+          )}
+
+          {appealPending && (
+            <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              <p className="font-medium">
+                本馆走「特殊申述通道」，目前仅你可见。
+                {deadlinePassed
+                  ? "补传期限已过，如需继续补传请联系客服。"
+                  : `请在 ${dueDays != null ? `${dueDays} 天` : "补传期内"} 内补传正式材料以转公开。`}
+              </p>
+              {!deadlinePassed && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-xs font-medium text-accent-600 hover:underline">
+                    补传正式材料
+                  </summary>
+                  <form action={supplementHallMaterials} className="mt-2 space-y-3">
+                    <input type="hidden" name="id" value={id} />
+                    {(["obituary", "old_photo", "tomb_photo", "family_record"] as const).map((type) => (
+                      <div key={type} className="grid gap-1 sm:grid-cols-2 sm:items-center">
+                        <label className="text-xs font-medium text-brand-700">
+                          {MATERIAL_TYPES[type].label}
+                        </label>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            name={`sup_${type}`}
+                            maxLength={200}
+                            className="min-w-[160px] flex-1 rounded border border-gray-200 px-2 py-1 text-sm"
+                            placeholder="编号 / 说明"
+                          />
+                          <input
+                            type="file"
+                            name={`supfile_${type}`}
+                            accept="image/*"
+                            className="text-xs text-brand-500"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    <button
+                      type="submit"
+                      className="rounded-md bg-brand-800 px-4 py-2 text-sm text-white hover:bg-brand-700"
+                    >
+                      提交补传并转公开
+                    </button>
+                  </form>
+                </details>
+              )}
+            </div>
+          )}
+
+          {hall.status === "pending" && (
+            <p className="mt-3 text-xs text-brand-400">
+              审核周期：{channel.slaText}。审核期间本馆仅你可见，通过后自动公开（特殊申述通道除外）。
+            </p>
+          )}
+        </div>
+
         {/* 1. 逝者照片：上传 + 遗像 + 相册管理 */}
         <HallPhotoManager
           hallId={hall.id}
