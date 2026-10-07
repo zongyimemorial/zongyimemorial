@@ -102,3 +102,56 @@ git lfs install && git lfs pull
 ```
 
 才能拿到真实截图；否则 `.smoke/*.png` 仅为 LFS 指针文本。
+
+---
+
+## 推送到 GitHub（含 `--force` 说明）
+
+本仓库 `origin` 为 `https://github.com/zongyimemorial/zongyimemorial.git`。推送前先确认本地已含本次烟测的两个提交：
+
+```bash
+git log --oneline -3
+# 6e33028 docs(hall-review): 补建馆审核浏览器烟测运行说明 README
+# edfc8c1 test(hall-review): 固化建馆审核端到端浏览器烟测套件
+# 037ad19 feat(hall-review): 建馆审核多渠道替代核验 + 三通道分层 + 合规底线
+```
+
+### 为什么需要 `--force`
+
+本地 `main` 与远程 `origin/main` **没有共同祖先**（`git merge-base HEAD origin/main` 为空）。远程当前只有 2 个占位提交：
+
+- `03f58fd chore: init repository with README`
+- `d727555 Initial commit: 宗忆纪念源码快照（source-only, 410 files）`
+
+而本地是 17 个提交的独立历史。因此**无法增量推送**（普通 `git push` 会被非快进拒绝），必须用强推把本地 17 个提交整体替换远程那 2 个占位提交。这与项目文档 `a990183`「推到现有仓库需 --force（含 force/rebase 二选一）」的既定方式一致。
+
+### 推荐命令
+
+```bash
+git fetch origin
+# 用 --force-with-lease 比裸 --force 安全：
+#   若远程在你 fetch 之后被别人改动过，会中止而非盲目覆盖
+git push --force-with-lease origin main
+# LFS 对象随 pre-push 钩子自动上传；
+# 若 push 报 LFS 对象缺失，补一句：
+#   git lfs install && git lfs push --all origin
+```
+
+> 前置条件：需要 GitHub **写权限**（PAT 或 SSH key）。匿名只能 `fetch`，`push` 会被拒。
+> 推送后远程 `main` 即变为本地这 17 个提交的线性历史，原 2 个占位提交不再出现在 `main` 上。
+
+### 备选：保留远程占位提交（非强推）
+
+若不想丢弃远程那 2 个占位提交，可先合并再普通推送（会产生一个「合并无关历史」的 merge commit）：
+
+```bash
+git fetch origin
+git merge origin/main --allow-unrelated-histories -m "chore: 合并远程初始化历史"
+git push origin main
+```
+
+一般不推荐——项目既定流程是强推以获得干净线性历史。
+
+### 环境注意
+
+在出网不稳定的沙箱里，到 `github.com:443` 的连接可能极慢/易断，导致 `git push`（需上传 LFS 对象 + pack）超时失败。此时请在本机或网络正常的机器上执行上面的推送命令，本地提交不会因此丢失。
