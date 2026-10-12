@@ -43,6 +43,8 @@ type HallRow = {
   id: string;
   ownerUserId: string;
   premiumUntil: Date | null;
+  name: string;
+  deceasedName: string;
   couplet: unknown;
   archive: unknown;
   templateConfig: unknown;
@@ -67,6 +69,8 @@ async function loadHall(
       id: true,
       ownerUserId: true,
       premiumUntil: true,
+      name: true,
+      deceasedName: true,
       couplet: true,
       archive: true,
       templateConfig: true,
@@ -160,17 +164,38 @@ export async function saveHallProfile(formData: FormData) {
 
   const prevArchive = (hall.archive as Record<string, unknown> | null) ?? {};
 
+  /*
+    馆名联动：建馆时 name 由逝者名派生（"{逝者名}纪念空间/纪念馆"）。
+    馆主在挽联配置里改了逝者名讳后，若馆名仍包含**旧**逝者名，
+    就把它替换成新名，避免"匾额写陆老先生、馆名还叫张老先生纪念空间"的割裂。
+    非派生馆名（如"免费馆主纪念空间"）不含旧逝者名，自然跳过，不会被误改。
+  */
+  const oldName = hall.name;
+  const oldDeceased = hall.deceasedName;
+  let newName = oldName;
+  if (oldDeceased && oldName.includes(oldDeceased)) {
+    newName = oldName.split(oldDeceased).join(deceasedName);
+  }
+
   await prisma.memorialHall.update({
     where: { id: hallId },
     data: {
       deceasedName,
+      ...(newName !== oldName ? { name: newName } : {}),
       couplet,
       archive: { ...prevArchive, epitaph, hometown, timeline, career, quote },
     },
   });
 
   refresh(hallId);
-  return { ok: true, message: "已保存，馆内展示已更新" };
+  revalidatePath("/console");
+  return {
+    ok: true,
+    message:
+      newName !== oldName
+        ? `已保存，馆名已同步更新为「${newName}」`
+        : "已保存，馆内展示已更新",
+  };
 }
 
 // ===========================================================================
