@@ -13,14 +13,14 @@ import { usePathname } from "next/navigation";
 const ITEMS: { href: string; label: string; exact?: boolean; moon?: boolean }[] = [
   { href: "/", label: "首页", exact: true },
   { href: "/halls", label: "数字纪念馆" },
-  { href: "/clan", label: "宗亲文化" },
   { href: "/whispers", label: "午夜悄悄话", moon: true },
+  { href: "/clan", label: "宗亲文化" },
+  { href: "/memorial", label: "公益纪念" },
   { href: "/mall", label: "虚拟祭品" },
+  { href: "/festivals", label: "追思节日" },
   { href: "/live", label: "云直播" },
   { href: "/news", label: "新闻资讯" },
-  { href: "/memorial", label: "公益纪念" },
   { href: "/gallery/decor", label: "装修案例" },
-  { href: "/festivals", label: "追思节日" },
   { href: "/points", label: "积分兑换" },
   { href: "/faq", label: "常见问题" },
 ];
