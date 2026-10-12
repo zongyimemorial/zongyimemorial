@@ -6,6 +6,7 @@ import { CLAN_TEMPLATES } from "@/lib/clan-decor";
 import { suiteItemSlug } from "@/lib/decor-suites";
 import type { DecorTemplate } from "@/lib/hall-decor";
 import Reveal from "@/components/site/Reveal";
+import DecorCover from "@/components/decor/DecorCover";
 
 export const metadata: Metadata = {
   title: "装修案例厅 · 纪念馆与宗祠主题模板",
@@ -113,17 +114,9 @@ function TemplateCard({ t, target }: { t: DecorTemplate; target: "hall" | "clan"
       </span>
     </div>
   );
-  const preview = (
-    <div
-      className="flex aspect-[16/9] w-full items-center justify-center text-5xl"
-      style={{
-        background: t.preview.background,
-        color: t.preview.color ?? "#1f2937",
-      }}
-    >
-      <span aria-hidden="true">{t.preview.icon ?? "🏛️"}</span>
-    </div>
-  );
+  // 主题化封面：按模板 id 逐套程序化绘制场景 SVG（配色取自模板调色板），
+  // 替代原先「一枚通用 emoji + 渐变色块」—— 后者与每套主题的文字描述对不上。
+  const preview = <DecorCover t={t} />;
 
   if (isFree) {
     return (
@@ -148,7 +141,7 @@ function TemplateCard({ t, target }: { t: DecorTemplate; target: "hall" | "clan"
         href={mallHref(t, target)}
         className="shine group block overflow-hidden rounded-xl border border-brand-200 bg-brand-100/70 shadow-sm transition hover:border-brand-300 hover:shadow-md"
       >
-      {/* 静态大预览：纯 CSS 渐变 + icon，零 3D 渲染、零图片加载（43 套一次列出也不卡） */}
+      {/* 静态大预览：主题化 SVG 场景封面（零 3D 渲染、零图片加载，43 套一次列出也不卡） */}
       {preview}
       <div className="p-4">
         {badge}

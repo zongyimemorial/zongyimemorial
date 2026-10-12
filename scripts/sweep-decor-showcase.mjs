@@ -45,6 +45,18 @@ async function main() {
   console.log(`   可点击主题卡片链接数：${galleryLinks.length}`);
   flag(galleryLinks.length >= 20, "画廊含足量可点击主题（>=20）");
 
+  // ③ 封面应为主题化 SVG（data-decor-cover），不应再是通用 emoji + 渐变色块
+  const allCovers = await page.$$eval("div[data-decor-cover]", (els) => els.length).catch(() => 0);
+  flag(allCovers >= 40, `画廊卡片全部使用主题化 SVG 封面（${allCovers} 张，应=43 套）`);
+  const themedLinkCards = await page
+    .$$eval('a[href^="/mall/"] div[data-decor-cover]', (els) => els.length)
+    .catch(() => 0);
+  flag(themedLinkCards >= 20, `可点击主题卡片均带主题化封面（${themedLinkCards} 张）`);
+  const emojiCover = await page
+    .$$eval("div[data-decor-cover] span", (els) => els.some((e) => /\p{Extended_Pictographic}/u.test(e.textContent || "")))
+    .catch(() => false);
+  flag(!emojiCover, "主题化封面内不含 emoji 字符（已替换为场景 SVG）");
+
   // ---------- 2) 逐个装修详情页排查（来自 DB 的全量装修商品，最全） ----------
   console.log("\n=== 装修商品详情页（全量 DB 装修商品）===");
   const dbSlugs = await prisma.product.findMany({
@@ -95,12 +107,17 @@ async function main() {
     const starReq = [...lottieRequests].some((u) => u.endsWith("/lottie/decor.json"));
     flag(!starReq, `详情页 ${href} 未加载 decor 星 Lottie`);
 
-    // ②b 封面是否落回 SVG 底图（容器内有 <img>）
-    const hasImgCover = await page.$$eval(
-      'div.aspect-\\[16\\/9\\] img',
-      (imgs) => imgs.some((i) => (i.getAttribute("src") || "").includes("prod-decor")),
-    ).catch(() => false);
-    flag(hasImgCover, `详情页 ${href} 封面回退为场景 SVG（prod-decor.*）`);
+    // ②b 封面：模板类应为主题化 SVG（data-decor-cover）；非模板类回退场景 SVG（prod-decor.* img）
+    const themedCover = await page.$("div[data-decor-cover]");
+    const hasImgCover = await page
+      .$$eval(
+        'div.aspect-\\[16\\/9\\] img',
+        (imgs) => imgs.some((i) => (i.getAttribute("src") || "").includes("prod-decor")),
+      )
+      .catch(() => false);
+    flag(themedCover || hasImgCover, `详情页 ${href} 首屏封面存在（主题SVG 或 场景SVG）`);
+    // 模板类若已用主题化封面，就不该再叠一张通用 prod-decor-tpl 占位图
+    flag(!themedCover || !hasImgCover, `详情页 ${href} 未同时呈现通用占位图（已替换为主题封面）`);
 
     // ③ 首屏价格 + 购买按钮：取“立即购买”按钮与“当前空间形态”文本的相对位置
     const layout = await page.evaluate(() => {

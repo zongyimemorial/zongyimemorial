@@ -11,6 +11,7 @@ import HallBuyButton from "@/components/shop/HallBuyButton";
 import BackLink from "@/components/site/BackLink";
 import LottieIcon from "@/components/shop/LottieIcon";
 import DecorSpacePreview, { SPACE_LABEL } from "@/components/decor/DecorSpacePreview";
+import DecorCover from "@/components/decor/DecorCover";
 import { resolveDecorEntitlement } from "@/lib/decor-products";
 import { BUNDLES, DEFAULT_DECOR, findTemplate, KITS } from "@/lib/hall-decor";
 import { CLAN_KITS, findClanTemplate } from "@/lib/clan-decor";
@@ -149,7 +150,10 @@ export default async function ProductDetailPage({
         }}
       />
       <BackLink href="/mall">返回纪念商城</BackLink>
-      {product.coverImage && (
+      {decorTpl ? (
+        // 装修模板：用主题化 SVG 封面，与各自描述匹配（替代共用 prod-decor-tpl.svg）
+        <DecorCover t={decorTpl} className="mt-4 rounded-xl shadow-sm" />
+      ) : product.coverImage ? (
         <div className="relative mt-4 aspect-[16/9] w-full overflow-hidden rounded-xl bg-brand-50 shadow-sm">
           <LottieIcon
             cover={product.coverImage}
@@ -166,7 +170,7 @@ export default async function ProductDetailPage({
             }
           />
         </div>
-      )}
+      ) : null}
       <div className="mb-2 mt-5 text-xs text-brand-500">{typeLabel[product.type]}</div>
       <h1 className="text-3xl font-semibold text-brand-900">{product.name}</h1>
       {/* 价格与购买入口置于首屏（标题正下方）：用户第一眼即见价格与按钮，
