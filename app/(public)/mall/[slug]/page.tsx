@@ -169,9 +169,39 @@ export default async function ProductDetailPage({
       )}
       <div className="mb-2 mt-5 text-xs text-brand-500">{typeLabel[product.type]}</div>
       <h1 className="text-3xl font-semibold text-brand-900">{product.name}</h1>
+      {/* 价格与购买入口置于首屏（标题正下方）：用户第一眼即见价格与按钮，
+          解决此前「封面+预览占满首屏、价格区需滚动才出现」的体验问题。 */}
+      {product.isFree ? (
+        <div className="mt-5 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-5">
+          <div>
+            <div className="text-2xl font-bold text-green-700">免费</div>
+            <p className="mt-1 text-xs text-green-700">
+              基础礼器，无需付费 · 前往任一纪念馆即可一键祭拜
+            </p>
+          </div>
+          <Link
+            href="/halls"
+            className="rounded-lg bg-green-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-800"
+          >
+            去纪念馆祭拜
+          </Link>
+        </div>
+      ) : (
+        <div className="mt-5 flex items-center justify-between rounded-lg bg-brand-50 p-5">
+          <Price fub={fubFromFen(product.price)} size="lg" className="text-2xl" />
+          {product.type === "physical_goods" ? (
+            <PhysicalBuyButton productId={product.id} label="立即购买" />
+          ) : product.type === "memorial_hall" ? (
+            <HallBuyButton productId={product.id} />
+          ) : (
+            <BuyButton productId={product.id} label="立即购买" />
+          )}
+        </div>
+      )}
       {/*
-        装修模板的空间预览：放在价格上方——先让用户"看见"，再谈钱。
-        与工坊里那处用的是**同一个组件**，保证商品页看到的和买到后得到的一致
+        装修模板的空间预览：标题下方即价格，预览紧随其后——用户先见价格与按钮，
+        再向下看"买到后的空间效果"。与工坊里那处用的是**同一个组件**，
+        保证商品页看到的和买到后得到的一致
         （两处各画一套迟早会漂移）。
 
         `decor` 直接由模板自己的 slots 合成：这样顾客看到的就是"买下并应用后"
@@ -252,37 +282,6 @@ export default async function ProductDetailPage({
           {product.description.split("\n\n").map((para, i) => (
             <p key={i}>{para}</p>
           ))}
-        </div>
-      )}
-      {/*
-        免费礼器不能显示 "¥0.00 + 立即购买" —— 它根本不需要下单，
-        入口在纪念馆的祭拜面板。这里改为引导用户去纪念馆一键祭拜。
-      */}
-      {product.isFree ? (
-        <div className="mt-6 flex items-center justify-between rounded-lg border border-green-200 bg-green-50 p-5">
-          <div>
-            <div className="text-2xl font-bold text-green-700">免费</div>
-            <p className="mt-1 text-xs text-green-700">
-              基础礼器，无需付费 · 前往任一纪念馆即可一键祭拜
-            </p>
-          </div>
-          <Link
-            href="/halls"
-            className="rounded-lg bg-green-700 px-5 py-2.5 text-sm font-medium text-white hover:bg-green-800"
-          >
-            去纪念馆祭拜
-          </Link>
-        </div>
-      ) : (
-        <div className="mt-6 flex items-center justify-between rounded-lg bg-brand-50 p-5">
-          <Price fub={fubFromFen(product.price)} size="lg" className="text-2xl" />
-          {product.type === "physical_goods" ? (
-            <PhysicalBuyButton productId={product.id} label="立即购买" />
-          ) : product.type === "memorial_hall" ? (
-            <HallBuyButton productId={product.id} />
-          ) : (
-            <BuyButton productId={product.id} label="立即购买" />
-          )}
         </div>
       )}
 

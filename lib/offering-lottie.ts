@@ -47,9 +47,10 @@ const MAP: Record<string, string> = {
   "prod-svc-meeting": "meeting",
   "prod-svc-qr": "qr",
   "prod-video": "video",
-  "prod-decor-bundle": "decor",
-  "prod-decor-kit": "decor",
-  "prod-decor-tpl": "decor",
+  // 注意：装修三件套（bundle/kit/tpl）的封面是场景 SVG（非祭品），
+  // 不应映射成 decor 星星动图 —— 商品详情页 16:9 大封面里会被放大成
+  // 一颗突兀的大五角星（2026-10 真实反馈）。删掉映射让 LottieIcon 回退
+  // 到封面 SVG 原图，与场景语义一致。
   "prod-wreath": "wreath",
   "prod-storage": "storage",
 };
