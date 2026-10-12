@@ -56,3 +56,30 @@ shots/
 
 # 本地 E2E 依赖（imapflow 等，独立安装不入库）
 .verifydeps/
+
+# ===== 误入库的非源码产物（整批提交 a8bd2b5 时一并扫入，现停止跟踪） =====
+# 测试/验收截图与备份目录（可重新生成）
+.smoke/
+.asset-backup-2026-10/
+
+# git 打包与归档
+*.bundle
+zongyimemorial-lfs-objects.tar.gz
+
+# 构建 / 运行 / 守护日志
+*.log
+/.watchdog.size
+/.cloudstudio
+
+# 散落根目录的截图与申请表单产物（非源码，可重新生成）
+/admin-*.png
+/forgot-*.png
+/password-*.png
+/proof-*.png
+/.e2e-*.png
+/.ok_*.png
+/apply.pdf
+/opc-application.html
+/opc-download.html
+/追思装置-*.docx
+/追思装置-*.pdf

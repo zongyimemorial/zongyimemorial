@@ -1,5 +1,0 @@
-[watchdog 19:32:57] 异常: app_down(http=000000) → 重启 next（拉新连接池）
-[watchdog 19:33:17] 异常: app_down(http=000000)，但距上次重启不足 120s，跳过本轮
-[watchdog 23:02:58] 异常: app_down(http=000000) → 重启 next（拉新连接池）
-[watchdog 23:36:25] 异常: app_down(http=000000) → 重启 next（拉新连接池）
-[watchdog 23:58:50] 异常: pg_restarted → 重启 next（拉新连接池）
