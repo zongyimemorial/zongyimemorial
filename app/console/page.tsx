@@ -9,7 +9,7 @@ import { iconOf } from "@/lib/ritual";
 import { syncUpcomingReminders, unreadCount, listNotifications } from "@/lib/notify";
 import { upcomingFestivals, festivalCountdownLabel, type FestivalOccurrence } from "@/lib/festivals";
 import { signOutAction } from "@/app/(public)/actions";
-import { markAllNotificationsReadAction, submitServiceIntake } from "@/app/console/actions";
+import { markAllNotificationsReadAction, submitServiceIntake, withdrawServiceFulfillment } from "@/app/console/actions";
 import { obituaryQuotaLeft } from "@/lib/obituary";
 import { SERVICE_STATUS_LABEL } from "@/lib/service";
 
@@ -654,21 +654,42 @@ export default async function ConsolePage() {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="text-sm font-medium text-brand-900">{s.productName}</div>
-                  <span
-                    className={
-                      "rounded px-2 py-0.5 text-[11px] " +
-                      (s.status === "done"
-                        ? "bg-emerald-100 text-emerald-700"
-                        : s.status === "processing"
-                          ? "bg-blue-100 text-blue-700"
-                          : s.status === "rejected"
-                            ? "bg-red-100 text-red-600"
-                            : "bg-gray-100 text-gray-600")
-                    }
-                  >
-                    {SERVICE_STATUS_LABEL[s.status] ?? s.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {s.status === "pending" && (
+                      <form action={withdrawServiceFulfillment}>
+                        <input type="hidden" name="id" value={s.id} />
+                        <button
+                          type="submit"
+                          className="rounded border border-gray-300 px-2 py-0.5 text-[11px] text-gray-500 hover:border-red-300 hover:text-red-500"
+                          title="撤回后，已支付的积分/订单将原路退回"
+                        >
+                          撤回
+                        </button>
+                      </form>
+                    )}
+                    <span
+                      className={
+                        "rounded px-2 py-0.5 text-[11px] " +
+                        (s.status === "done"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : s.status === "processing"
+                            ? "bg-blue-100 text-blue-700"
+                            : s.status === "rejected"
+                              ? "bg-red-100 text-red-600"
+                              : s.status === "cancelled"
+                                ? "bg-gray-100 text-gray-400 line-through"
+                                : "bg-gray-100 text-gray-600")
+                      }
+                    >
+                      {SERVICE_STATUS_LABEL[s.status] ?? s.status}
+                    </span>
+                  </div>
                 </div>
+                {s.status === "cancelled" && (
+                  <p className="mt-2 text-[11px] text-gray-400">
+                    已撤回，相关费用已原路退回。
+                  </p>
+                )}
                 {s.adminNote && (
                   <div
                     className={

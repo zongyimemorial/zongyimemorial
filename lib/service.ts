@@ -23,6 +23,7 @@ export const SERVICE_STATUS_LABEL: Record<string, string> = {
   processing: "受理中",
   done: "已完成",
   rejected: "已驳回",
+  cancelled: "已撤回",
 };
 
 /** 可传事务 tx 的最小 db 契约（与 lib/obituary.ts 同构）。 */
