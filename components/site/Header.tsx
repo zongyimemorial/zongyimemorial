@@ -32,19 +32,19 @@ export default async function Header() {
         <div className="hidden flex-1 items-center justify-center gap-3 md:flex">
           <span
             aria-hidden="true"
-            className="h-px w-10 bg-gradient-to-r from-transparent to-accent-300"
+            className="h-px w-12 bg-gradient-to-r from-transparent to-accent-400"
           />
           <div className="text-center leading-tight">
-            <p className="font-serif text-[15px] tracking-[0.3em] text-brand-800">
+            <p className="font-serif text-base font-semibold tracking-[0.3em] text-brand-900">
               慎终追远 · 民德归厚
             </p>
-            <p className="mt-0.5 text-[11px] tracking-widest text-brand-400">
+            <p className="mt-0.5 text-xs font-medium tracking-widest text-brand-600">
               数字纪念馆 · 宗亲文化 · 云端追思
             </p>
           </div>
           <span
             aria-hidden="true"
-            className="h-px w-10 bg-gradient-to-l from-transparent to-accent-300"
+            className="h-px w-12 bg-gradient-to-l from-transparent to-accent-400"
           />
         </div>
 
