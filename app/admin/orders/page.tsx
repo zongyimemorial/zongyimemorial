@@ -13,7 +13,7 @@ const shipLabel: Record<string, string> = {
 
 export default async function AdminOrders() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "editor")) redirect("/console");
+  if (!user || (user.role !== "admin" && user.role !== "editor" && user.role !== "super_admin")) redirect("/console");
 
   const orders = await prisma.order.findMany({
     orderBy: { createdAt: "desc" },

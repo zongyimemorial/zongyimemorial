@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
-import { INITIAL_POINTS, POINTS_PER_YUAN, REDEEM_RATE_BASIC, REDEEM_RATE_ADVANCED, REDEEM_RATE_HALL, REDEEM_DAILY_LIMIT, POINTS_VALID_MONTHS } from "@/lib/points";
+import { INITIAL_POINTS, POINTS_PER_YUAN, REDEEM_RATE_BASIC, REDEEM_RATE_ADVANCED, REDEEM_RATE_HALL, REDEEM_DAILY_LIMIT, POINTS_VALID_MONTHS, INVITE_REGISTER_POINTS } from "@/lib/points";
 import { fubFromFen, fubOnly } from "@/lib/fortune";
 import type { ProductType } from "@prisma/client";
 
@@ -29,7 +29,7 @@ const earnRules = [
   },
   {
     name: "邀请好友注册",
-    point: "+20 / 人",
+    point: `+${INVITE_REGISTER_POINTS} / 人`,
     note: "社交裂变奖励（公网阶段上线）。",
   },
   {
@@ -131,7 +131,7 @@ export default async function PointsGuidePage() {
       </header>
 
       {/* 目录 */}
-      <nav className="mt-8 rounded-xl border border-gray-100 bg-brand-50 p-5">
+      <nav className="mt-8 rounded-xl border border-brand-200 bg-brand-50 p-5">
         <div className="mb-3 text-sm font-semibold text-brand-800">
           本文目录
         </div>
@@ -163,7 +163,7 @@ export default async function PointsGuidePage() {
           积分主要来自两类行为：<strong>你加入平台</strong>（注册赠礼）、
           <strong>你在平台产生消费或互动</strong>（消费累计、开通纪念馆、互动等）。
         </p>
-        <div className="mt-5 overflow-x-auto rounded-lg border border-gray-100 bg-white">
+        <div className="mt-5 overflow-x-auto rounded-lg border border-brand-200 bg-brand-100/70">
           <table className="w-full text-sm">
             <thead className="bg-brand-50 text-left text-brand-700">
               <tr>
@@ -188,7 +188,7 @@ export default async function PointsGuidePage() {
       {/* 三、积分获取示例 */}
       <section id="example" className="mt-10 scroll-mt-20">
         <h2 className="text-2xl font-semibold text-brand-900">三、积分获取示例</h2>
-        <div className="mt-3 rounded-lg border border-gray-100 bg-white p-5 text-sm leading-7 text-gray-700">
+        <div className="mt-3 rounded-lg border border-brand-200 bg-brand-100/70 p-5 text-sm leading-7 text-gray-700">
           <p>
             小念刚注册，账户里立刻有了{" "}
             <strong className="text-accent-600">{INITIAL_POINTS} 积分</strong>
@@ -250,7 +250,7 @@ export default async function PointsGuidePage() {
             <Link
               key={p.id}
               href={`/mall/${p.slug}`}
-              className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md"
+              className="rounded-lg border border-brand-200 bg-brand-100/70 p-4 shadow-sm transition hover:shadow-md"
             >
               <div className="text-xs text-brand-500">{typeLabel[p.type]}</div>
               <div className="mt-1 font-semibold text-brand-900">{p.name}</div>
@@ -263,7 +263,7 @@ export default async function PointsGuidePage() {
             </Link>
           ))}
           {redeemable.length === 0 && (
-            <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-brand-500">
+            <div className="rounded-lg border border-dashed border-brand-300 bg-brand-100/70 p-8 text-center text-sm text-brand-500">
               暂无可兑换商品
             </div>
           )}
@@ -289,7 +289,7 @@ export default async function PointsGuidePage() {
           {faqs.map((f, i) => (
             <details
               key={i}
-              className="group rounded-xl border border-gray-100 bg-white p-5 shadow-sm [&_summary]:cursor-pointer"
+              className="group rounded-xl border border-brand-200 bg-brand-100/70 p-5 shadow-sm [&_summary]:cursor-pointer"
             >
               <summary className="flex items-center justify-between font-semibold text-brand-900">
                 <span>{f.q}</span>
@@ -319,7 +319,7 @@ export default async function PointsGuidePage() {
         </Link>
         <Link
           href="/faq"
-          className="rounded-md border border-gray-300 px-5 py-2.5 text-sm font-medium text-brand-700 hover:bg-gray-50"
+          className="rounded-md border border-brand-300 px-5 py-2.5 text-sm font-medium text-brand-700 hover:bg-gray-50"
         >
           更多常见问题
         </Link>

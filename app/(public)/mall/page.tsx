@@ -3,6 +3,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/db";
 import { fubFromFen, fubOnly } from "@/lib/fortune";
 import Price from "@/components/shop/Price";
+import Reveal from "@/components/site/Reveal";
 import type { ProductType } from "@prisma/client";
 
 export const metadata = { title: "虚拟祭品商城" };
@@ -154,7 +155,7 @@ export default async function MallPage({
       </div>
 
       {/* 文明祭扫模式切换 */}
-      <div className="mb-6 flex flex-col gap-3 rounded-xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mb-6 flex flex-col gap-3 rounded-xl border border-brand-200 bg-brand-100/70 p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-semibold text-brand-900">祭扫模式</div>
           <p className="mt-0.5 text-xs text-brand-400">
@@ -186,7 +187,7 @@ export default async function MallPage({
           className={
             !tierParam
               ? "rounded-xl border border-brand-800 bg-brand-800 p-4 text-white"
-              : "rounded-xl border border-gray-100 bg-white p-4 transition hover:border-brand-300"
+              : "rounded-xl border border-brand-200 bg-brand-100/70 p-4 transition hover:border-brand-300"
           }
         >
           <div className="flex items-center justify-between">
@@ -234,7 +235,7 @@ export default async function MallPage({
               className={
                 active
                   ? "rounded-xl border border-brand-800 bg-brand-800 p-4 text-white"
-                  : "rounded-xl border border-gray-100 bg-white p-4 transition hover:border-brand-300"
+                  : "rounded-xl border border-brand-200 bg-brand-100/70 p-4 transition hover:border-brand-300"
               }
             >
               <div className="flex items-center justify-between">
@@ -265,13 +266,19 @@ export default async function MallPage({
             <span className="text-sm font-normal text-brand-400">（共 {freeProducts.length} 项）</span>
           </h2>
           <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
-            {freeProducts.map((p) => (
-              <Link
-                key={p.id}
-                href={`/mall/${p.slug}`}
-                className="group overflow-hidden rounded-lg border border-green-100 bg-white shadow-sm transition hover:shadow-md"
-              >
+            {freeProducts.map((p, i) => (
+              <Reveal key={p.id} delay={i * 60}>
+                <Link
+                  href={`/mall/${p.slug}`}
+                  className="shine block group overflow-hidden rounded-lg border border-green-100 bg-brand-100/70 shadow-sm transition hover:shadow-md"
+                >
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-brand-50">
+                  {/*
+                    直接展示 AI 生成的产品实拍图（暖米色亚麻布景 · 金褐象牙色调，
+                    与品牌视觉统一）。曾用墨金 Lottie 盖住封面 —— 那套扁平金色
+                    图形被用户评为"太难看"，列表页回归精美封面图；Lottie 微动图
+                    仅保留在商品详情页（见 mall/[slug]/page.tsx）。
+                  */}
                   {p.coverImage ? (
                     <Image
                       src={p.coverImage}
@@ -289,6 +296,7 @@ export default async function MallPage({
                   <div className="mt-1 text-sm font-bold text-green-600">免费</div>
                 </div>
               </Link>
+              </Reveal>
             ))}
           </div>
         </section>
@@ -309,12 +317,12 @@ export default async function MallPage({
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {paidProducts.map((p) => (
-              <Link
-                key={p.id}
-                href={`/mall/${p.slug}`}
-                className="group overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
-              >
+            {paidProducts.map((p, i) => (
+              <Reveal key={p.id} delay={i * 60}>
+                <Link
+                  href={`/mall/${p.slug}`}
+                  className="shine block group overflow-hidden rounded-lg border border-brand-200 bg-brand-100/70 shadow-sm transition hover:shadow-md"
+                >
                 <div className="relative aspect-[16/10] w-full overflow-hidden bg-brand-100">
                   {p.coverImage ? (
                     <Image
@@ -352,9 +360,10 @@ export default async function MallPage({
                   </div>
                 </div>
               </Link>
+              </Reveal>
             ))}
             {paidProducts.length === 0 && (
-              <div className="col-span-full rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-brand-500">
+              <div className="col-span-full rounded-lg border border-dashed border-brand-300 bg-brand-100/70 p-10 text-center text-sm text-brand-500">
                 该分类下暂无在售商品
               </div>
             )}

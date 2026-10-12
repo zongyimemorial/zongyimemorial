@@ -20,12 +20,14 @@ import {
   resetClanDecor,
   saveClanDecor,
   setClanHallPortrait,
+  supplementClanHallMaterials,
   unlockClanDecor,
 } from "./actions";
 import ClanHallProfileForm from "@/components/clan/ClanHallProfileForm";
 import { isPremiumForUser } from "@/lib/premium";
 import { CLAN_DEFAULT_ORDER, resolveSectionOrder } from "@/lib/section-order";
 import SectionOrderEditor, { CLAN_SECTION_LABELS } from "@/components/SectionOrderEditor";
+import ClanActivityForm from "@/components/console/ClanActivityForm";
 import {
   activeStoragePlanSlug,
   CLAN_FREE_QUOTA,
@@ -37,11 +39,29 @@ import {
 } from "@/lib/storage";
 import {
   createClanStorageOrder,
+  deleteClanHall,
   saveClanHallSectionOrder,
+  setClanHallPublic,
 } from "./actions";
-import { CHANNEL_META, normalizeProofs } from "@/lib/hall-review";
+import HallDangerZone from "@/components/console/HallDangerZone";
+import HallVisibilityZone from "@/components/console/HallVisibilityZone";
+import {
+  appealPendingSupplement,
+  channelMetaFor,
+  MATERIAL_TYPES,
+  normalizeProofs,
+  supplementDeadlinePassed,
+  supplementDueInDays,
+} from "@/lib/hall-review";
 
 export const metadata = { title: "宗祠管理 · 宗忆堂" };
+
+const REVIEW_LABEL: Record<string, string> = { pending: "待审", approved: "已发布", rejected: "已驳回" };
+const REVIEW_CLS: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-700",
+  approved: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-600",
+};
 
 export default async function ClanHallManagePage({
   params,
@@ -67,7 +87,7 @@ export default async function ClanHallManagePage({
   */
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
-    select: { points: true, premiumUntil: true },
+    select: { points: true, premiumUntil: true, idVerified: true },
   });
   const premiumActive = isPremiumForUser(dbUser, hall);
   /*
@@ -100,6 +120,13 @@ export default async function ClanHallManagePage({
   });
   const pointsTotal = clanTributes.reduce((s, t) => s + t.pointsCost, 0);
   const cashTotal = clanTributes.reduce((s, t) => s + t.amountFen, 0);
+
+  // 本祠主办的宗族活动（含审核状态）
+  const clanActivities = await prisma.clanActivity.findMany({
+    where: { clanHallId: hall.id },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
   const clanTypeLabel: Record<string, string> = {
     incense: "上香",
     flower: "献花",
@@ -138,7 +165,7 @@ export default async function ClanHallManagePage({
         <span className="text-brand-600">宗祠管理</span>
         <a
           href="/"
-          className="ml-auto rounded-md border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+          className="ml-auto rounded-md border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
         >
           ← 返回首页
         </a>
@@ -174,8 +201,8 @@ export default async function ClanHallManagePage({
       </p>
 
       <div className="mt-6 space-y-6">
-        {/* 审核状态横幅（宗祠仅标准通道） */}
-        <div className="rounded-xl border border-gray-100 bg-white p-5">
+        {/* 审核状态横幅（通道感知：标准 / 替代 / 特殊申述） */}
+        <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-brand-900">审核状态：</span>
             <span
@@ -191,7 +218,7 @@ export default async function ClanHallManagePage({
               {hall.status === "active" ? "已通过" : hall.status === "rejected" ? "已驳回" : "待审核"}
             </span>
             <span className="rounded bg-accent-50 px-2 py-0.5 text-xs text-accent-700">
-              通道：{CHANNEL_META.standard.label}
+              通道：{channelMetaFor("clan", hall.reviewChannel || "standard").label}
             </span>
             <span className="text-xs text-brand-400">
               公开状态：{hall.isPublic ? "已公开" : "仅你可见"}
@@ -201,6 +228,71 @@ export default async function ClanHallManagePage({
             <p className="mt-3 text-xs text-brand-400">
               宗祠先审后显，审核通过后将自动对宗亲公开。已提交佐证材料 {normalizeProofs(hall.proofs)?.materials?.length ?? 0} 项。
             </p>
+          )}
+
+          {/* 特殊申述通道：已通过但待补传（仅创建者可见，60 天内补传转公开） */}
+          {appealPendingSupplement(hall) && (
+            <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
+                  待补传
+                </span>
+                {(() => {
+                  const due = supplementDueInDays(hall);
+                  const passed = supplementDeadlinePassed(hall);
+                  if (passed) {
+                    return (
+                      <span className="text-xs text-red-600">
+                        补传期限已过，未补传材料，本宗祠维持仅你可见。
+                      </span>
+                    );
+                  }
+                  return (
+                    <span className="text-xs text-amber-700">
+                      距补传截止还有 {due ?? "—"} 天，补传正式材料后宗祠将自动转公开。
+                    </span>
+                  );
+                })()}
+              </div>
+
+              {!supplementDeadlinePassed(hall) && (
+                <details className="mt-3 group">
+                  <summary className="cursor-pointer text-xs font-medium text-accent-600 hover:underline">
+                    补传正式佐证材料（转公开）
+                  </summary>
+                  <form action={supplementClanHallMaterials} className="mt-3 space-y-3">
+                    <input type="hidden" name="id" value={hall.id} />
+                    {(["clan_obituary", "clan_old_photo", "clan_history_doc", "clan_family_record"] as const).map(
+                      (type) => (
+                        <div key={type} className="flex flex-wrap items-center gap-2">
+                          <label className="text-xs font-medium text-brand-700">
+                            {MATERIAL_TYPES[type].label}
+                          </label>
+                          <input
+                            name={`sup_${type}`}
+                            maxLength={200}
+                            className="w-64 rounded-md border border-brand-200 px-2 py-1.5 text-xs"
+                            placeholder="编号或文字说明"
+                          />
+                          <input
+                            type="file"
+                            name={`supfile_${type}`}
+                            accept="image/*"
+                            className="text-xs text-brand-500"
+                          />
+                        </div>
+                      ),
+                    )}
+                    <button
+                      type="submit"
+                      className="rounded bg-brand-800 px-4 py-1.5 text-xs text-white hover:bg-brand-700"
+                    >
+                      提交补传材料
+                    </button>
+                  </form>
+                </details>
+              )}
+            </div>
           )}
         </div>
 
@@ -280,7 +372,7 @@ export default async function ClanHallManagePage({
         />
 
         {/* 4. 祭祀/消费记录（馆主可见完整实名与联系方式） */}
-        <section className="rounded-xl border border-gray-100 bg-white p-6">
+        <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
           <h2 className="text-sm font-semibold text-brand-900">祭祀 / 消费记录</h2>
           <p className="mt-1 text-xs text-brand-400">
             共 {clanTributes.length} 条 · 累计积分供奉 {pointsTotal}
@@ -294,7 +386,7 @@ export default async function ClanHallManagePage({
             <div className="mt-4 overflow-x-auto">
               <table className="w-full min-w-[720px] text-sm">
                 <thead>
-                  <tr className="border-b border-gray-100 text-left text-xs text-brand-500">
+                  <tr className="border-b border-brand-200 text-left text-xs text-brand-500">
                     <th className="py-2 pr-4 font-medium">时间</th>
                     <th className="py-2 pr-4 font-medium">名号（脱敏）</th>
                     <th className="py-2 pr-4 font-medium">实名 / 联系方式</th>
@@ -347,6 +439,71 @@ export default async function ClanHallManagePage({
           initialOrder={clanOrder}
           labels={CLAN_SECTION_LABELS}
           action={saveClanHallSectionOrder}
+        />
+
+        {/* 6. 宗族活动：祠主发布本族活动（先审后显） */}
+        <section className="mt-6">
+          <h2 className="mb-3 text-lg font-semibold text-brand-900">⑥ 宗族活动</h2>
+          <p className="mb-4 text-sm text-brand-500">
+            发布本祠活动（家族议事、宗亲联谊、修谱研讨等）。提交后需平台审核通过，才会在「宗族活动」公页公开。
+          </p>
+          <ClanActivityForm
+            clanHallId={hall.id}
+            idVerified={!!dbUser?.idVerified}
+            surname={hall.surname}
+          />
+
+          {clanActivities.length > 0 && (
+            <div className="mt-5 overflow-x-auto rounded-xl border border-brand-200">
+              <table className="w-full min-w-[560px] text-left text-sm">
+                <thead className="bg-brand-100/80 text-xs text-brand-600">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">活动</th>
+                    <th className="px-3 py-2 font-medium">时间</th>
+                    <th className="px-3 py-2 text-right font-medium">报名</th>
+                    <th className="px-3 py-2 font-medium">审核状态</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {clanActivities.map((a) => (
+                    <tr key={a.id} className="border-t border-brand-100">
+                      <td className="px-3 py-2 font-medium text-brand-900">{a.title}</td>
+                      <td className="px-3 py-2 text-xs text-brand-500">
+                        {new Date(a.startAt).toLocaleString("zh-CN", { hour12: false })}
+                      </td>
+                      <td className="px-3 py-2 text-right text-xs tabular-nums text-brand-500">
+                        {a.signupCount}/{a.capacity}
+                      </td>
+                      <td className="px-3 py-2">
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${REVIEW_CLS[a.reviewStatus]}`}>
+                          {REVIEW_LABEL[a.reviewStatus] ?? a.reviewStatus}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+
+        {/* 下架 / 撤回为私密草稿（可逆，置于删除之前） */}
+        <HallVisibilityZone
+          hallId={hall.id}
+          kindLabel="宗祠"
+          idField="clanHallId"
+          isPublic={hall.isPublic}
+          status={hall.status}
+          action={setClanHallPublic}
+        />
+
+        {/* 删除宗祠（危险操作，置于最后） */}
+        <HallDangerZone
+          hallId={hall.id}
+          hallName={hall.hallName}
+          kindLabel="宗祠"
+          idField="clanHallId"
+          action={deleteClanHall}
         />
 
       </div>

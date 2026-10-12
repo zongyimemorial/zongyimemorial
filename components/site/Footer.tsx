@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="mt-16 border-t border-gray-200 bg-white">
+    <footer className="mt-16 border-t border-brand-200 bg-brand-100/70">
       <div className="container-page grid gap-8 py-10 md:grid-cols-4">
         <div>
           <div className="mb-3 flex items-center gap-2.5">
@@ -90,7 +90,7 @@ export default function Footer() {
           </p>
         </div>
       </div>
-      <div className="border-t border-gray-100 py-4 text-center text-xs text-brand-500">
+      <div className="border-t border-brand-200 py-4 text-center text-xs text-brand-500">
         © {new Date().getFullYear()} 宗忆堂 · 仅供数字纪念与文化交流使用
       </div>
     </footer>

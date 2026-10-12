@@ -44,7 +44,7 @@ export default function CreateFlowSteps({
               <span
                 className={
                   "flex h-4 w-4 items-center justify-center rounded-full text-[10px] " +
-                  (active ? "bg-white/25 text-white" : done ? "bg-emerald-600 text-white" : "bg-white text-brand-500")
+                  (active ? "bg-white/25 text-white" : done ? "bg-emerald-600 text-white" : "bg-brand-100/70 text-brand-500")
                 }
               >
                 {done ? "✓" : i + 1}

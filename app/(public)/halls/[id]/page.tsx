@@ -1,15 +1,17 @@
 import { Fragment, type ReactNode } from "react";
 import BackLink from "@/components/site/BackLink";
+import LivingScene from "@/components/site/LivingScene";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import WorshipPanel from "@/components/hall/WorshipPanel";
-import ReservePanel from "@/components/hall/ReservePanel";
 import PanoramaView from "@/components/hall/PanoramaView";
 import HallDecorLayer from "@/components/hall/HallDecorLayer";
 import HallGallery from "@/components/hall/HallGallery";
-import NicheWallHero from "@/components/hall/NicheWallHero";
+import Hall3DStage from "@/components/hall/Hall3DStage";
+import WreathOffer from "@/components/hall/WreathOffer";
+import { listActiveWreaths, getWreathProduct } from "@/lib/wreaths";
 import DecorSpacePreview, { SPACE_LABEL } from "@/components/decor/DecorSpacePreview";
 import SceneLayoutEditor from "@/components/decor/SceneLayoutEditor";
 import PortraitNiche from "@/components/decor/PortraitNiche";
@@ -251,12 +253,33 @@ export default async function HallDetailPage({
   const frameItem = decorItem("frame", decor);
   const fontItem = decorItem("font", decor);
   const ornItem = decorItem("ornament", decor);
+  const floorItem = decorItem("floor", decor);
   const portraitUrl = archive.portrait;
   /*
     遗像要安奉进壁龛格，所以必须在 isNicheWall 之前就取出来（否则踩 TDZ）。
     但**只 select 展示名相关的字段** —— 公网馆页不读馆主实名（脱敏口径见 AGENTS.md）。
   */
   const isNicheWall = !!portraitUrl || ornItem?.style.ornament?.kind === "niche-wall";
+
+  /*
+    装修差异化判定：任一槽位偏离默认值（wall-plain / floor-none / orn-none /
+    frame-line / font-modern）或购买了空间模板 = 装修过。
+    Hall3DStage 据此切换两套完全不同的材质/灯光/陈设，让"装没装修"一眼可辨。
+  */
+  const ornIds = (decor.slots.ornament ?? []).filter((o) => o && o !== "orn-none");
+  const isDecorated =
+    !!decor.templateId ||
+    (wallItem && wallItem.id !== "wall-plain") ||
+    (floorItem && floorItem.id !== "floor-none") ||
+    (frameItem && frameItem.id !== "frame-line") ||
+    (fontItem && fontItem.id !== "font-modern") ||
+    ornIds.length > 0;
+
+  // 有效花圈（未过期，最多 2）+ 花圈商品（价格在商品表维护，前端绝不传金额）
+  const [wreaths, wreathProduct] = await Promise.all([
+    listActiveWreaths(hall.id),
+    getWreathProduct(),
+  ]);
 
   /*
     壁龛纪念墙模式判定。
@@ -334,7 +357,15 @@ export default async function HallDetailPage({
   const pageSkin = withDark(skin, dark);
   const cardCls =
     "rounded-xl border p-6 " +
-    (dark ? "border-white/15 bg-white/8 backdrop-blur-sm" : "border-gray-100 bg-white");
+    /*
+      浅色档底色：品牌暖米（brand-100/70 = #f2ede4 的 70% 透明度），
+      与 WorshipPanel / 商城 / 首页的墨金暖色语言一致 ——
+      馆页整体压在暖褐墙纸上，纯白卡（旧 bg-brand-100/70）在深暖底上像"补丁"。
+      半透明 + 暖米既保留纸面感，又让墙纸纹理隐约透出来。
+    */
+    (dark
+      ? "border-white/15 bg-white/8 backdrop-blur-sm"
+      : "border-brand-200/80 bg-brand-100/70");
   const subText = dark ? "text-white/60" : "text-brand-400";
 
   // ===== 板块数组化：馆主可在控制台拖拽重排（见 lib/section-order.ts）=====
@@ -343,24 +374,35 @@ export default async function HallDetailPage({
   const heroNode = (
     <>
       {/*
-        壁龛纪念墙模式：整幅壁龛场景 + 遗像安奉于墙面正中偏上的壁龛格。
-        此处**不再渲染**封面图与原「遗像卡片」里的那张竖图 —— 遗像已经在场景里了，
-        否则同一位逝者的照片会在首屏出现两次。
-
-        ⚠️ `!use3DScene` 这个条件是必需的（用户反馈过"两处不统一"）：
-        3D 空间里已经用 PortraitNiche 安奉了遗像，若本块再渲一次，
-        同一位逝者的照片会在同一页出现两次。两者**必须互斥**。
+        默认厅堂 3D 舞台：取代原平面壁龛墙（NicheWallHero）。
+        CSS 3D 透视 + 鼠标视差，装修/未装修两套材质；遗像安奉于正墙壁龛，
+        敬献的花圈陈列在遗像正下方（3 天后自动消失）。
       */}
       {isNicheWall && !use3DScene && (
-        <div className="mb-6">
-          <NicheWallHero
+        <div className="mb-3">
+          <Hall3DStage
             portrait={portraitUrl}
             deceasedName={hall.deceasedName}
             isOwner={isOwner}
             manageHref={`/console/halls/${hall.id}`}
             frameStyle={decorStyle("frame", decor)}
             altarItems={altarItems}
+            decorated={!!isDecorated}
+            wallId={wallItem?.id}
+            floorId={floorItem?.id}
+            ornamentIds={ornIds}
+            wreaths={wreaths.map((w) => ({ id: w.id, message: w.message }))}
           />
+          {wreathProduct && wreathProduct.status === "active" && (
+            <WreathOffer
+              hallId={hall.id}
+              productId={wreathProduct.id}
+              priceLabel={`¥${(wreathProduct.price / 100).toFixed(wreathProduct.price % 100 === 0 ? 0 : 2)}`}
+              activeCount={wreaths.length}
+              isLoggedIn={!!user}
+              earliestExpiry={wreaths.length ? wreaths[wreaths.length - 1].expiresAt.toISOString() : null}
+            />
+          )}
         </div>
       )}
 
@@ -451,13 +493,14 @@ export default async function HallDetailPage({
     },
     {
       key: "cover",
-      node:
-        !isNicheWall && hall.coverImage ? (
-          <img
-            src={hall.coverImage}
-            alt={hall.name}
-            className="mb-5 aspect-[16/9] w-full rounded-xl object-cover shadow-sm"
-          />
+      node: !isNicheWall ? (
+          <div className="relative mb-5 aspect-[16/9] w-full overflow-hidden rounded-xl shadow-sm">
+            <LivingScene
+              image={hall.coverImage || "/assets/scene-hall.jpg"}
+              alt={hall.name}
+              particles={16}
+            />
+          </div>
         ) : null,
     },
     {
@@ -470,7 +513,7 @@ export default async function HallDetailPage({
               (portraitUrl ? (
                 <div className="mx-auto shrink-0 sm:mx-0">
                   <div
-                    className="relative overflow-hidden rounded-md border-[6px] border-solid bg-gray-100 shadow-lg"
+                    className="relative overflow-hidden rounded-md border-[6px] border-solid bg-brand-100 shadow-lg"
                     style={decorStyle("frame", decor)}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -485,7 +528,7 @@ export default async function HallDetailPage({
               ) : (
                 isOwner && (
                   <div className="mx-auto shrink-0 text-center sm:mx-0">
-                    <div className="flex h-44 w-36 items-center justify-center rounded-md border border-dashed border-gray-300 bg-gray-50 text-4xl text-gray-300 sm:h-52 sm:w-44">
+                    <div className="flex h-44 w-36 items-center justify-center rounded-md border border-dashed border-brand-300 bg-brand-50 text-4xl text-brand-300 sm:h-52 sm:w-44">
                       🖼️
                     </div>
                     <a
@@ -584,7 +627,7 @@ export default async function HallDetailPage({
               {paidTributes.map((p) => (
                 <div
                   key={p.id}
-                  className="flex flex-col items-center gap-2 rounded-lg border border-gray-100 bg-white p-3 text-center"
+                  className="flex flex-col items-center gap-2 rounded-lg border border-brand-200/80 bg-brand-100/70 p-3 text-center transition hover:border-accent-300 hover:bg-accent-50/60"
                   style={skinCardStyle()}
                 >
                   <div className="text-2xl">
@@ -608,12 +651,12 @@ export default async function HallDetailPage({
               故人数字档案
             </h2>
             {archive.timeline && archive.timeline.length > 0 && (
-              <div className="relative rounded-xl border border-gray-100 bg-white p-6" style={skinCardStyle()}>
-                <div className="absolute bottom-6 left-[52px] top-8 w-px bg-gray-200" />
+              <div className="relative rounded-xl border border-brand-200/80 bg-brand-100/70 p-6" style={skinCardStyle()}>
+                <div className="absolute bottom-6 left-[52px] top-8 w-px bg-brand-200" />
                 <ul className="space-y-4">
                   {archive.timeline.map((t, i) => (
                     <li key={i} className="relative flex gap-4">
-                      <span className="z-10 mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full bg-accent-500 ring-4 ring-white" />
+                      <span className="z-10 mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full bg-accent-500 ring-4 ring-brand-100" />
                       <div className="flex-1">
                         <span className="mr-3 text-sm font-semibold text-brand-800">{t.year}</span>
                         <span className="text-sm text-gray-600">{t.event}</span>
@@ -632,14 +675,6 @@ export default async function HallDetailPage({
         ) : null,
     },
     {
-      key: "reserve",
-      node: (
-        <section className="mt-8">
-          <ReservePanel hallId={hall.id} isLoggedIn={!!user} />
-        </section>
-      ),
-    },
-    {
       key: "tributes",
       node: (
         <section className="mt-8">
@@ -648,7 +683,7 @@ export default async function HallDetailPage({
           </h2>
           <ul className="space-y-3">
             {tributes.map((t) => (
-              <li key={t.id} className="rounded-lg border border-gray-100 bg-white p-4 text-sm" style={skinCardStyle()}>
+              <li key={t.id} className="rounded-lg border border-brand-200/80 bg-brand-100/70 p-4 text-sm" style={skinCardStyle()}>
                 <div className="text-brand-700">
                   {typeIcon[t.type] ?? "🕊️ 祭拜"}
                   {/* displayName 是写入时冻结的**脱敏**快照，可安全公开渲染 */}
@@ -715,7 +750,7 @@ export default async function HallDetailPage({
               因此壁龛模式下只有馆主真的传了 coverImage 才显示全景。
             */}
             <PanoramaView
-              src={hall.coverImage || "/assets/hall-cover.jpg"}
+              src={hall.coverImage || "/assets/scene-hall.jpg"}
               title={hall.deceasedName}
             />
           </section>
@@ -747,7 +782,12 @@ export default async function HallDetailPage({
     .filter((s): s is { key: string; node: ReactNode } => s.node != null);
 
   return (
-    <HallDecorLayer decor={decor} className="min-h-screen" skin={pageSkin}>
+    <HallDecorLayer
+      decor={decor}
+      className="min-h-screen"
+      skin={pageSkin}
+      suppressFixedOrnaments={isNicheWall && !use3DScene}
+    >
       {pub && (
         <script
           type="application/ld+json"
@@ -784,7 +824,7 @@ export default async function HallDetailPage({
         )}
 
         {/* 合规底线：一键举报入口（活人被祭拜 / 虚假馆 / 其他） */}
-        <details className="mt-6 rounded-lg border border-gray-100 bg-white p-4">
+        <details className="mt-6 rounded-lg border border-brand-200/80 bg-brand-100/70 p-4">
           <summary className="cursor-pointer text-sm font-medium text-brand-700">
             发现违规内容？举报此纪念馆
           </summary>
@@ -793,7 +833,7 @@ export default async function HallDetailPage({
             <input type="hidden" name="from" value={`/halls/${id}`} />
             <div>
               <label className="mb-1 block text-xs font-medium text-brand-700">举报类型</label>
-              <select name="kind" defaultValue="living" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm">
+              <select name="kind" defaultValue="living" className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm bg-brand-50/70">
                 <option value="living">活人被祭拜</option>
                 <option value="fake">虚假纪念馆</option>
                 <option value="other">其他违规</option>
@@ -805,13 +845,13 @@ export default async function HallDetailPage({
                 name="reason"
                 rows={3}
                 maxLength={1000}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm bg-brand-50/70"
                 placeholder="请简述违规情况"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-brand-700">联系方式（选填）</label>
-              <input name="contact" maxLength={100} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm" placeholder="方便我们回访" />
+              <input name="contact" maxLength={100} className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm bg-brand-50/70" placeholder="方便我们回访" />
             </div>
             <button type="submit" className="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700">
               提交举报

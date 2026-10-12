@@ -95,7 +95,7 @@ export default async function GenealogyDetailPage({
       )}
 
       {/* 谱头 */}
-      <section className="rounded-xl border border-gray-100 bg-white p-7">
+      <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-7">
         <h1 className="text-2xl font-semibold text-brand-900">
           {g.surname}氏族谱{g.hallName ? ` · ${g.hallName}` : ""}
         </h1>
@@ -124,7 +124,7 @@ export default async function GenealogyDetailPage({
           </div>
         </dl>
         {g.migration && (
-          <p className="mt-4 border-t border-gray-100 pt-4 text-sm leading-7 text-brand-500">
+          <p className="mt-4 border-t border-brand-200 pt-4 text-sm leading-7 text-brand-500">
             <span className="font-medium text-brand-700">迁徙源流：</span>
             {g.migration}
           </p>
@@ -157,7 +157,7 @@ export default async function GenealogyDetailPage({
         {members.length ? (
           <GenealogyChart members={members} config={config} />
         ) : (
-          <div className="rounded-xl border border-dashed border-gray-200 bg-white p-12 text-center">
+          <div className="rounded-xl border border-dashed border-brand-200 bg-brand-100/70 p-12 text-center">
             <div className="text-4xl">📜</div>
             <p className="mt-3 text-sm text-brand-500">该族谱尚未创建设计族谱图</p>
             <Link
@@ -172,12 +172,12 @@ export default async function GenealogyDetailPage({
 
       {/* 世系明细 */}
       {members.length > 0 && (
-        <section className="mt-6 rounded-xl border border-gray-100 bg-white p-6">
+        <section className="mt-6 rounded-xl border border-brand-200 bg-brand-100/70 p-6">
           <h2 className="text-sm font-semibold text-brand-900">世系明细</h2>
           <div className="mt-3 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-brand-400">
+                <tr className="border-b border-brand-200 text-left text-xs text-brand-400">
                   <th className="py-2 pr-4">世代</th>
                   <th className="py-2 pr-4">姓名</th>
                   <th className="py-2 pr-4">关系</th>

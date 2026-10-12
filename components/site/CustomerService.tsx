@@ -46,8 +46,8 @@ export default function CustomerService() {
         {open ? "×" : "客服"}
       </button>
       {open && (
-        <div className="fixed bottom-20 right-6 z-50 flex h-96 w-80 flex-col rounded-xl border border-gray-200 bg-white shadow-xl">
-          <div className="border-b border-gray-100 px-4 py-2 text-sm font-medium text-brand-900">
+        <div className="fixed bottom-20 right-6 z-50 flex h-96 w-80 flex-col rounded-xl border border-brand-200 bg-brand-100/70 shadow-xl">
+          <div className="border-b border-brand-200 px-4 py-2 text-sm font-medium text-brand-900">
             宗忆堂 · 在线客服（内测）
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto p-3 text-sm">
@@ -66,7 +66,7 @@ export default function CustomerService() {
             ))}
             {loading && <div className="text-left text-xs text-brand-400">客服输入中…</div>}
           </div>
-          <div className="flex gap-2 border-t border-gray-100 p-2">
+          <div className="flex gap-2 border-t border-brand-200 p-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -74,7 +74,7 @@ export default function CustomerService() {
                 if (e.key === "Enter") send();
               }}
               placeholder="输入问题…"
-              className="flex-1 rounded border border-gray-200 px-2 py-1 text-sm"
+              className="flex-1 rounded border border-brand-200 px-2 py-1 text-sm"
             />
             <button
               onClick={send}

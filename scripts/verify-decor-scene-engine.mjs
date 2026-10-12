@@ -420,13 +420,19 @@ check(
   /engine\?:\s*"v1"\s*\|\s*"v2"/.test(fullPrevSrc) && /<DecorSpacePreview[\s\S]{0,300}engine=\{engine\}/.test(fullPrevSrc),
 );
 
+/*
+  ⚠️ 宗祠祠页**不在此列** —— 它已改用 ClanHall3DTour（四段 3D 漫游连廊），
+  不再走 DecorSpacePreview/SceneLayoutEditor 那条链（见祠页注释：
+  「取代原先分散的四段 2D 分镜与付费独立 3D 板块」）。
+  早先把祠页留在这里并断言它含 `engine="v2"`，于是恒红 —— 那是**断言过时**，
+  不是"宗祠页漏传了 engine"。祠页的渲染层由下面那条 data-clan-tour 断言单独守。
+*/
 const publicV2Pages = [
   ["纪念馆馆页", "app/(public)/halls/[id]/page.tsx"],
-  ["宗祠祠页", "app/(public)/clan/halls/[id]/page.tsx"],
   ["商城装修商品详情页", "app/(public)/mall/[slug]/page.tsx"],
 ];
 /*
-  阶段 10 起馆页/祠页经由 SceneLayoutEditor 包裹（engine="v2" 挂在它上面），
+  阶段 10 起馆页经由 SceneLayoutEditor 包裹（engine="v2" 挂在它上面），
   透传链由下一条断言锁死 —— 这里允许两种标签命中。
 */
 const editorSrc = src("components/decor/SceneLayoutEditor.tsx");
@@ -434,9 +440,15 @@ const notEnabled = publicV2Pages.filter(
   ([, p]) => !/<(DecorSpacePreview|SceneLayoutEditor)[^>]*engine="v2"/.test(src(p)),
 );
 check(
-  `阶段 6：三处公页已显式启用 v2（直接或经 SceneLayoutEditor 透传）`,
+  `阶段 6：两处公页已显式启用 v2（直接或经 SceneLayoutEditor 透传）`,
   notEnabled.length === 0,
   notEnabled.map(([label, p]) => `${label}(${p})`).join(" , "),
+);
+// 宗祠祠页的渲染层：必须是 ClanHall3DTour（3D 连廊），不是 DecorSpacePreview
+check(
+  "宗祠祠页渲染层为 ClanHall3DTour（含 data-clan-tour 标记）",
+  /<ClanHall3DTour/.test(src("app/(public)/clan/halls/[id]/page.tsx")) &&
+    /data-clan-tour/.test(src("components/clan/ClanHall3DTour.tsx")),
 );
 // 透传链必须闭合：SceneLayoutEditor 内部确实把 engine 原样传给 DecorSpacePreview
 check(

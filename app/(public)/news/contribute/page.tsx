@@ -10,7 +10,7 @@ export default async function ContributePage({
 }) {
   const { sent } = await searchParams;
   const user = await getCurrentUser();
-  const field = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm";
+  const field = "w-full rounded-md border border-brand-300 px-3 py-2 text-sm";
 
   return (
     <div className="container-page max-w-2xl py-12">
@@ -48,7 +48,7 @@ export default async function ContributePage({
           </button>
         </form>
       ) : (
-        <div className="mt-8 rounded-lg border border-gray-200 bg-white p-6 text-sm text-brand-600">
+        <div className="mt-8 rounded-lg border border-brand-200 bg-brand-100/70 p-6 text-sm text-brand-600">
           请先{" "}
           <a href="/login" className="font-medium text-brand-800 underline">
             登录

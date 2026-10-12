@@ -60,7 +60,7 @@ export default function FaqPage() {
         {faqs.map((f, i) => (
           <details
             key={i}
-            className="group rounded-xl border border-gray-100 bg-white p-5 shadow-sm [&_summary]:cursor-pointer"
+            className="group rounded-xl border border-brand-200 bg-brand-100/70 p-5 shadow-sm [&_summary]:cursor-pointer"
           >
             <summary className="flex items-center justify-between font-semibold text-brand-900">
               <span>{f.q}</span>
@@ -73,7 +73,7 @@ export default function FaqPage() {
         ))}
       </div>
 
-      <div className="mt-8 rounded-xl border border-gray-100 bg-white p-6 text-center">
+      <div className="mt-8 rounded-xl border border-brand-200 bg-brand-100/70 p-6 text-center">
         <h2 className="text-base font-semibold text-brand-900">想更深入地了解？</h2>
         <div className="mt-3 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
           <Link

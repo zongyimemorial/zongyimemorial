@@ -2,7 +2,7 @@
 -- 建馆审核流程改造（多渠道替代核验 + 三通道分层 + 合规底线）
 --
 -- 1) MemorialHall / ClanHall 各加三列：reviewChannel / supplementDeadline / supplementedAt
---    - reviewChannel：standard | alternative | appeal（宗祠恒为 standard）
+--    - reviewChannel：standard | alternative | appeal（宗祠侧同样三通道，见 lib/hall-review.ts 的 CLAN_CHANNEL_META）
 --    - supplementDeadline / supplementedAt：appeal 通道「60 天补传期」实时判定用，无 cron
 -- 2) ClanHall.isPublic 默认值由 true 改 false —— 修掉「pending 却直接公开」的合规口子，
 --    统一先审后显（建馆 pending → 后台通过 → isPublic=true）。

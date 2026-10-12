@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { PLAN_SPECS, SINGLE_PACK, CLONE_PASS, WHISPER_POINTS } from "@/lib/whisper";
+import { PLAN_SPECS, SINGLE_PACK, CLONE_PASS, WHISPER_POINTS, MEMORIAL_VIDEO } from "@/lib/whisper";
 import { fubFromFen } from "@/lib/fortune";
 import { isMockMode, currentEngineLabel } from "@/lib/ai/index";
 import { AiDisclosureBar } from "@/components/whisper/AiBadge";
@@ -20,8 +20,6 @@ export default async function WhispersPage() {
     id: string;
     personaName: string;
     personTitle: string | null;
-    mode: string;
-    avatarUrl: string | null;
     hallId: string;
     hallName: string;
     deceasedName: string;
@@ -33,7 +31,6 @@ export default async function WhispersPage() {
       where: { enabled: true, status: "active", isPublic: true },
       include: {
         hall: { select: { id: true, name: true, deceasedName: true } },
-        avatars: { where: { isSelected: true }, take: 1 },
       },
       orderBy: { updatedAt: "desc" },
       take: 12,
@@ -42,8 +39,6 @@ export default async function WhispersPage() {
       id: r.id,
       personaName: r.personaName,
       personTitle: r.personTitle,
-      mode: r.mode,
-      avatarUrl: r.avatars[0]?.imageUrl ?? null,
       hallId: r.hall.id,
       hallName: r.hall.name,
       deceasedName: r.hall.deceasedName,
@@ -63,7 +58,7 @@ export default async function WhispersPage() {
   return (
     <div className="container-page max-w-5xl py-10">
       {/* —— Hero —— */}
-      <div className="rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 via-white to-accent-50/40 p-8">
+      <div className="rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 via-brand-50 to-accent-50/40 p-8">
         <p className="text-xs font-medium tracking-wide text-accent-600">纪念馆 · 收费板块</p>
         <h1 className="mt-2 text-3xl font-semibold text-brand-900">午夜悄悄话</h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-brand-600">
@@ -71,6 +66,13 @@ export default async function WhispersPage() {
           想他/她的时候，可以用他/她熟悉的声音说说话——那些没来得及说完的，可以慢慢说。
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
+          <Link
+            href="/whispers/guide"
+            className="flex items-center gap-2 rounded-md bg-gradient-to-r from-accent-300 to-accent-200 px-5 py-2.5 text-sm font-medium text-brand-900 shadow-sm ring-1 ring-accent-400/60 transition hover:shadow-md"
+          >
+            <span aria-hidden="true">📖</span>
+            使用指引 · 3 分钟学会安全地说说话
+          </Link>
           {user?.id ? (
             <Link
               href="/console"
@@ -88,7 +90,7 @@ export default async function WhispersPage() {
           )}
           <Link
             href="/halls"
-            className="rounded-md border border-gray-300 bg-white px-5 py-2.5 text-sm text-brand-700 hover:bg-gray-50"
+            className="rounded-md border border-brand-300 bg-brand-100/70 px-5 py-2.5 text-sm text-brand-700 hover:bg-gray-50"
           >
             先建一座纪念馆
           </Link>
@@ -108,7 +110,7 @@ export default async function WhispersPage() {
         <section className="mt-8">
           <h2 className="text-sm font-semibold text-brand-900">我设立的装置</h2>
           {owned.length === 0 ? (
-            <p className="mt-3 rounded-xl border border-dashed border-gray-200 bg-white p-6 text-center text-sm text-brand-400">
+            <p className="mt-3 rounded-xl border border-dashed border-brand-200 bg-brand-100/70 p-6 text-center text-sm text-brand-400">
               还没有追思装置。先建一座纪念馆，再在纪念馆下设立「午夜悄悄话」。
             </p>
           ) : (
@@ -117,7 +119,7 @@ export default async function WhispersPage() {
                 <Link
                   key={p.id}
                   href={`/console/whispers/${p.id}`}
-                  className="rounded-xl border border-gray-100 bg-white p-4 transition hover:border-accent-300"
+                  className="rounded-xl border border-brand-200 bg-brand-100/70 p-4 transition hover:border-accent-300"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-sm font-medium text-brand-900">{p.personaName}</p>
@@ -147,43 +149,46 @@ export default async function WhispersPage() {
       {/* —— 可对话的装置 —— */}
       {available.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-sm font-semibold text-brand-900">可以去看望的装置</h2>
+          <h2 className="text-sm font-semibold text-brand-900">悄悄话，从这里开始</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             {available.map((p) => (
               <Link
                 key={p.id}
                 href={`/whispers/${p.hallId}`}
-                className="group overflow-hidden rounded-xl border border-gray-100 bg-white transition hover:border-accent-300"
+                className="group overflow-hidden rounded-xl border border-brand-200 bg-brand-100/70 shadow-sm transition hover:border-accent-300 hover:shadow-md"
               >
-                <div className="aspect-[4/3] bg-brand-50">
-                  {p.avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={p.avatarUrl}
-                      alt={p.personaName}
-                      className="h-full w-full object-cover transition group-hover:scale-105"
+                {/* 夜空封面 */}
+                <div className="relative flex aspect-[4/3] flex-col items-center justify-center gap-2.5 overflow-hidden bg-gradient-to-b from-brand-800 via-brand-700 to-brand-600 text-accent-200">
+                  {/* 星点 */}
+                  <span className="absolute left-5 top-5 h-1 w-1 rounded-full bg-accent-200/70" aria-hidden />
+                  <span className="absolute right-8 top-8 h-1.5 w-1.5 rounded-full bg-accent-100/60" aria-hidden />
+                  <span className="absolute bottom-8 left-9 h-1 w-1 rounded-full bg-accent-200/50" aria-hidden />
+                  <span className="absolute right-6 bottom-14 h-0.5 w-0.5 rounded-full bg-accent-100/70" aria-hidden />
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="h-10 w-10 text-accent-300 drop-shadow-[0_0_10px_rgba(232,197,109,0.45)] transition group-hover:scale-110 group-hover:text-accent-200"
+                    aria-hidden
+                  >
+                    <path
+                      d="M12 3c-1.2 3.4-3.6 5.8-7 7 3.4 1.2 5.8 3.6 7 7 1.2-3.4 3.6-5.8 7-7-3.4-1.2-5.8-3.6-7-7Z"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                      strokeLinejoin="round"
                     />
-                  ) : (
-                    <div className="flex h-full flex-col items-center justify-center gap-1 text-brand-300">
-                      <svg viewBox="0 0 24 24" fill="none" className="h-7 w-7" aria-hidden>
-                        <path
-                          d="M12 3c-1.2 3.4-3.6 5.8-7 7 3.4 1.2 5.8 3.6 7 7 1.2-3.4 3.6-5.8 7-7-3.4-1.2-5.8-3.6-7-7Z"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      <span className="text-[11px]">还没有选定形象</span>
-                    </div>
-                  )}
+                  </svg>
+                  <span className="px-3 text-center text-[11px] tracking-wide text-accent-100/90">
+                    纯语音 · 用他/她的声音说说话
+                  </span>
                 </div>
-                <div className="p-3">
+                {/* 暖色底栏 */}
+                <div className="border-t border-accent-100 bg-accent-50 p-3">
                   <p className="text-sm font-medium text-brand-900">{p.personaName}</p>
                   <p className="mt-0.5 text-xs text-brand-400">
                     {p.hallName} · {p.deceasedName}
                   </p>
-                  <p className="mt-1.5 text-[11px] text-accent-600">
-                    {p.mode === "avatar" ? "形象 + 声音" : "纯语音"} · 去说话 →
+                  <p className="mt-1.5 inline-flex items-center rounded-full bg-accent-100 px-2.5 py-1 text-[11px] font-medium text-accent-700 transition group-hover:bg-accent-200">
+                    纯语音对话 · 去说话 →
                   </p>
                 </div>
               </Link>
@@ -202,7 +207,7 @@ export default async function WhispersPage() {
             { n: "3", t: "生成人格", d: "平台据资料库构建人格与说话方式，可选克隆他/她的声音。" },
             { n: "4", t: "开始说话", d: "想他/她的时候进来坐坐，用文字或语音聊几句。" },
           ].map((s) => (
-            <div key={s.n} className="rounded-xl border border-gray-100 bg-white p-4">
+            <div key={s.n} className="rounded-xl border border-brand-200 bg-brand-100/70 p-4">
               <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-brand-800 text-xs text-white">
                 {s.n}
               </span>
@@ -217,10 +222,10 @@ export default async function WhispersPage() {
       <section className="mt-10">
         <h2 className="text-sm font-semibold text-brand-900">收费标准</h2>
         <p className="mt-1 text-xs text-brand-400">
-          按「语音分钟数」计费——这是唯一变动成本。文字对话几乎不产生成本，故免费档不做限制性收费。
+          按「语音分钟数」计费，文字对话不受限；免费档可长期使用文字对话。
         </p>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {tiers.map((t) => {
             const film = t.plan === "premium";
             return (
@@ -228,7 +233,7 @@ export default async function WhispersPage() {
                 key={t.plan}
                 className={
                   "rounded-xl border p-5 " +
-                  (film ? "border-accent-300 bg-accent-50/30" : "border-gray-100 bg-white")
+                  (film ? "border-accent-300 bg-accent-50/30" : "border-brand-200 bg-brand-100/70")
                 }
               >
                 <div className="flex items-baseline justify-between">
@@ -253,13 +258,9 @@ export default async function WhispersPage() {
                   </li>
                   <li>· 对话轮次：{t.monthlyRounds >= 99999 ? "不限" : `${t.monthlyRounds} 轮`}</li>
                   <li>· 声音克隆：{t.cloneLimit > 0 ? `${t.cloneLimit} 个` : "不含（可积分兑换）"}</li>
-                  <li>· 数字形象：{t.avatarLimit === -1 ? "不限" : `${t.avatarLimit} 个`}</li>
                   <li>· 资料条目：{t.memoryLimit === -1 ? "不限" : `${t.memoryLimit} 条`}</li>
                   <li>· 纪念短片：{t.videoQuota > 0 ? `${t.videoQuota} 段 / 月` : "不含"}</li>
                 </ul>
-                <p className="mt-3 border-t border-gray-100 pt-3 text-[11px] leading-relaxed text-brand-400">
-                  {t.note}
-                </p>
                 {t.priceFen > 0 && (
                   <Link
                     href={`/mall/${t.slug}`}
@@ -271,11 +272,44 @@ export default async function WhispersPage() {
               </div>
             );
           })}
+
+          {/* —— 声音克隆资格 · 独立入口卡（用户要求放回此排） —— */}
+          <div className="rounded-xl border border-accent-300 bg-accent-50/30 p-5">
+            <div className="flex items-baseline justify-between">
+              <p className="text-sm font-semibold text-brand-900">声音克隆资格</p>
+              <span className="rounded bg-accent-600 px-1.5 py-0.5 text-[10px] text-white">
+                一次性
+              </span>
+            </div>
+            <p className="mt-2">
+              <span className="text-2xl font-semibold text-brand-900">
+                {fubFromFen(CLONE_PASS.priceFen)} 福币
+              </span>
+              <span className="ml-1 text-xs text-brand-400">/ 永久</span>
+            </p>
+            <ul className="mt-3 space-y-1.5 text-xs text-brand-600">
+              <li>· 解锁克隆入口与声线复刻</li>
+              <li>· 真实声线训练由订阅档承载</li>
+              <li>· 或用 {WHISPER_POINTS.CLONE_UNLOCK} 积分兑换</li>
+            </ul>
+            <Link
+              href={`/mall/${CLONE_PASS.slug}`}
+              className="mt-3 block rounded-md bg-accent-600 px-4 py-2 text-center text-xs text-white hover:bg-accent-500"
+            >
+              购买资格
+            </Link>
+            <Link
+              href="/points"
+              className="mt-2 block rounded-md border border-brand-300 px-4 py-2 text-center text-xs text-brand-700 hover:bg-gray-50"
+            >
+              {WHISPER_POINTS.CLONE_UNLOCK} 积分兑换
+            </Link>
+          </div>
         </div>
 
         {/* 按次与加购 */}
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-xl border border-gray-100 bg-white p-5">
+          <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
             <p className="text-sm font-semibold text-brand-900">按次购买</p>
             <p className="mt-2 text-lg font-semibold text-brand-900">
               {fubFromFen(SINGLE_PACK.priceFen)} 福币
@@ -284,71 +318,93 @@ export default async function WhispersPage() {
               </span>
             </p>
             <p className="mt-2 text-xs leading-relaxed text-brand-500">
-              不限时不订阅时的选择。买来的分钟数不随月度周期清零，用完为止。（{SINGLE_PACK.note}）
+              不限时不订阅时的选择。买来的分钟数不随月度周期清零，用完为止。
             </p>
             <Link
               href={`/mall/${SINGLE_PACK.slug}`}
-              className="mt-3 inline-block rounded-md border border-gray-300 px-4 py-2 text-xs text-brand-700 hover:bg-gray-50"
+              className="mt-3 inline-block rounded-md border border-brand-300 px-4 py-2 text-xs text-brand-700 hover:bg-gray-50"
             >
               购买时长
             </Link>
           </div>
 
-          <div className="rounded-xl border border-gray-100 bg-white p-5">
+          <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
             <p className="text-sm font-semibold text-brand-900">积分兑换</p>
             <ul className="mt-2 space-y-1.5 text-xs text-brand-600">
-              <li>· 声音克隆资格：{WHISPER_POINTS.CLONE_UNLOCK} 积分</li>
+              <li>· 声音克隆资格申请：{WHISPER_POINTS.CLONE_UNLOCK} 积分</li>
               <li>· 10 分钟对话时长：{WHISPER_POINTS.MINUTES_10} 积分</li>
-              <li>· 单个收费形象：{WHISPER_POINTS.AVATAR_UNLOCK} 积分</li>
             </ul>
             <p className="mt-2 text-xs leading-relaxed text-brand-500">
-              积分可通过祭拜、邀请好友、内容贡献等方式免费获取。声音克隆单次加购价
-              {fubFromFen(CLONE_PASS.priceFen)} 福币。
+              积分可通过祭拜、邀请好友、内容贡献等方式免费获取。克隆资格为一次性工本费（¥10 /
+              {fubFromFen(CLONE_PASS.priceFen)} 福币），仅解锁克隆入口；真实声线复刻由订阅档承载。
             </p>
             <Link
               href="/points"
-              className="mt-3 inline-block rounded-md border border-gray-300 px-4 py-2 text-xs text-brand-700 hover:bg-gray-50"
+              className="mt-3 inline-block rounded-md border border-brand-300 px-4 py-2 text-xs text-brand-700 hover:bg-gray-50"
             >
               查看积分
             </Link>
           </div>
         </div>
+
+        {/* 纪念短片 · 单条加购（高毛利加购项，与订阅解耦） */}
+        <div className="mt-4 rounded-xl border border-accent-200 bg-accent-50/40 p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-semibold text-brand-900">纪念短片 · 单条加购</p>
+            <p className="text-lg font-semibold text-brand-900">
+              {fubFromFen(MEMORIAL_VIDEO.priceFen)} 福币
+              <span className="ml-1 text-xs font-normal text-brand-400">/ 条</span>
+            </p>
+          </div>
+          <p className="mt-2 text-xs leading-relaxed text-brand-500">
+            用他/她的声线与人格，异步生成一支追思短片。按需下单、人工精修交付，
+            <b className="text-brand-700">不与订阅绑定</b>——长夜版已不含视频，需要时可单独加购。
+          </p>
+          <Link
+            href={`/mall/${MEMORIAL_VIDEO.slug}`}
+            className="mt-3 inline-block rounded-md bg-accent-600 px-4 py-2 text-xs text-white hover:bg-accent-500"
+          >
+            下单定制纪念短片
+          </Link>
+        </div>
       </section>
 
-      {/* —— 关于「数字人」的技术与成本说明 —— */}
-      <section className="mt-10 rounded-xl border border-gray-100 bg-white p-6">
+      {/* —— 关于「为什么只有声音」的技术与成本说明 —— */}
+      <section className="mt-10 rounded-xl border border-brand-200 bg-brand-100/70 p-6">
         <h2 className="text-sm font-semibold text-brand-900">
-          为什么是「声音 + 静态形象」，而不是会说话的视频数字人
+          为什么「午夜悄悄话」只有声音，没有会说话的形象
         </h2>
         <p className="mt-2 text-xs leading-relaxed text-brand-600">
-          这是我们在核算真实成本后做的取舍，也想把账算给你看：
+          这是我们在核算真实成本、并权衡伦理风险后做的取舍，也想把账算给你看：
         </p>
         <div className="mt-4 grid gap-4 text-xs leading-relaxed text-brand-600 sm:grid-cols-2">
           <div className="rounded-lg bg-brand-50/50 p-4">
-            <p className="font-medium text-brand-800">实时口型驱动的数字人视频</p>
+            <p className="font-medium text-brand-800">实时口型驱动的数字人形象</p>
             <ul className="mt-1.5 list-disc space-y-1 pl-4">
               <li>成本是纯语音的 <b>15–120 倍</b>（主流服务约 ¥795–6,030 / 月 / 路）</li>
               <li>口型合成 + 视频编码的延迟，<b>当前技术下无法支撑自然对话节奏</b></li>
               <li>形象越逼真，「把人当成真的」带来的心理风险越高</li>
+              <li>在逝者场景下，深度合成形象属于<b>高风险用途</b>，多数平台不提供</li>
             </ul>
           </div>
           <div className="rounded-lg bg-accent-50/50 p-4">
             <p className="font-medium text-brand-800">本平台采用的方案</p>
             <ul className="mt-1.5 list-disc space-y-1 pl-4">
-              <li><b>合成语音</b>：用他/她生前的录音克隆音色，这是「像」的核心</li>
-              <li><b>静态数字形象</b>：对话时显示照片级的表达性肖像，保留见面感</li>
-              <li><b>纪念短片</b>（长夜版）：异步渲染的视频，按需生成，不做实时对话</li>
+              <li><b>纯语音</b>：用他/她生前的录音克隆音色，这是「像」的核心</li>
+              <li><b>文字 + 语音</b>：想念时进来坐坐，说几句话，没有屏幕上的打扰</li>
+              <li><b>纪念短片</b>（按需单买）：用他/她的声线与人格异步生成，下单后人工精修交付，不与订阅绑定</li>
             </ul>
           </div>
         </div>
-        <p className="mt-4 border-t border-gray-100 pt-4 text-xs leading-relaxed text-brand-500">
-          我们不做实时口型驱动——这是当前技术条件下唯一兼顾成本与体验的方案，
-          也是我们认为对追思这件事更负责的做法。
+        <p className="mt-4 border-t border-brand-200 pt-4 text-xs leading-relaxed text-brand-500">
+          我们不做数字人形象——这是当前技术条件下唯一兼顾成本与体验的方案，
+          也是我们认为对追思这件事更负责的做法：声音已经足够让人想起一个人，
+          而一张会动、会说话的脸，更容易让你误以为 TA 回来了。
         </p>
       </section>
 
       {/* —— 边界与承诺 —— */}
-      <section className="mt-10 rounded-xl border border-gray-100 bg-white p-6">
+      <section className="mt-10 rounded-xl border border-brand-200 bg-brand-100/70 p-6">
         <h2 className="text-sm font-semibold text-brand-900">我们的边界</h2>
         <div className="mt-3 grid gap-4 text-xs leading-relaxed text-brand-600 sm:grid-cols-2">
           <div>
@@ -365,11 +421,11 @@ export default async function WhispersPage() {
               <li>不会自称是真人，也不会说「我回来了」之类的话</li>
               <li>不会诱导你长时间停留、不鼓励你只依赖它</li>
               <li>不会编造你没上传过的记忆</li>
-              <li>不会拿逝者形象做任何商业用途</li>
+              <li>不会生成逝者的形象，也不会拿逝者形象做任何商业用途</li>
             </ul>
           </div>
         </div>
-        <p className="mt-4 border-t border-gray-100 pt-4 text-xs leading-relaxed text-brand-500">
+        <p className="mt-4 border-t border-brand-200 pt-4 text-xs leading-relaxed text-brand-500">
           若你正经历强烈痛苦或有伤害自己的念头，请拨打
           <b className="mx-1 text-red-600">全国心理援助热线 12356</b>
           或联系身边信任的人。平台也会在对话中主动转介。

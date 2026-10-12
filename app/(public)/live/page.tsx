@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
 import type { LiveStatus } from "@prisma/client";
+import Reveal from "@/components/site/Reveal";
 
 export const metadata = { title: "云直播 · 重大事件直播" };
 
@@ -68,6 +69,13 @@ export default async function LivePage({
             当前有 {liveCount} 场直播正在进行
           </p>
         )}
+        <Link
+          href="/live/guide"
+          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-accent-600 hover:text-accent-700 hover:underline"
+        >
+          <span aria-hidden>📖</span>
+          第一次看直播？先看《云直播操作指引》，怎么看、怎么回放一次说清 →
+        </Link>
       </header>
 
       {/* 状态筛选 */}
@@ -81,7 +89,7 @@ export default async function LivePage({
               className={
                 active
                   ? "rounded-full bg-brand-800 px-4 py-1.5 text-sm text-white"
-                  : "rounded-full border border-gray-200 bg-white px-4 py-1.5 text-sm text-brand-600 hover:border-brand-300"
+                  : "rounded-full border border-brand-200 bg-brand-100/70 px-4 py-1.5 text-sm text-brand-600 hover:border-brand-300"
               }
             >
               {t.label}
@@ -97,7 +105,7 @@ export default async function LivePage({
           className={
             !cat
               ? "rounded-md bg-accent-500 px-3 py-1 text-xs text-white"
-              : "rounded-md border border-gray-200 bg-white px-3 py-1 text-xs text-brand-600 hover:border-accent-300"
+              : "rounded-md border border-brand-200 bg-brand-100/70 px-3 py-1 text-xs text-brand-600 hover:border-accent-300"
           }
         >
           全部类型
@@ -109,7 +117,7 @@ export default async function LivePage({
             className={
               cat === c
                 ? "rounded-md bg-accent-500 px-3 py-1 text-xs text-white"
-                : "rounded-md border border-gray-200 bg-white px-3 py-1 text-xs text-brand-600 hover:border-accent-300"
+                : "rounded-md border border-brand-200 bg-brand-100/70 px-3 py-1 text-xs text-brand-600 hover:border-accent-300"
             }
           >
             {c}
@@ -118,12 +126,12 @@ export default async function LivePage({
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {lives.map((l) => (
-          <Link
-            key={l.id}
-            href={`/live/${l.id}`}
-            className="group overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
-          >
+        {lives.map((l, i) => (
+          <Reveal key={l.id} delay={i * 80}>
+            <Link
+              href={`/live/${l.id}`}
+              className="shine block group overflow-hidden rounded-lg border border-brand-200 bg-brand-100/70 shadow-sm transition hover:shadow-md"
+            >
             <div className="relative aspect-video w-full overflow-hidden bg-brand-900">
               {l.coverImage ? (
                 <Image
@@ -144,7 +152,7 @@ export default async function LivePage({
                 }
               >
                 {l.status === "live" && (
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-100/70" />
                 )}
                 {statusLabel[l.status]}
               </span>
@@ -168,9 +176,10 @@ export default async function LivePage({
               </div>
             </div>
           </Link>
+          </Reveal>
         ))}
         {lives.length === 0 && (
-          <div className="col-span-full rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-brand-500">
+          <div className="col-span-full rounded-lg border border-dashed border-brand-300 bg-brand-100/70 p-10 text-center text-sm text-brand-500">
             暂无相关直播
           </div>
         )}

@@ -14,9 +14,12 @@
  *    稳定，单卡自建只是把厂商风险转嫁给自己。自建 CosyVoice 3 属「阶段二」，
  *    待付费用户起量、TTS 成本真正压毛利时再上，届时以「自建为主 + 云端降级」演进。
  *
- *    因此本文件的价格按**云端 TTS 成本**定价：¥39 档在云端成本下为负毛利，
- *    故 basic 档定价上调至 ¥59（云端成本 ¥51 → 毛利 ≈14%），避免卖一单亏一单。
- *    若日后切换自建 TTS，可回调至 ¥39（毛利 ≈64%）。详见各档 note 字段。
+ *    因此本文件的价格按**云端 TTS 成本**定价，并保证满耗毛利 ≥30%：
+ *    - 思念版：满耗成本 ¥50.8 → 定价 ¥79（毛利 ≈36%）
+ *    - 长夜版：满耗成本 ≈¥135.2（800 分钟全云端）→ 定价 ¥199（毛利 ≈32%）
+ *    - 纪念短片（单条）：成本 ≈¥15 → 定价 ¥49（毛利 ≈69%，高毛利加购项）
+ *    若日后切换自建 TTS，思念版可回调至 ¥39（毛利 ≈64%）。详见各档 note 字段。
+ *    ⚠️ note 属内部经营数据，只允许在管理后台展示，禁止渲染到前台页面。
  */
 
 import { prisma } from "@/lib/db";
@@ -38,13 +41,11 @@ export interface PlanSpec {
   monthlyRounds: number;
   /** 可创建的声音克隆数 */
   cloneLimit: number;
-  /** 可用形象数（-1 表示不限） */
-  avatarLimit: number;
   /** 生平资料条目上限（-1 不限） */
   memoryLimit: number;
   /** 每月可生成纪念视频数 */
   videoQuota: number;
-  /** 成本与毛利备注 */
+  /** 成本与毛利备注（内部经营数据，仅管理后台展示） */
   note: string;
 }
 
@@ -57,36 +58,33 @@ export const PLAN_SPECS: Record<WhisperPlan, PlanSpec> = {
     monthlyMins: 0, // 免费档仅文字
     monthlyRounds: 30,
     cloneLimit: 0,
-    avatarLimit: 2,
     memoryLimit: 20,
     videoQuota: 0,
-    note: "引流档，成本 ≈¥2/月",
+    note: "引流档，文字对话成本 ≈¥2/月",
   },
   basic: {
     slug: "whisper-basic",
     plan: "basic",
     name: "思念版",
-    priceFen: 5900,
+    priceFen: 7900,
     monthlyMins: 300,
     monthlyRounds: 3000,
     cloneLimit: 1,
-    avatarLimit: 2,
     memoryLimit: 100,
     videoQuota: 0,
-    note: "云 TTS 成本 ¥51 → ¥59 毛利 ≈14%（不亏）；若切自建 TTS（成本 ¥21）可回调 ¥39，毛利 ≈64%",
+    note: "满耗成本 ¥50.8 → ¥79 毛利 ≈36%；若切自建 TTS（成本 ¥21.3）毛利 ≈73%，届时可回调 ¥39 档",
   },
   premium: {
     slug: "whisper-premium",
     plan: "premium",
     name: "长夜版",
-    priceFen: 9900,
-    monthlyMins: 900,
+    priceFen: 19900,
+    monthlyMins: 800,
     monthlyRounds: 99999,
     cloneLimit: 3,
-    avatarLimit: -1,
     memoryLimit: -1,
-    videoQuota: 2,
-    note: "云 TTS 成本 ≈¥152（900 分钟）→ 按典型消耗 60% 计 ≈¥91 → 毛利 ≈8~35%；含 2 条视频",
+    videoQuota: 0,
+    note: "满耗成本 ≈¥135.2（800 分钟全云端）→ ¥199 毛利 ≈32%（守 ≥30% 底线；视频已拆出单卖 ¥49/条）",
   },
 };
 
@@ -98,23 +96,41 @@ export const SINGLE_PACK = {
   note: "成本 ≈¥1.7 → 毛利 72%",
 };
 
-/** 声音克隆资格（一次性） */
+/**
+ * 声音克隆资格申请（一次性工本费 / 转化漏斗入口）。
+ * ¥10 不是「买断克隆」，而是「克隆资格申请」：支付后置 WhisperProfile.cloneApplied=true，
+ * 解锁克隆入口（上传样本→复刻声线）。真实克隆训练成本由订阅档 cloneLimit 承载，
+ * 内测期走 Mock 引擎零成本，故此处不计入毛利率（避免 -1280% 误读）。
+ */
 export const CLONE_PASS = {
   slug: "whisper-clone",
   priceFen: 1000,
-  note: "含音色训练成本 ¥138/音色 + 加价",
+  note: "克隆资格申请工本费（漏斗入口）；真实克隆由订阅档 cloneLimit 承载，内测 Mock 零成本",
+};
+
+/**
+ * 纪念短片（单条加购）。
+ * 用逝者声线 + 人格异步生成一支追思短片，走 memorial_service 人工受理链路，
+ * 付款后由既有 isServiceProduct + createServiceFulfillment 自动建 pending 受理单，
+ * 无需新写履约代码。
+ * 成本 ≈¥15/条（渲染 + 克隆摊销 + 人工精修）→ 毛利 ≈69%，明显高于订阅档。
+ */
+export const MEMORIAL_VIDEO = {
+  slug: "whisper-video",
+  priceFen: 4900,
+  costYuan: 15,
+  /** 毛利备注（内部经营数据，仅管理后台展示） */
+  note: "人工异步生成，成本 ≈¥15/条 → 毛利 ≈69%",
 };
 
 // ---------------------------------------------------------------- 积分兑换
 
 /** 积分兑换表（100 积分 = 1 元，与既有体系一致） */
 export const WHISPER_POINTS = {
-  /** 声音克隆资格 */
+  /** 声音克隆资格申请（等价 ¥10 工本费，支付后置 cloneApplied） */
   CLONE_UNLOCK: 1000,
   /** 10 分钟对话时长 */
   MINUTES_10: 300,
-  /** 单个收费形象 */
-  AVATAR_UNLOCK: 800,
 } as const;
 
 // ---------------------------------------------------------------- 合规上限

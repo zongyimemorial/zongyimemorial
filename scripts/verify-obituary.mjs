@@ -334,8 +334,26 @@ async function main() {
   const qBefore3 = quotaRow().split("/").map(Number);
   const ptsBefore3 = pointsOf();
   let redeemErrText = "";
-  // 清掉该用户当日的积分兑换记录，避免多次运行累计触发日上限（50000）误判。
-  psql(`DELETE FROM "PointRedemption" WHERE "userId"='${uid}' AND "createdAt" >= current_date`);
+  // 清掉该用户当日的积分兑换**流水**，避免同一天多次运行累计触发日上限（50000）误判。
+  //
+  // ⚠️ 必须删 "PointLog"，不是 "PointRedemption"。
+  //    日上限的唯一判据是 lib/points.ts 的 dailyRedeemedPoints()：
+  //        sum("PointLog".amount) where kind='redeem' and createdAt >= 当日 0 点
+  //    它**从不读** "PointRedemption"。历史版本删的是 "PointRedemption"，
+  //    等于没清 —— 同一天反复运行会把 5 万日名额耗光，兑换被拦，
+  //    §3「配额 +1 / 积分 -2900」双双变红（假失败，产品代码无责）。
+  //
+  // ⚠️ 时间窗口必须与产品同口径：用 Node 本地 0 点（startOfToday() 的语义），
+  //    不能图省事用 psql 的 current_date —— 那是 **DB 时区**（本库 UTC），
+  //    与 Node（Asia/Shanghai）差 8 小时，夜跑会错清一整天的流水。
+  //    列类型是 timestamp without time zone，Prisma 按 UTC 落库，
+  //    故把本地 0 点格式化成 UTC 字面量再比较，两边才落在同一根轴上。
+  const dayStart3 = new Date();
+  dayStart3.setHours(0, 0, 0, 0);
+  const dayStart3Sql = dayStart3.toISOString().replace("T", " ").replace("Z", "");
+  psql(
+    `DELETE FROM "PointLog" WHERE "userId"='${uid}' AND kind='redeem' AND "createdAt" >= '${dayStart3Sql}'`,
+  );
   if (redeemPid) {
     await page
       .locator('h3:text-is("电子讣告发布")')

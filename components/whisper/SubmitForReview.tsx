@@ -4,7 +4,7 @@ import { useState } from "react";
 import { submitForReview, toggleEnabled } from "@/app/console/whispers/[id]/actions";
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 
 export default function SubmitForReview({
   profileId,
@@ -50,7 +50,7 @@ export default function SubmitForReview({
   }
 
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-6">
+    <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
       <h2 className="text-sm font-semibold text-brand-900">
         提交审核与开关 <span className="ml-1 font-normal text-brand-400">最后一步</span>
       </h2>

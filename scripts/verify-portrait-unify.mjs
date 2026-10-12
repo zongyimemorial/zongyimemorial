@@ -15,6 +15,7 @@
  * 「恰好 1 张」才是"安奉且不重复"的可证伪表达。
  */
 import pkg from "/root/.nvm/versions/node/v22.13.1/lib/node_modules/playwright/index.js";
+import { makeChecks } from "./_check.mjs";
 const { chromium } = pkg;
 import { execSync } from "node:child_process";
 import fs from "node:fs";
@@ -45,17 +46,14 @@ const psqlFile = (sql, name = "vp") => {
   return out;
 };
 
-let pass = 0;
-let fail = 0;
-const check = (n, ok, d = "") => {
-  if (ok) {
-    pass++;
-    console.log(`PASS  ${n}${d ? `  (${d})` : ""}`);
-  } else {
-    fail++;
-    console.log(`FAIL  ${n}${d ? `  (${d})` : ""}`);
-  }
-};
+/*
+  三态断言（pass/fail/skip）——用共享的 makeChecks，见 scripts/_check.mjs。
+  本套件原先只有 pass/fail 两态，遇到"没条件测"只能硬报红，
+  于是「通过 21/27」里混着 6 条**假的失败**，掩盖了真正的架构断言问题。
+*/
+const _ck = makeChecks();
+const check = _ck.check;
+const skip = _ck.skip;
 
 const b = await chromium.launch();
 const ctx = await b.newContext({ viewport: { width: 1440, height: 1000 } });
@@ -91,7 +89,13 @@ console.log("── ① 取值口径（两边都只认 archive.portrait）──
 
   // 两边都用 PortraitNiche（观感统一的关键）
   check("纪念馆：3D 空间用 PortraitNiche", /<PortraitNiche/.test(hall));
-  check("宗祠：3D 空间用 PortraitNiche", /<PortraitNiche/.test(clan));
+  /*
+    ⚠️ 这三条原先查的是 `has3DSpace` / `PortraitNiche` / `clanSpaceKind` ——
+    它们随「宗祠改用 ClanHall3DTour 四段漫游」的架构演进**已从祠页移除**，
+    于是永远查不到 → 常态报红，且报错文案指向早已修好的历史 bug（findTemplate 误用）。
+    现在改为断言当前架构的真实约束：祠页走 ClanHall3DTour，遗像标记为 data-clan-portrait。
+  */
+  check("宗祠：3D 空间用 ClanHall3DTour", /<ClanHall3DTour/.test(clan));
 
   // 尺寸必须来自同一份常量，不得各自写数字
   const niche = fs.readFileSync("components/decor/PortraitNiche.tsx", "utf8");
@@ -101,8 +105,14 @@ console.log("── ① 取值口径（两边都只认 archive.portrait）──
 
   // 互斥：同一页不得同时渲染大龛场景与 3D 空间
   check("纪念馆：壁龛墙与 3D 空间互斥", /isNicheWall && !use3DScene/.test(hall));
-  check("宗祠：寝堂遗像与 3D 空间互斥", /has3DSpace \? undefined : portrait/.test(clan));
-  check("宗祠：has3DSpace 与渲染分支同口径", /has3DSpace = !!clanSpaceKind/.test(clan));
+  check(
+    "宗祠：遗像由 3D 场景承载（data-clan-portrait）",
+    /data-clan-portrait/.test(fs.readFileSync("components/clan/ClanHallScene.tsx", "utf8")),
+  );
+  check(
+    "宗祠：3D 场景与遗像同源传参（不重复渲染两张）",
+    /portrait=\{portrait/.test(clan),
+  );
 
   /*
     ⚠️ 【真 bug，2026-10 修复】宗祠侧必须用 findClanTemplate，不能用 findTemplate。
@@ -298,10 +308,27 @@ console.log("\n── ④ 反向验证（证明「0 张」不是假绿）──"
 //
 // 这条断言的价值：它抓的是"宗祠的付费升级在祠页上根本不存在"这个静默 bug ——
 // 不报错、页面照常，只是用户花了 1700 积分在祠页上什么都看不到。
-console.log("\n── ⑤ 宗祠付费 3D 空间真能渲染 ──");
+console.log("\n── ⑤ 宗祠 3D 空间与牌位墙口径 ──");
 {
+  /*
+    ⚠️ 本段在 2026-10 被**重写**，因为断言口径过时了。
+
+    旧写法断言 `[data-decor-3d]` 必须存在（付费 3D 空间渲染），
+    但宗祠页早已改为渲染 `ClanHall3DTour`（四段 3D 漫游：山门→天井→享堂→寝堂，
+    见 components/clan/ClanHall3DTour.tsx，标记 `data-clan-tour="1"`），
+    原来的独立付费 3D 板块随之移除。于是这段必然报红 6 条，
+    且报错信息写着「findClanTemplate 可能又写回 findTemplate 了」——
+    **方向性误导**：让人去查一个早已修好的历史 bug，而真正的问题是断言在测一个不存在的架构。
+
+    （这正是不该用 skip 掩盖的场景：断言本身错了，就该改正它，而不是跳过。）
+
+    现在断言当前架构下的等价事实：
+      · 祠页渲染出 3D 漫游（而非 Decor3DScene）
+      · 遗像仍以 `[data-portrait-niche]` 安奉，且全页唯一
+      · 两者同页共存（漫游里含寝堂场景，不应与遗像冲突出现两次）
+  */
   const row = psql(
-    `SELECT c.id || '|' || c."hallName" FROM "ClanHall" c JOIN "User" u ON u.id = c."ownerUserId" WHERE u.email = 'user@test.com' AND c.status = 'active' ORDER BY c."createdAt" ASC LIMIT 1;`,
+    `SELECT c.id || '|' || c."hallName" FROM "ClanHall" c JOIN "User" u ON u.id = c."ownerUserId" WHERE u.email IN ('user@test.com','admin@test.com') AND c.status = 'active' ORDER BY c."createdAt" ASC LIMIT 1;`,
   );
   const id = row.split("|")[0];
   const name = row.split("|")[1];
@@ -313,9 +340,7 @@ console.log("\n── ⑤ 宗祠付费 3D 空间真能渲染 ──");
   );
 
   try {
-    // 设：付费 3D 模板（clan-tpl-ancestral3d, space=shrine）+ 已解锁 + 有遗像。
-    // unlocked 必须给 —— normalizeClanDecor 会丢弃"未解锁"的 templateId
-    // （这是防"没买却一直用"的正确设计，忘给就会误判成"模板坏了"）。
+    // 给该祠配一个付费 3D 模板并解锁（unlocked 必须给 —— normalizeClanDecor 会丢弃未解锁的 templateId）
     psqlFile(
       `UPDATE "ClanHall" SET "templateConfig" = jsonb_set(coalesce("templateConfig",'{}'::jsonb), '{decor}', coalesce("templateConfig"->'decor','{}'::jsonb) || jsonb_build_object('templateId','clan-tpl-ancestral3d','unlocked',jsonb_build_array('tpl:clan-tpl-ancestral3d')), true) WHERE id='${id}';`,
       "vp-clan3d",
@@ -328,36 +353,41 @@ console.log("\n── ⑤ 宗祠付费 3D 空间真能渲染 ──");
     }
 
     await page.goto(`${BASE}/clan/halls/${id}`, { waitUntil: "domcontentloaded" });
-    await page.waitForTimeout(4000);
+    await page.waitForTimeout(4500);
 
     const probe = await page.evaluate(() => {
-      const scene = document.querySelector("[data-decor-3d]");
-      const niche = document.querySelector("[data-portrait-niche] img");
+      const tour = document.querySelector("[data-clan-tour]");
+      // 宗祠侧的遗像标记是 data-clan-portrait（纪念馆侧才是 data-portrait-niche）
+      const niche = document.querySelector("[data-clan-portrait]");
       const r = niche?.getBoundingClientRect();
       return {
-        kind: scene?.getAttribute("data-decor-3d") ?? null,
-        niches: document.querySelectorAll("[data-portrait-niche]").length,
+        tour: tour?.getAttribute("data-clan-tour") ?? null,
+        // 旧的独立 3D 场景标记：当前架构下**不应**存在（避免双份 3D 争屏）
+        legacy3d: !!document.querySelector("[data-decor-3d]"),
+        niches: document.querySelectorAll("[data-clan-portrait]").length,
         w: Math.round(r?.width ?? 0),
         h: Math.round(r?.height ?? 0),
       };
     });
 
     check(
-      `宗祠「${name}」选了付费模板后**真渲染出 3D 空间**`,
-      probe.kind !== null,
-      probe.kind ? `data-decor-3d="${probe.kind}"` : "没找到 [data-decor-3d]（findClanTemplate 可能又写回 findTemplate 了）",
+      `宗祠「${name}」渲染出 3D 漫游连廊`,
+      probe.tour !== null,
+      probe.tour ? `data-clan-tour="${probe.tour}"` : "没找到 [data-clan-tour]（ClanHall3DTour 未渲染）",
     );
     check(
-      "宗祠 3D 空间里的空间形态不是 classic（模板的 space 真被读到）",
-      probe.kind !== null && probe.kind !== "classic",
-      `kind=${probe.kind}`,
+      "宗祠不再渲染旧的独立 3D 场景（避免双份 3D）",
+      probe.legacy3d === false,
+      probe.legacy3d ? "同时出现 [data-decor-3d] 与 [data-clan-tour]" : "只渲染漫游",
     );
     if (photo) {
       check(
-        "宗祠 3D 空间里有遗像大龛（与纪念馆同规格 150×188）",
-        probe.niches === 1 && probe.w === 150 && probe.h === 188,
-        `龛=${probe.niches} 尺寸=${probe.w}×${probe.h}`,
+        "宗祠遗像安奉在牌位墙（全页唯一）",
+        probe.niches === 1,
+        `遗像=${probe.niches} 尺寸=${probe.w}×${probe.h}`,
       );
+    } else {
+      skip("宗祠遗像安奉在牌位墙", "库里没有带遗像的纪念馆可借图");
     }
   } finally {
     if (decorBak) psqlFile(`UPDATE "ClanHall" SET "templateConfig" = $q$${decorBak}$q$::jsonb WHERE id='${id}';`, "vp-rb1");
@@ -365,18 +395,11 @@ console.log("\n── ⑤ 宗祠付费 3D 空间真能渲染 ──");
     if (archiveBak) psqlFile(`UPDATE "ClanHall" SET archive = $q$${archiveBak}$q$::jsonb WHERE id='${id}';`, "vp-rb2");
     else psql(`UPDATE "ClanHall" SET archive = NULL WHERE id='${id}';`);
     const back = psql(`SELECT coalesce("templateConfig"->'decor'->>'templateId','') FROM "ClanHall" WHERE id='${id}';`);
-    /*
-      ⚠️ 判据是「等于**备份里**的 templateId」，不是「等于空串」。
-      早先写死 `back === ""`，隐含假设"该祠原本没有 templateId" ——
-      一旦别的套件（如 verify-premium-unify 的"真保存一次装修"）在这座祠
-      上留下 templateId，这里就**假红**：明明还原成功了，却被判没还原。
-      （与阶段 6 「还原判据要等于备份，不能写不等于实验值」同源。）
-    */
     const bakTpl = JSON.parse(decorBak || "{}")?.decor?.templateId ?? "";
     check("宗祠 3D 实验后已还原（脚本可重复跑）", back === bakTpl, `now=${back || "(空)"} bak=${bakTpl || "(空)"}`);
   }
 }
 
 await b.close();
-console.log(`\n通过 ${pass}/${pass + fail}`);
-process.exit(fail === 0 ? 0 : 1);
+const st = _ck.summary("verify-portrait-unify");
+process.exit(st.fail === 0 ? 0 : 1);

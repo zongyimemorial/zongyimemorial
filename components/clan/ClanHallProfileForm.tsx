@@ -4,7 +4,7 @@ import { useState } from "react";
 import { saveClanHallProfile, submitClanHallForReview } from "@/app/console/clan-halls/[id]/actions";
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 
 export type ClanHallProfileInitial = {
   surname: string;
@@ -47,7 +47,7 @@ export default function ClanHallProfileForm({
   }
 
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-6">
+    <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
       <h2 className="text-sm font-semibold text-brand-900">宗祠基本信息</h2>
       <p className="mb-4 mt-1 text-xs text-brand-400">
         堂号、始祖与字辈是宗祠的根脉，填得越完整，宗亲越容易认领。修改后需重新送审。
@@ -123,7 +123,7 @@ export default function ClanHallProfileForm({
             type="button"
             onClick={onResubmit}
             disabled={busy}
-            className="rounded-md border border-gray-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-md border border-brand-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50 disabled:opacity-50"
           >
             保存并重新送审
           </button>

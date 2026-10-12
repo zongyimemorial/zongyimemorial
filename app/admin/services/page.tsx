@@ -6,7 +6,7 @@ import { updateServiceFulfillment } from "@/app/admin/services/actions";
 
 export default async function AdminServices() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "editor")) redirect("/console");
+  if (!user || (user.role !== "admin" && user.role !== "editor" && user.role !== "super_admin")) redirect("/console");
 
   const tickets = await prisma.serviceFulfillment.findMany({
     orderBy: { createdAt: "desc" },
@@ -62,32 +62,31 @@ export default async function AdminServices() {
                 </td>
                 <td className="p-2">{SERVICE_STATUS_LABEL[t.status] ?? t.status}</td>
                 <td className="p-2">
-                  {!handled && (
-                    <form action={updateServiceFulfillment} className="space-y-2">
-                      <input type="hidden" name="id" value={t.id} />
-                      <select
-                        name="status"
-                        defaultValue={t.status}
-                        className="block rounded border border-gray-300 p-1 text-xs"
-                      >
-                        <option value="processing">受理中</option>
-                        <option value="done">已完成</option>
-                        <option value="rejected">已驳回</option>
-                      </select>
-                      <input
-                        name="adminNote"
-                        defaultValue={t.adminNote ?? ""}
-                        placeholder="处理备注"
-                        className="block w-40 rounded border border-gray-300 p-1 text-xs"
-                      />
-                      <button
-                        type="submit"
-                        className="block rounded bg-brand-800 px-2 py-1 text-xs text-white hover:bg-brand-700"
-                      >
-                        更新
-                      </button>
-                    </form>
-                  )}
+                  <form action={updateServiceFulfillment} className="space-y-2">
+                    <input type="hidden" name="id" value={t.id} />
+                    <select
+                      name="status"
+                      defaultValue={t.status}
+                      className="block rounded border border-brand-300 p-1 text-xs"
+                    >
+                      <option value="pending">待受理</option>
+                      <option value="processing">受理中</option>
+                      <option value="done">已完成</option>
+                      <option value="rejected">已驳回</option>
+                    </select>
+                    <input
+                      name="adminNote"
+                      defaultValue={t.adminNote ?? ""}
+                      placeholder="处理备注（会展示给用户）"
+                      className="block w-40 rounded border border-brand-300 p-1 text-xs"
+                    />
+                    <button
+                      type="submit"
+                      className="block rounded bg-brand-800 px-2 py-1 text-xs text-white hover:bg-brand-700"
+                    >
+                      更新
+                    </button>
+                  </form>
                 </td>
               </tr>
             );

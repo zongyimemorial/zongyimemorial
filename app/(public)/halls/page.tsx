@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/db";
+import Reveal from "@/components/site/Reveal";
 
 export const metadata = { title: "数字纪念馆" };
 
@@ -45,7 +46,7 @@ export default async function HallsPage() {
       </header>
 
       {/* 使用流程 */}
-      <section className="rounded-2xl bg-white p-8 shadow-sm">
+      <section className="rounded-2xl bg-brand-100/70 p-8 shadow-sm">
         <h2 className="text-center text-xl font-semibold text-brand-900">
           三步建立纪念空间
         </h2>
@@ -82,12 +83,12 @@ export default async function HallsPage() {
       <section className="mt-12">
         <h2 className="mb-5 text-xl font-semibold text-brand-900">已公开的纪念空间</h2>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {halls.map((h) => (
-            <Link
-              key={h.id}
-              href={`/halls/${h.id}`}
-              className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
-            >
+          {halls.map((h, i) => (
+            <Reveal key={h.id} delay={i * 80}>
+              <Link
+                href={`/halls/${h.id}`}
+                className="shine block overflow-hidden rounded-lg border border-brand-200 bg-brand-100/70 shadow-sm transition hover:shadow-md"
+              >
               <div className="relative aspect-[16/9] w-full overflow-hidden bg-brand-100">
                 {h.coverImage ? (
                   <Image
@@ -111,9 +112,10 @@ export default async function HallsPage() {
                 )}
               </div>
             </Link>
+            </Reveal>
           ))}
           {halls.length === 0 && (
-            <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-brand-500">
+            <div className="rounded-lg border border-dashed border-brand-300 bg-brand-100/70 p-10 text-center text-sm text-brand-500">
               暂无公开纪念馆
             </div>
           )}
@@ -141,7 +143,7 @@ export default async function HallsPage() {
 
 function Step({ n, t, d }: { n: string; t: string; d: string }) {
   return (
-    <div className="rounded-lg border border-gray-100 bg-white p-5">
+    <div className="rounded-lg border border-brand-200 bg-brand-100/70 p-5">
       <div className="mb-2 text-sm font-bold text-accent-600">第 {n} 步</div>
       <div className="font-semibold text-brand-900">{t}</div>
       <p className="mt-1 text-sm text-brand-500">{d}</p>
@@ -151,7 +153,7 @@ function Step({ n, t, d }: { n: string; t: string; d: string }) {
 
 function Feature({ t, d }: { t: string; d: string }) {
   return (
-    <div className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+    <div className="rounded-lg border border-brand-200 bg-brand-100/70 p-5 shadow-sm">
       <div className="font-semibold text-brand-900">{t}</div>
       <p className="mt-2 text-sm leading-6 text-brand-500">{d}</p>
     </div>

@@ -73,7 +73,7 @@ export default function Error({
 
   return (
     <div className="container-page flex min-h-[60vh] max-w-xl flex-col items-center justify-center py-12 text-center">
-      <div className="w-full rounded-2xl border border-brand-100 bg-white p-8 shadow-sm">
+      <div className="w-full rounded-2xl border border-brand-100 bg-brand-100/70 p-8 shadow-sm">
         <h1 className="text-xl font-semibold text-brand-900">页面加载遇到问题</h1>
         <p className="mt-2 text-sm text-brand-500">
           {autoTrying
@@ -96,7 +96,7 @@ export default function Error({
           </button>
           <a
             href="/"
-            className="w-full rounded-lg border border-gray-300 py-3 font-medium text-brand-700 transition hover:bg-gray-50"
+            className="w-full rounded-lg border border-brand-300 py-3 font-medium text-brand-700 transition hover:bg-gray-50"
           >
             返回首页
           </a>

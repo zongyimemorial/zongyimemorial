@@ -103,7 +103,7 @@ export default function StoragePanel({
   }
 
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-6">
+    <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-brand-900">存储空间</h2>
@@ -165,7 +165,7 @@ export default function StoragePanel({
               key={p.slug}
               className={
                 "flex flex-col rounded-lg border p-3 " +
-                (isCurrent ? "border-accent-300 bg-accent-50/50" : "border-gray-100 bg-brand-50/30")
+                (isCurrent ? "border-accent-300 bg-accent-50/50" : "border-brand-200 bg-brand-50/30")
               }
             >
               <div className="text-sm font-medium text-brand-900">{p.gb} GB / 年</div>

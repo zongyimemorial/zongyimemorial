@@ -24,6 +24,7 @@ export default async function AccountPage() {
       email: true,
       realName: true,
       idVerified: true,
+      passwordHash: true,
       accounts: { select: { id: true, provider: true, createdAt: true } },
     },
   });
@@ -50,6 +51,7 @@ export default async function AccountPage() {
           realName={dbUser.realName}
           idVerified={dbUser.idVerified}
           providers={providers}
+          hasPassword={!!dbUser.passwordHash}
         />
       </div>
     </div>

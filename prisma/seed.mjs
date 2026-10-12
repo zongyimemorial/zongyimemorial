@@ -8,27 +8,68 @@ async function main() {
   const adminPwd = await bcrypt.hash("admin123456", 10);
   const userPwd = await bcrypt.hash("user123456", 10);
 
+  // 普通管理员默认模块权限（与 lib/permissions.ts 中 admin 角色的 ROLE_PERMISSIONS 一致）。
+  // 显式写入 permissions 字段，便于账号管理页「模块权限设置」直接呈现，且数据自检无需依赖角色默认回退。
+  const ADMIN_DEFAULT_PERMS = [
+    "monitor", "content", "products", "orders", "live", "activities", "review",
+    "ledger_halls", "ledger_clans", "points", "services", "whispers",
+    "memorial_review",
+  ];
+
   // 演示账号
   const admin = await prisma.user.upsert({
     where: { email: "admin@test.com" },
-    update: {},
+    update: { passwordHash: adminPwd, permissions: ADMIN_DEFAULT_PERMS },
     create: {
       email: "admin@test.com",
       passwordHash: adminPwd,
       realName: "测试管理员",
       role: "admin",
       status: "active",
+      permissions: ADMIN_DEFAULT_PERMS,
     },
   });
+  // ⚠️ 密码用 update 强制回写（不是 update:{}）：
+  //    验收脚本依赖 user123456 / admin123456 登录，若历史上被改过就会全部红掉。
+  //    seed 的职责是把环境拉回已知良好状态，故此处显式重置。
   const user = await prisma.user.upsert({
     where: { email: "user@test.com" },
-    update: {},
+    update: { passwordHash: userPwd },
     create: {
       email: "user@test.com",
       passwordHash: userPwd,
       realName: "测试用户",
       role: "user",
       status: "active",
+    },
+  });
+
+  // 管理员账号体系（需求：管理后台最多 3 个管理员账号 = 1 超级管理员 + 2 普通管理员）
+  // ⚠️ admin@test.com 保持 role=admin 不变（verify-whisper-compliance 断言其角色为 admin）。
+  //    超管为独立账号 superadmin@test.com，第二个普通管理员为 admin2@test.com。
+  //    三个管理账号统一用 admin123456，与现有演示账号约定一致，便于验收登录。
+  await prisma.user.upsert({
+    where: { email: "superadmin@test.com" },
+    update: { passwordHash: adminPwd },
+    create: {
+      email: "superadmin@test.com",
+      passwordHash: adminPwd,
+      realName: "超级管理员",
+      role: "super_admin",
+      status: "active",
+      // 超级管理员权限由角色固定为全部，permissions 留空（不依赖该字段）
+    },
+  });
+  await prisma.user.upsert({
+    where: { email: "admin2@test.com" },
+    update: { passwordHash: adminPwd, permissions: ADMIN_DEFAULT_PERMS },
+    create: {
+      email: "admin2@test.com",
+      passwordHash: adminPwd,
+      realName: "测试管理员二",
+      role: "admin",
+      status: "active",
+      permissions: ADMIN_DEFAULT_PERMS,
     },
   });
 
@@ -358,7 +399,109 @@ async function main() {
     },
   });
 
-  console.log("✅ Seed 完成：admin@test.com / user@test.com 演示账号，4 篇新闻，6 件商品，1 个示例纪念馆，1 场示例直播");
+  console.log("✅ Seed 完成：superadmin@test.com(超管) / admin@test.com(管理员) / admin2@test.com(管理员) / user@test.com(用户)，4 篇新闻，6 件商品，1 个示例纪念馆，1 场示例直播");
+
+  // —— 公益纪念堂演示数据（明确标注示例的虚构人物，仅用于展示 UI，非真实英烈） ——
+  await prisma.publicMemorial.upsert({
+    where: { slug: "example-shifu-yi" },
+    update: { couplet: { left: "一生义渡济乡邻", right: "半世仁心照后人", horizontal: "德耀乡邦" } },
+    create: {
+      slug: "example-shifu-yi",
+      name: "（示例）史福义",
+      category: "GOOD_DEED",
+      birthYear: 1958,
+      deathYear: 2021,
+      honorTitle: "三十年如一日义务摆渡的乡村好人",
+      summary:
+        "（本条目为演示数据，人物与事迹均为虚构）一位乡村渡工，三十年风雨无阻免费接送两岸乡亲，晚年仍将积蓄捐予村小。",
+      story:
+        "（示例数据）史福义自青年起守护村口渡口，不取分文。他常说「过河的乡亲就是自家人」。退休后仍每日巡堤、助学，被乡邻称为「义渡老人」。此处仅为演示公益纪念堂的展示形态，不代表任何真实人物。",
+      sourceUrl: null,
+      grade: "imperial",
+      couplet: { left: "一生义渡济乡邻", right: "半世仁心照后人", horizontal: "德耀乡邦" },
+      lightCount: 128,
+      viewCount: 340,
+      status: "APPROVED",
+      approvedAt: new Date(),
+    },
+  });
+
+  await prisma.publicMemorial.upsert({
+    where: { slug: "example-jianguo" },
+    update: { couplet: { left: "临危挺身昭大义", right: "舍己救人铸忠魂", horizontal: "浩气长存" } },
+    create: {
+      slug: "example-jianguo",
+      name: "（示例）李建国",
+      category: "HEROIC",
+      birthYear: 1975,
+      deathYear: 2019,
+      honorTitle: "危急关头挺身而出的见义勇为者",
+      summary:
+        "（本条目为演示数据，人物与事迹均为虚构）一次突发险情中，他为救陌生群众不幸牺牲，被追授见义勇为称号。",
+      story:
+        "（示例数据）李建国在他人生命受到威胁时毫不犹豫冲在最前，用行动诠释了平凡人的勇气。本条仅为演示公益纪念堂中「见义勇为」类别的呈现，不代表任何真实英烈或真实事件，相关认定以权威部门为准。",
+      sourceUrl: null,
+      grade: "imperial",
+      couplet: { left: "临危挺身昭大义", right: "舍己救人铸忠魂", horizontal: "浩气长存" },
+      lightCount: 256,
+      viewCount: 612,
+      status: "APPROVED",
+      approvedAt: new Date(),
+    },
+  });
+
+  // 示例留言（已审核通过，用于演示留言板形态）
+  const demoMemorial = await prisma.publicMemorial.findUnique({
+    where: { slug: "example-jianguo" },
+    select: { id: true },
+  });
+  if (demoMemorial) {
+    const cnt = await prisma.publicMemorialMessage.count({
+      where: { memorialId: demoMemorial.id, status: "APPROVED" },
+    });
+    if (cnt === 0) {
+      await prisma.publicMemorialMessage.create({
+        data: {
+          memorialId: demoMemorial.id,
+          nickname: "一位市民",
+          content: "（示例留言）向平凡英雄致敬，愿这样的勇气被记住。",
+          status: "APPROVED",
+          reviewedAt: new Date(),
+        },
+      });
+    }
+
+    // 示例花圈（平台免费提供，陈列 3 天）与免费祭品 —— 仅用于演示 UI 形态
+    const wreathCnt = await prisma.publicMemorialWreath.count({
+      where: { memorialId: demoMemorial.id },
+    });
+    if (wreathCnt === 0) {
+      await prisma.publicMemorialWreath.create({
+        data: {
+          memorialId: demoMemorial.id,
+          nickname: "社区居民",
+          message: "（示例花圈）英雄走好，邻里永远记得您。",
+          expiresAt: new Date(Date.now() + 3 * 24 * 3600 * 1000),
+        },
+      });
+    }
+    const offeringCnt = await prisma.publicMemorialOffering.count({
+      where: { memorialId: demoMemorial.id },
+    });
+    if (offeringCnt === 0) {
+      await prisma.publicMemorialOffering.createMany({
+        data: [
+          { memorialId: demoMemorial.id, type: "flower", label: "白菊" },
+          { memorialId: demoMemorial.id, type: "incense", label: "清香" },
+          { memorialId: demoMemorial.id, type: "candle", label: "长明灯" },
+        ],
+      });
+      await prisma.publicMemorial.update({
+        where: { id: demoMemorial.id },
+        data: { offeringCount: { increment: 3 } },
+      });
+    }
+  }
 }
 
 main()

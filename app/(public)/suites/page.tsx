@@ -82,7 +82,7 @@ export default async function SuitesPage({
         data-suite-target={s.target}
         data-suite-bracket={bracketOf(total)}
         data-suite-price={total}
-        className="group flex flex-col overflow-hidden rounded-xl border border-gray-100 bg-white transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md"
+        className="group flex flex-col overflow-hidden rounded-xl border border-brand-200 bg-brand-100/70 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md"
       >
         <div
           className="relative flex h-28 items-center justify-center"
@@ -136,7 +136,7 @@ export default async function SuitesPage({
             className={
               bracket === "all"
                 ? "rounded-lg border border-brand-800 bg-brand-800 px-3 py-1.5 text-sm text-white"
-                : "rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
+                : "rounded-lg border border-brand-200 bg-brand-100/70 px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
             }
           >
             全部
@@ -148,7 +148,7 @@ export default async function SuitesPage({
               className={
                 bracket === b.key
                   ? "rounded-lg border border-brand-800 bg-brand-800 px-3 py-1.5 text-sm text-white"
-                  : "rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
+                  : "rounded-lg border border-brand-200 bg-brand-100/70 px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
               }
             >
               {b.label}
@@ -167,7 +167,7 @@ export default async function SuitesPage({
             className={
               target === "all"
                 ? "rounded-lg border border-brand-800 bg-brand-800 px-3 py-1.5 text-sm text-white"
-                : "rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
+                : "rounded-lg border border-brand-200 bg-brand-100/70 px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
             }
           >
             全部（{allSuites().length}）
@@ -177,7 +177,7 @@ export default async function SuitesPage({
             className={
               target === "hall"
                 ? "rounded-lg border border-brand-800 bg-brand-800 px-3 py-1.5 text-sm text-white"
-                : "rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
+                : "rounded-lg border border-brand-200 bg-brand-100/70 px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
             }
           >
             纪念馆（{countByTarget("hall")}）
@@ -187,7 +187,7 @@ export default async function SuitesPage({
             className={
               target === "clan"
                 ? "rounded-lg border border-brand-800 bg-brand-800 px-3 py-1.5 text-sm text-white"
-                : "rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
+                : "rounded-lg border border-brand-200 bg-brand-100/70 px-3 py-1.5 text-sm text-brand-600 hover:border-brand-300"
             }
           >
             宗祠（{countByTarget("clan")}）
@@ -214,7 +214,7 @@ export default async function SuitesPage({
       })}
 
       {filtered.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-10 text-center text-brand-400">
+        <div className="rounded-xl border border-dashed border-brand-200 bg-gray-50 p-10 text-center text-brand-400">
           当前筛选条件下没有匹配的套装，换个价格区间或端试试。
         </div>
       )}

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createClanPost } from "@/app/(public)/clan/actions";
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 
 const TOPICS = ["寻根问祖", "家族事务", "联谊交流", "字辈讨论"];
 
@@ -21,7 +21,7 @@ export default function ClanComposer({
 
   if (!isLoggedIn) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-white p-6 text-center text-sm text-brand-400">
+      <div className="rounded-xl border border-dashed border-brand-200 bg-brand-100/70 p-6 text-center text-sm text-brand-400">
         <a href="/login" className="text-accent-600 hover:underline">登录</a>
         后可发布话题（实名认证后可发帖，营造可信宗亲社区）
       </div>
@@ -29,7 +29,7 @@ export default function ClanComposer({
   }
   if (!idVerified) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-white p-6 text-center text-sm text-brand-400">
+      <div className="rounded-xl border border-dashed border-brand-200 bg-brand-100/70 p-6 text-center text-sm text-brand-400">
         发帖需先完成
         <a href="/console/realname" className="text-accent-600 hover:underline">实名认证</a>
       </div>
@@ -38,7 +38,7 @@ export default function ClanComposer({
 
   return (
     <form
-      className="rounded-xl border border-gray-100 bg-white p-6"
+      className="rounded-xl border border-brand-200 bg-brand-100/70 p-6"
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
@@ -63,7 +63,7 @@ export default function ClanComposer({
                 key={t}
                 type="button"
                 onClick={() => setTopic(t)}
-                className={`rounded-full border px-3 py-1 text-xs ${topic === t ? "border-accent-400 bg-accent-50 text-accent-700" : "border-gray-200 text-brand-500"}`}
+                className={`rounded-full border px-3 py-1 text-xs ${topic === t ? "border-accent-400 bg-accent-50 text-accent-700" : "border-brand-200 text-brand-500"}`}
               >
                 {t}
               </button>

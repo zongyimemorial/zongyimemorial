@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function PreviewGateForm() {
   const [pass, setPass] = useState("");
@@ -42,14 +43,13 @@ export default function PreviewGateForm() {
       method="POST"
       className="mt-6 flex flex-col gap-3"
     >
-      <input
-        type="password"
+      <PasswordInput
         name="pass"
-        autoFocus
         value={pass}
         onChange={(e) => setPass(e.target.value)}
         placeholder="请输入内测口令"
-        className="w-full rounded-lg border border-brand-200 px-4 py-3 text-center text-lg outline-none focus:border-brand-500"
+        /* 保留原有居中大号样式，仅补 pr-11 给眼睛按钮让位（否则长口令会被按钮压住） */
+        className="w-full rounded-lg border border-brand-200 px-4 py-3 pr-11 text-center text-lg outline-none focus:border-brand-500"
       />
       {error && <p className="text-sm text-red-600">{error}</p>}
       <button

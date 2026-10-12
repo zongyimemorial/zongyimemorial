@@ -10,11 +10,12 @@ export default async function ActivitiesPage() {
 
   const [upcoming, finished] = await Promise.all([
     prisma.clanActivity.findMany({
-      where: { status: { in: ["upcoming", "ongoing"] } },
+      where: { status: { in: ["upcoming", "ongoing"] }, reviewStatus: "approved" },
       orderBy: { startAt: "asc" },
+      include: { clanHall: { select: { hallName: true, surname: true } } },
     }),
     prisma.clanActivity.findMany({
-      where: { status: "finished" },
+      where: { status: "finished", reviewStatus: "approved" },
       orderBy: { startAt: "desc" },
       take: 5,
     }),
@@ -34,7 +35,7 @@ export default async function ActivitiesPage() {
         {upcoming.map((a) => {
           const full = a.signupCount >= a.capacity;
           return (
-            <div key={a.id} className="rounded-xl border border-gray-100 bg-white p-6">
+            <div key={a.id} className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-accent-100 px-2.5 py-0.5 text-xs text-accent-700">
                   {a.kind}
@@ -44,6 +45,9 @@ export default async function ActivitiesPage() {
                     {a.surname}氏专场
                   </span>
                 )}
+                <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs text-brand-600">
+                  {a.clanHall ? `${a.clanHall.hallName} 主办` : "平台主办"}
+                </span>
                 <span className={`text-xs ${full ? "text-red-500" : "text-green-600"}`}>
                   {full ? "已满员" : `余 ${a.capacity - a.signupCount} 名额`}
                 </span>
@@ -72,7 +76,7 @@ export default async function ActivitiesPage() {
           );
         })}
         {upcoming.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-brand-400">
+          <div className="rounded-xl border border-dashed border-brand-200 bg-brand-100/70 p-10 text-center text-sm text-brand-400">
             近期暂无活动，敬请关注
           </div>
         )}
@@ -83,7 +87,7 @@ export default async function ActivitiesPage() {
           <h2 className="mb-3 text-lg font-semibold text-brand-900">往期活动</h2>
           <ul className="space-y-2">
             {finished.map((a) => (
-              <li key={a.id} className="flex items-center justify-between rounded-lg bg-white p-4 text-sm">
+              <li key={a.id} className="flex items-center justify-between rounded-lg bg-brand-100/70 p-4 text-sm">
                 <span className="text-brand-700">{a.title}</span>
                 <span className="text-xs text-brand-300">
                   {new Date(a.startAt).toLocaleDateString("zh-CN")} · {a.signupCount} 人参与

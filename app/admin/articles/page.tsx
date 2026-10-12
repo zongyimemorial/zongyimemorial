@@ -12,7 +12,7 @@ const statusLabel: Record<string, string> = {
 
 export default async function AdminArticles() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "editor")) redirect("/console");
+  if (!user || (user.role !== "admin" && user.role !== "editor" && user.role !== "super_admin")) redirect("/console");
 
   const articles = await prisma.article.findMany({
     orderBy: { createdAt: "desc" },

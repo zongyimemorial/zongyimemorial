@@ -76,14 +76,14 @@ export default function ArticleEditor({
     }
   }
 
-  const field = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+  const field = "w-full rounded-md border border-brand-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
   const label = "mb-1 block text-xs font-medium text-brand-700";
 
   return (
     <form action={saveArticle} className="max-w-3xl space-y-4">
       {article?.id && <input type="hidden" name="id" value={article.id} />}
 
-      <div className="rounded-lg border border-gray-100 bg-brand-50/40 p-4">
+      <div className="rounded-lg border border-brand-200 bg-brand-50/40 p-4">
         <div className="mb-2 flex items-end gap-2">
           <input
             value={topic}
@@ -151,7 +151,7 @@ export default function ArticleEditor({
         </span>
       </label>
 
-      <details className="rounded-lg border border-gray-100 p-3">
+      <details className="rounded-lg border border-brand-200 p-3">
         <summary className="cursor-pointer text-xs font-medium text-brand-700">SEO 设置</summary>
         <div className="mt-3 space-y-3">
           <div>
@@ -174,7 +174,7 @@ export default function ArticleEditor({
           type="submit"
           name="status"
           value="draft"
-          className="rounded-md border border-gray-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50"
+          className="rounded-md border border-brand-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50"
         >
           存为草稿
         </button>

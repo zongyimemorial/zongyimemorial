@@ -20,7 +20,7 @@ export default async function SearchPage({
           name="q"
           defaultValue={term}
           placeholder="输入关键词，如：云祭扫、备案、清明"
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+          className="flex-1 rounded-md border border-brand-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
         />
         <button className="rounded-md bg-brand-800 px-4 py-2 text-sm text-white hover:bg-brand-700">
           搜索
@@ -33,7 +33,7 @@ export default async function SearchPage({
             找到 {results.length} 条与「{term}」相关的结果
           </p>
           {results.map((a) => (
-            <div key={a.id} className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+            <div key={a.id} className="rounded-lg border border-brand-200 bg-brand-100/70 p-4 shadow-sm">
               <h2 className="text-base font-semibold text-brand-900">
                 <Link href={`/news/${a.slug}`} className="hover:text-brand-600">
                   {a.title}

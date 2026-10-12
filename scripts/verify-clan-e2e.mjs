@@ -70,6 +70,19 @@ await page.fill('input[name="name"]', "三槐堂");
 await page.fill('input[name="ancestorName"]', "王祐");
 await page.fill('input[name="origin"]', "山东莘县");
 await page.fill('textarea[name="generationPoem"]', "三槐世泽，两晋家声\n忠厚传家，诗书继世");
+/*
+  ⚠️ 建宗祠表单后来升级为**三通道合规版**（lib/hall-review.ts 的 CLAN_CHANNEL_META），
+  默认 standard 通道新增了三类必填：
+    · 至少 1 项佐证材料（requireMin=1）
+    · 经办人实名：身份证 + 手机号
+  本套件早先只填 6 个基础字段就点提交，表单被 onSubmit 拦下（不跳转），
+  表现为 waitForURL 超时 —— 是**断言/备货过时**，不是建祠坏了。
+  这里按标准通道补齐（填法与 smoke-clan-review.mjs 的 standard 路径一致，
+  材料输入框没有 name 属性，只能按 placeholder 定位）。
+*/
+await page.getByPlaceholder("如：族谱记载 / 宗亲会证明编号").fill("族谱记载 E2E-CLAN-001");
+await page.getByPlaceholder("18位（加密存储）").fill("11010119900307123X");
+await page.getByPlaceholder("11位").fill("13800000000");
 await page.click('button:has-text("提交并进入装修工坊")');
 await page.waitForURL(/\/console\/clan-halls\//, { timeout: 25000 });
 check("设立宗祠成功并跳转管理台", /\/console\/clan-halls\//.test(page.url()), page.url());

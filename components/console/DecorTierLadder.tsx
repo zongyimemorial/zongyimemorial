@@ -50,7 +50,7 @@ export default function DecorTierLadder({
   if (rungs.length === 0) return null;
 
   return (
-    <div data-tier-ladder className={"mt-3 rounded-lg border border-gray-200 bg-white p-3 " + className}>
+    <div data-tier-ladder className={"mt-3 rounded-lg border border-brand-200 bg-brand-100/70 p-3 " + className}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <span className="text-xs font-medium text-brand-700">装修档次阶梯</span>
         <span className="text-[11px] text-brand-400">免费足够庄重，越往上空间形态与光线越讲究</span>
@@ -73,7 +73,7 @@ export default function DecorTierLadder({
                 ? // 当前档：描金高亮。刻意不用 accent 色 —— 那是 DecorStudioGuide 的色调，
                   // 两块挨着会分不清谁是谁
                   "border-amber-300 bg-amber-50/70 ring-1 ring-amber-200"
-                : "border-gray-200 bg-gray-50/60")
+                : "border-brand-200 bg-gray-50/60")
             }
           >
             <div className="flex items-center gap-1.5">

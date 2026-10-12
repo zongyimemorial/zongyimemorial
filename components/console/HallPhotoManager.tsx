@@ -187,7 +187,7 @@ export default function HallPhotoManager({
   }
 
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-6">
+    <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-brand-900">{title}</h2>
@@ -205,7 +205,7 @@ export default function HallPhotoManager({
           e.preventDefault();
           uploadFiles(e.dataTransfer.files);
         }}
-        className="mt-4 rounded-lg border-2 border-dashed border-gray-200 bg-brand-50/40 p-6 text-center transition hover:border-accent-300"
+        className="mt-4 rounded-lg border-2 border-dashed border-brand-200 bg-brand-50/40 p-6 text-center transition hover:border-accent-300"
       >
         <div className="text-2xl">🖼️</div>
         <p className="mt-2 text-sm text-brand-700">把照片拖到这里，或</p>
@@ -247,9 +247,9 @@ export default function HallPhotoManager({
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             placeholder="https://… 或 /uploads/…"
-            className="flex-1 rounded-md border border-gray-200 px-3 py-2 text-sm"
+            className="flex-1 rounded-md border border-brand-200 px-3 py-2 text-sm"
           />
-          <button className="rounded-md border border-gray-300 px-4 py-2 text-sm text-brand-700 hover:bg-gray-50">
+          <button className="rounded-md border border-brand-300 px-4 py-2 text-sm text-brand-700 hover:bg-gray-50">
             添加
           </button>
         </form>
@@ -263,7 +263,7 @@ export default function HallPhotoManager({
       {list.length > 0 && (
         <div className="mt-5 grid grid-cols-3 gap-3 sm:grid-cols-4">
           {list.map((p, i) => (
-            <div key={p.url} className="group relative overflow-hidden rounded-lg border border-gray-100">
+            <div key={p.url} className="group relative overflow-hidden rounded-lg border border-brand-200">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={p.url}
@@ -280,7 +280,7 @@ export default function HallPhotoManager({
                 <button
                   type="button"
                   onClick={() => onPortrait(p.url)}
-                  className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-brand-900 hover:bg-white"
+                  className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-brand-900 hover:bg-brand-100/70"
                 >
                   {p.portrait ? `取消${portraitLabel}` : `设为${portraitLabel}`}
                 </button>
@@ -288,7 +288,7 @@ export default function HallPhotoManager({
                   <button
                     type="button"
                     onClick={() => onMove(p.url, "up")}
-                    className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-brand-900 hover:bg-white"
+                    className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-brand-900 hover:bg-brand-100/70"
                   >
                     ← 前移
                   </button>
@@ -297,7 +297,7 @@ export default function HallPhotoManager({
                   <button
                     type="button"
                     onClick={() => onMove(p.url, "down")}
-                    className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-brand-900 hover:bg-white"
+                    className="rounded bg-white/90 px-1.5 py-0.5 text-[10px] text-brand-900 hover:bg-brand-100/70"
                   >
                     后移 →
                   </button>

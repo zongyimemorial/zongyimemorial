@@ -11,7 +11,7 @@ import {
 } from "@/lib/hall-review";
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 const RELATIONS = ["亲属", "配偶", "子女", "父母", "兄弟姐妹", "朋友", "宗亲", "单位（逝者生平相关）"];
 
 /** 简单图片上传（走 /api/proof-upload，返回可访问 URL） */
@@ -116,7 +116,7 @@ export default function NewHallForm() {
       <input type="hidden" name="promiseSigned" value={promiseSigned ? "on" : "off"} />
 
       {/* —— 审核通道选择 —— */}
-      <section className="rounded-xl border border-gray-100 bg-white p-6">
+      <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
         <h2 className="text-sm font-semibold text-brand-900">选择审核通道</h2>
         <p className="mb-4 mt-1 text-xs text-brand-400">
           依据《网络祭祀要求》（MZ/T 173—2025），建馆须核验经办人身份与逝者关系。无火化证明等法定材料时，可走替代核验或特殊申述通道。
@@ -131,7 +131,7 @@ export default function NewHallForm() {
                 key={ch}
                 onClick={() => setChannel(ch)}
                 className={`rounded-lg border p-3 text-left transition ${
-                  active ? "border-accent-500 bg-accent-50 ring-1 ring-accent-300" : "border-gray-200 hover:border-accent-300"
+                  active ? "border-accent-500 bg-accent-50 ring-1 ring-accent-300" : "border-brand-200 hover:border-accent-300"
                 }`}
               >
                 <div className="text-sm font-semibold text-brand-900">{m.label}</div>
@@ -144,7 +144,7 @@ export default function NewHallForm() {
       </section>
 
       {/* —— 实名与逝者信息 —— */}
-      <section className="rounded-xl border border-gray-100 bg-white p-6">
+      <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
         <h2 className="text-sm font-semibold text-brand-900">实名与逝者信息</h2>
         <p className="mb-4 mt-1 text-xs text-brand-400">
           依据《网络祭祀要求》（MZ/T 173—2025）：建馆须提供经办人身份证、手机号及逝者关系，经专人审核后方可开通。材料仅用于合规审核，加密存储。
@@ -178,7 +178,7 @@ export default function NewHallForm() {
       </section>
 
       {/* —— 证明材料（按通道） —— */}
-      <section className="rounded-xl border border-gray-100 bg-white p-6">
+      <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
         <h2 className="text-sm font-semibold text-brand-900">{meta.label} · 证明材料</h2>
         <p className="mb-4 mt-1 text-xs text-brand-400">{meta.desc}</p>
         <div className="space-y-4">
@@ -186,7 +186,7 @@ export default function NewHallForm() {
             const mt = MATERIAL_TYPES[type as keyof typeof MATERIAL_TYPES];
             const hasUrl = !!urls[type];
             return (
-              <div key={type} className="rounded-lg border border-gray-100 bg-gray-50/40 p-3">
+              <div key={type} className="rounded-lg border border-brand-200 bg-gray-50/40 p-3">
                 <label className="mb-1 block text-xs font-medium text-brand-700">{mt.label}（编号 / 说明）</label>
                 <div className="flex flex-wrap items-center gap-2">
                   <input
@@ -196,7 +196,7 @@ export default function NewHallForm() {
                     className={field}
                     placeholder="填写编号或文字说明"
                   />
-                  <label className="cursor-pointer whitespace-nowrap rounded-md border border-gray-300 bg-white px-3 py-2 text-xs text-brand-600 hover:border-accent-400">
+                  <label className="cursor-pointer whitespace-nowrap rounded-md border border-brand-300 bg-brand-100/70 px-3 py-2 text-xs text-brand-600 hover:border-accent-400">
                     {uploader.busy ? "上传中…" : hasUrl ? "重新上传图片" : "上传图片（可选）"}
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => onUpload(type, e)} />
                   </label>
@@ -237,7 +237,7 @@ export default function NewHallForm() {
                 <a href="/docs/commitment-letter.md" target="_blank" rel="noreferrer" className="text-xs font-medium text-accent-600 hover:underline">
                   下载《真实性承诺书》模板
                 </a>
-                <label className="cursor-pointer whitespace-nowrap rounded-md border border-gray-300 bg-white px-3 py-2 text-xs text-brand-600 hover:border-accent-400">
+                <label className="cursor-pointer whitespace-nowrap rounded-md border border-brand-300 bg-brand-100/70 px-3 py-2 text-xs text-brand-600 hover:border-accent-400">
                   {uploader.busy ? "上传中…" : promiseLetter ? "重新上传" : "上传签署件"}
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                     const f = e.target.files?.[0];

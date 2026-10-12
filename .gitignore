@@ -5,6 +5,7 @@ node_modules/
 
 # next.js
 .next/
+.next-*/
 out/
 
 # production
@@ -41,6 +42,10 @@ next-env.d.ts
 .env.bak
 .env*.bak
 
+# 隧道 token 与自愈守护运行日志（含敏感信息，勿入库）
+/.tunnel-token
+/.self-heal.log
+
 # 代理工作目录与一次性交付产物（非项目源码）
 .codebuddy/
 _delivery/
@@ -48,3 +53,6 @@ _delivery/
 # 浏览器自动化日志与验收截图产物（运行期生成，勿入库）
 .playwright-cli/
 shots/
+
+# 本地 E2E 依赖（imapflow 等，独立安装不入库）
+.verifydeps/

@@ -78,7 +78,7 @@ export default async function SuiteDetailPage({
             data-suite-item={e.ref}
             data-suite-item-kind={e.kind}
             data-suite-item-found={e.found ? "1" : "0"}
-            className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white p-3"
+            className="flex items-center gap-3 rounded-xl border border-brand-200 bg-brand-100/70 p-3"
           >
             <span
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-2xl"

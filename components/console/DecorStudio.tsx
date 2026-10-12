@@ -831,7 +831,7 @@ export default function DecorStudio({
   for (const r of tierRungs) r.current = r.key === currentRungKey;
 
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-6">
+    <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-brand-900">{title}</h2>
@@ -850,7 +850,7 @@ export default function DecorStudio({
             type="button"
             onClick={onReset}
             disabled={busy}
-            className="rounded border border-gray-300 px-2 py-1 text-brand-600 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded border border-brand-300 px-2 py-1 text-brand-600 hover:bg-gray-50 disabled:opacity-50"
           >
             恢复默认
           </button>
@@ -974,7 +974,7 @@ export default function DecorStudio({
             onClick={() => setCompare((v) => !v)}
             data-decor-compare-toggle=""
             aria-pressed={compare}
-            className="rounded border border-gray-300 px-2.5 py-1 text-[11px] text-brand-600 hover:bg-gray-50"
+            className="rounded border border-brand-300 px-2.5 py-1 text-[11px] text-brand-600 hover:bg-gray-50"
           >
             {compare ? "关闭对比" : "与未装修对比"}
           </button>
@@ -1085,7 +1085,7 @@ export default function DecorStudio({
             )}
           </div>
         </div>
-        <div className="rounded-lg border border-gray-100 bg-brand-50/50 p-4">
+        <div className="rounded-lg border border-brand-200 bg-brand-50/50 p-4">
           <div className="text-xs font-medium text-brand-700">当前装修方案</div>
           <div className="mt-2 space-y-1.5 text-xs text-brand-500">
             {(["wall", "floor", "ornament", "frame", "font"] as DecorSlot[]).map((s) => (
@@ -1152,7 +1152,7 @@ export default function DecorStudio({
               "rounded-full px-3 py-1.5 text-xs transition " +
               (tab === c.key
                 ? "bg-brand-800 text-white"
-                : "border border-gray-200 text-brand-600 hover:border-accent-400")
+                : "border border-brand-200 text-brand-600 hover:border-accent-400")
             }
           >
             {c.label}
@@ -1179,7 +1179,7 @@ export default function DecorStudio({
                   key={tpl.id}
                   className={
                     "overflow-hidden rounded-lg border transition " +
-                    (active ? "border-accent-500 ring-2 ring-accent-200" : "border-gray-200")
+                    (active ? "border-accent-500 ring-2 ring-accent-200" : "border-brand-200")
                   }
                 >
                   <div
@@ -1297,7 +1297,7 @@ export default function DecorStudio({
                       但那个兜底结果不用于断言。
                     */
                     data-kit-slots={JSON.stringify(kit.applies ?? kitSlots(kit))}
-                    className="overflow-hidden rounded-lg border border-gray-200"
+                    className="overflow-hidden rounded-lg border border-brand-200"
                   >
                     <div
                       className="flex h-24 items-center justify-center text-3xl"
@@ -1410,7 +1410,7 @@ export default function DecorStudio({
                   data-decor-item-slot={activeCat.key}
                   className={
                     "overflow-hidden rounded-lg border transition " +
-                    (active ? "border-accent-500 ring-2 ring-accent-200" : "border-gray-200")
+                    (active ? "border-accent-500 ring-2 ring-accent-200" : "border-brand-200")
                   }
                 >
                   {thumb ? (

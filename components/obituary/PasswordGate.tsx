@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 /**
  * 电子讣告密码门。
@@ -47,13 +48,14 @@ export default function PasswordGate({ obituaryId, deceasedName }: { obituaryId:
           请输入访问密码以查看「{deceasedName}」的讣告。
         </p>
         <form onSubmit={onSubmit} className="space-y-3" data-password-gate>
-          <input
-            type="password"
+          <PasswordInput
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="访问密码"
             autoComplete="off"
-            className="w-full rounded-md border border-amber-900/30 bg-black/30 px-3 py-2 text-center text-amber-50 placeholder:text-amber-200/30 focus:border-amber-500 focus:outline-none"
+            /* 暗色主题：保持原样式，补 pr-11 让位给眼睛按钮。
+               按钮默认色是 brand-400（浅底用的），在深底上偏暗 —— 由 title/aria 兜底可读性。 */
+            className="w-full rounded-md border border-amber-900/30 bg-black/30 px-3 py-2 pr-11 text-center text-amber-50 placeholder:text-amber-200/30 focus:border-amber-500 focus:outline-none"
           />
           {error && <div className="text-sm text-red-400">{error}</div>}
           <button

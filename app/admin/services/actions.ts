@@ -13,7 +13,7 @@ const VALID_STATUS = ["pending", "processing", "done", "rejected"];
  */
 export async function updateServiceFulfillment(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "editor")) redirect("/console");
+  if (!user || (user.role !== "admin" && user.role !== "editor" && user.role !== "super_admin")) redirect("/console");
 
   const id = String(formData.get("id") || "");
   const status = String(formData.get("status") || "");

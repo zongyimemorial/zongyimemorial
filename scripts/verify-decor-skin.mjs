@@ -549,7 +549,14 @@ const DOM_CONTRACTS = [
   ["app/(public)/clan/halls/[id]/page.tsx", "overflow-hidden p-8"],
   // 纪念馆首屏「3D 场景 + 遗像」的硬约束（AGENTS.md：遗像必须是真 <img>，绝不画进 SVG）
   ["app/(public)/halls/[id]/page.tsx", "PortraitNiche"],
-  ["app/(public)/clan/halls/[id]/page.tsx", "PortraitNiche"],
+  /*
+    ⚠️ 宗祠侧**不是** PortraitNiche —— 宗祠页已改用 ClanHall3DTour（四段 3D 漫游连廊），
+    遗像由连廊内部的 SceneShrine 渲染（标记 `data-clan-portrait` 在 Tour 的子树里，
+    不在页面文件本身，故这里只断"页面确实挂了 Tour"）。
+    硬约束本身没变：宗祠遗像同样是"真 <img> + 有可定位的标记"。
+    早先这里照抄纪念馆写成 PortraitNiche，于是恒红（断言过时，不是遗像丢了）。
+  */
+  ["app/(public)/clan/halls/[id]/page.tsx", "ClanHall3DTour"],
   // 场景优先布局的硬约束文案（改版时不许删板块）
   ["app/(public)/clan/halls/[id]/page.tsx", "字辈诗 · 派语"],
   ["app/(public)/clan/halls/[id]/page.tsx", "祭祀记录"],
@@ -558,6 +565,12 @@ for (const [file, needle] of DOM_CONTRACTS) {
   const s = src(file);
   check(`DOM 契约未变：${file.split("/").pop()} 仍含 ${needle.slice(0, 40)}`, !s || s.includes(needle));
 }
+// 宗祠遗像的定位标记在 ClanHallScene（Tour 内部复用的 SceneShrine）里，
+// 页面文件与 Tour 文件本身都没有，故单独在真正承载它的组件上验。
+check(
+  "DOM 契约未变：ClanHallScene 含 data-clan-portrait（宗祠遗像可定位）",
+  /data-clan-portrait/.test(src("components/clan/ClanHallScene.tsx")),
+);
 
 check(
   "装修层根节点仍是单个 div（未包额外 wrapper）",

@@ -30,7 +30,7 @@ export default function FestivalsPage() {
       {/* Hero：下一个节日 */}
       <section className="bg-brand-800 py-16 text-white">
         <div className="container-page text-center">
-          <p className="text-sm tracking-[0.3em] text-amber-200">追思节日历</p>
+          <p className="text-sm tracking-[0.3em] text-accent-300">追思节日历</p>
           {next ? (
             <>
               <h1 className="mt-4 text-3xl font-bold md:text-4xl">
@@ -72,7 +72,7 @@ export default function FestivalsPage() {
           <section
             key={f.kind}
             id={f.kind}
-            className={f.kind === "qingming" ? "container-page py-14" : "container-page border-t border-gray-100 py-14"}
+            className={f.kind === "qingming" ? "container-page py-14" : "container-page border-t border-brand-200 py-14"}
           >
             <div className="grid gap-10 lg:grid-cols-[5fr_4fr]">
               <div>
@@ -90,7 +90,7 @@ export default function FestivalsPage() {
                 {/* 习俗 */}
                 <div className="mt-5 grid gap-3 sm:grid-cols-3">
                   {f.customs.map((c) => (
-                    <div key={c.title} className="rounded-lg border border-gray-100 bg-white p-4">
+                    <div key={c.title} className="rounded-lg border border-brand-200 bg-brand-100/70 p-4">
                       <div className="text-sm font-semibold text-brand-800">{c.title}</div>
                       <p className="mt-1 text-xs leading-5 text-brand-500">{c.desc}</p>
                     </div>
@@ -119,7 +119,7 @@ export default function FestivalsPage() {
                   <Link
                     key={s!.id}
                     href={`/suites/${s!.id}`}
-                    className="block rounded-xl border border-gray-100 bg-white p-4 transition hover:border-brand-300 hover:shadow-sm"
+                    className="block rounded-xl border border-brand-200 bg-brand-100/70 p-4 transition hover:border-brand-300 hover:shadow-sm"
                   >
                     <div className="flex items-center gap-3">
                       <span
@@ -153,7 +153,7 @@ export default function FestivalsPage() {
       })}
 
       {/* 全年日历（五年总表） */}
-      <section id="calendar" className="bg-white py-16">
+      <section id="calendar" className="bg-brand-100/70 py-16">
         <div className="container-page">
           <div className="mb-10 text-center">
             <h2 className="text-2xl font-semibold text-brand-900">追思节日 · 五年日历</h2>
@@ -161,7 +161,7 @@ export default function FestivalsPage() {
               农历节日的公历日期每年不同，收藏本页，为思念标定每一个回家的日子。
             </p>
           </div>
-          <div className="overflow-x-auto rounded-xl border border-gray-100">
+          <div className="overflow-x-auto rounded-xl border border-brand-200">
             <table className="w-full min-w-[560px] text-sm">
               <thead>
                 <tr className="bg-brand-50 text-left text-brand-800">

@@ -10,6 +10,12 @@ import {
 } from "@/app/(public)/halls/[id]/actions";
 import { useAmbientPlayer, TRACK_BY_SLUG } from "@/components/hall/useAmbientPlayer";
 import { iconOf } from "@/lib/ritual";
+/*
+  动效/音效的唯一真相源见 lib/ritual-effects.ts。
+  这里曾经有一份 30 条 EFFECT_KIND + 19 条 SOUND + playTone 的**本地副本**，
+  与宗祠面板逐字节相同 —— 谁先改谁就对不上。现已抽为共享模块。
+*/
+import { EFFECT_KIND, SOUND, playTone } from "@/lib/ritual-effects";
 
 /** 免费祭品：带剩余份数（每份用一次，每日补到配额） */
 type FreeProduct = { id: string; name: string; slug: string; qty: number };
@@ -48,45 +54,6 @@ type BtnState =
   | { state: "hidden"; product: null };
 
 
-// slug → 动效类型（全部 30 个礼器：10 个免费 + 20 个可敬献解锁）
-const EFFECT_KIND: Record<string, string> = {
-  "free-incense": "incense",
-  "free-candle": "candle",
-  "free-flower": "flower",
-  "free-wine": "offering",
-  "free-fruit": "offering",
-  "free-tea": "offering",
-  "free-clean": "clean",
-  "free-music": "music",
-  "free-message": "message",
-  "free-letter": "message",
-  "free-lantern": "lantern",
-  "free-lotus": "lantern",
-  "free-kite": "kite",
-  "free-dove": "dove",
-  "free-tree": "tree",
-  "free-willow": "sway",
-  "free-wreath": "flower",
-  "free-bell": "bell",
-  "free-chime": "bell",
-  "free-bow": "bow",
-  "free-prayer": "prayer",
-  "free-scripture": "prayer",
-  "free-poem": "scroll",
-  "free-story": "scroll",
-  "free-star": "star",
-  "free-moon": "star",
-  "free-firework": "firework",
-  "free-food": "offering",
-  "free-rice": "offering",
-  "free-song": "music",
-};
-
-/**
- * 面板按钮：只定义「有哪些祭品、叫什么」，
- * 图标一律取自 lib/ritual 的权威表 —— 供台陈列与场景供台也用同一张表，
- * 否则同一件祭品在按钮上是 🎐、在供台上是 🔔，看起来像两样东西。
- */
 const BUTTON_DEFS: { slug: string; label: string }[] = [
   { slug: "free-incense", label: "上香" },
   { slug: "free-flower", label: "献花" },
@@ -124,50 +91,6 @@ const BUTTONS: { slug: string; icon: string; label: string }[] = BUTTON_DEFS.map
   ...b,
   icon: iconOf(b.slug),
 }));
-
-// Web Audio 合成音效：无需音频资源文件
-function playTone(freqs: number[], duration = 1.6) {
-  try {
-    const ctx = new (window.AudioContext || (window as never as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-    freqs.forEach((f, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = f;
-      const t0 = ctx.currentTime + i * 0.18;
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(0.22, t0 + 0.03);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(t0);
-      osc.stop(t0 + duration + 0.1);
-    });
-    setTimeout(() => ctx.close(), (duration + freqs.length * 0.18) * 1000 + 300);
-  } catch {
-    /* 浏览器不支持时静默 */
-  }
-}
-
-const SOUND: Record<string, number[]> = {
-  incense: [523.25, 783.99],
-  candle: [659.25, 987.77],
-  flower: [587.33, 880],
-  offering: [493.88, 739.99],
-  clean: [440, 659.25],
-  music: [523.25, 659.25, 783.99, 1046.5],
-  message: [698.46, 1046.5],
-  lantern: [440, 554.37, 659.25],
-  kite: [587.33, 739.99],
-  dove: [659.25, 880, 987.77],
-  tree: [392, 523.25],
-  sway: [523.25, 698.46],
-  bell: [880, 1174.66],
-  bow: [329.63, 440],
-  prayer: [493.88, 659.25, 987.77],
-  scroll: [523.25, 659.25],
-  star: [1046.5, 1318.5],
-  firework: [587.33, 880, 1174.66, 1567.98],
-};
 
 export default function WorshipPanel({
   hallId,
@@ -321,7 +244,7 @@ export default function WorshipPanel({
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white">
+    <div className="overflow-hidden rounded-xl border border-brand-200/70 bg-brand-100/70 shadow-sm">
       {/* 祭拜舞台 */}
       <div className="relative h-64 overflow-hidden bg-gradient-to-b from-[#2b2118] via-[#3a2c1e] to-[#1c150e] sm:h-72">
         {/* 烛台 */}
@@ -373,7 +296,7 @@ export default function WorshipPanel({
             <div key={e.key} className="absolute inset-0">
               {e.kind === "incense" && (
                 <>
-                  <div className="smoke absolute bottom-24 left-1/2 h-20 w-3 -translate-x-1/2 rounded-full bg-gradient-to-t from-white/25 to-transparent" />
+                  <div className="smoke absolute bottom-24 left-1/2 h-20 w-3 -translate-x-1/2 rounded-full bg-gradient-to-t from-brand-50/25 to-transparent" />
                   <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-2xl">🙏</div>
                 </>
               )}
@@ -514,17 +437,23 @@ export default function WorshipPanel({
 
       {/* 供品面板：只列「我持有的」——从未买过的收费祭品不在此出现（去商城逛） */}      <div className="p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <span className="text-sm font-semibold text-brand-900">
+          <span className="text-lg font-semibold text-brand-900">
             祭品 · 一键祭拜
-            <span className="ml-2 font-normal text-brand-400">
+            <span className="ml-2 text-base font-normal text-brand-500">
               {visibleButtons.length === 0
                 ? "暂无可用供品"
                 : `已持有 ${stats.held} 件${stats.spent > 0 ? ` · 用尽 ${stats.spent} 件` : ""}`}
             </span>
           </span>
-          <span className="flex items-center gap-3 text-xs text-brand-400">
-            <span>每份用一次 · 免费每日补 3 份</span>
-            <a href="/mall" className="text-accent-600 hover:underline">
+          {/*
+            这一行是面板里唯一的"操作指引"（配额规则 + 补货入口），
+            原先用 text-sm/text-brand-500 的浅灰，在浅米卡上几乎糊成底纹 ——
+            用户看完一整屏供品却找不到"用完了去哪儿补"。
+            加强方式只动这两处：字号提到 base、字重 semibold、颜色加深到 brand-700/accent-700。
+          */}
+          <span className="flex items-center gap-3 text-base font-semibold text-brand-700">
+            <span>每份用一次 · 免费每日领 1 份</span>
+            <a href="/mall" className="font-semibold text-accent-700 underline hover:no-underline">
               去商城补充供品 →
             </a>
           </span>
@@ -535,14 +464,14 @@ export default function WorshipPanel({
           给一条明确的"去商城挑一件"的路，而不是让人对着空格猜。
         */}
         {visibleButtons.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-200 bg-brand-50/40 px-4 py-8 text-center">
-            <p className="text-sm text-brand-500">还没有可供奉的祭品</p>
-            <p className="mt-1 text-xs text-brand-400">
-              免费祭品会在进馆时自动补足每日 3 份；收费礼器请去商城敬献后在馆内使用
+          <div className="rounded-lg border border-dashed border-brand-300 bg-brand-50/70 px-4 py-8 text-center">
+            <p className="text-base text-brand-600">还没有可供奉的祭品</p>
+            <p className="mt-1 text-sm text-brand-400">
+              免费祭品会在进馆时自动补足每日 1 份；收费礼器请去商城敬献后在馆内使用
             </p>
             <a
               href="/mall"
-              className="mt-3 inline-block rounded-md bg-brand-800 px-4 py-1.5 text-xs text-white hover:bg-brand-700"
+              className="mt-3 inline-block rounded-md bg-brand-800 px-4 py-1.5 text-sm text-white hover:bg-brand-700"
             >
               去商城挑选供品
             </a>
@@ -571,23 +500,23 @@ export default function WorshipPanel({
                   }
                   className={
                     empty
-                      ? "flex cursor-not-allowed flex-col items-center gap-1 rounded-lg border border-gray-100 bg-gray-50 px-1 py-2.5 text-lg opacity-40"
-                      : "flex flex-col items-center gap-1 rounded-lg border border-gray-100 bg-brand-50/50 px-1 py-2.5 text-lg transition hover:border-accent-300 hover:bg-accent-50 disabled:opacity-30"
+                      ? "flex cursor-not-allowed flex-col items-center gap-1 rounded-lg border border-brand-200 bg-brand-100/80 px-1 py-2.5 text-2xl opacity-50"
+                      : "flex flex-col items-center gap-1 rounded-lg border border-brand-200 bg-brand-50/80 px-1 py-2.5 text-2xl shadow-sm transition hover:border-accent-300 hover:bg-accent-50 disabled:opacity-30"
                   }
                 >
                   <span className={empty ? "opacity-60" : ""}>
                     {busy === b.slug ? "…" : b.icon}
                   </span>
-                  <span className="text-[11px] text-brand-600">{b.label}</span>
+                  <span className="text-sm text-brand-700">{b.label}</span>
                   {/* 剩余份数角标：用尽时显示「已用尽」而不是让按钮消失（重新购买即恢复点亮） */}
                   {empty ? (
-                    <span className="text-[10px] font-semibold text-gray-400">已用尽</span>
+                    <span className="text-xs font-semibold text-brand-400">已用尽</span>
                   ) : (
                     <span
                       className={
                         qty <= 1
-                          ? "text-[10px] font-semibold text-amber-600"
-                          : "text-[10px] font-semibold text-green-600"
+                          ? "text-xs font-semibold text-amber-600"
+                          : "text-xs font-semibold text-green-700"
                       }
                     >
                       ×{qty}
@@ -600,26 +529,26 @@ export default function WorshipPanel({
         )}
 
         {showInput && (
-          <div className="mt-4 rounded-lg border border-gray-100 bg-brand-50/60 p-3">
+          <div className="mt-4 rounded-lg border border-brand-200 bg-brand-50/70 p-3">
             <textarea
               value={msgText}
               onChange={(e) => setMsgText(e.target.value)}
               rows={3}
               maxLength={200}
               placeholder="写下想对TA说的话、讲一段往事…（200字以内）"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+              className="w-full rounded-md border border-brand-200 px-3 py-2 text-base"
             />
             <div className="mt-2 flex justify-end gap-2">
               <button
                 onClick={() => setShowInput(false)}
-                className="rounded-md border border-gray-300 px-3 py-1.5 text-xs text-brand-600"
+                className="rounded-md border border-brand-300 px-3 py-1.5 text-sm text-brand-600"
               >
                 取消
               </button>
               <button
                 onClick={submitMessage}
                 disabled={busy === "free-message"}
-                className="rounded-md bg-brand-800 px-4 py-1.5 text-xs text-white hover:bg-brand-700 disabled:opacity-50"
+                className="rounded-md bg-brand-800 px-4 py-1.5 text-sm text-white hover:bg-brand-700 disabled:opacity-50"
               >
                 {busy === "free-message" ? "发送中…" : "送达"}
               </button>

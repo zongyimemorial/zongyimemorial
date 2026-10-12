@@ -41,11 +41,11 @@ await prisma.user.update({
 console.log("已重置配额与积分\n");
 
 // ---------- 1. 定价常量自洽 ----------
-check("思念版定价 ¥59（云 TTS 成本下不亏）", PLAN_SPECS.basic.priceFen === 5900);
-check("长夜版定价 ¥99", PLAN_SPECS.premium.priceFen === 9900);
+check("思念版定价 ¥79（满耗毛利 ≥30%）", PLAN_SPECS.basic.priceFen === 7900);
+check("长夜版定价 ¥199（满耗毛利 ≥30%）", PLAN_SPECS.premium.priceFen === 19900);
 check("按次 10 分钟 ¥6", SINGLE_PACK.priceFen === 600 && SINGLE_PACK.minutes === 10);
 check("思念版含 300 分钟", PLAN_SPECS.basic.monthlyMins === 300);
-check("长夜版含 900 分钟", PLAN_SPECS.premium.monthlyMins === 900);
+check("长夜版含 800 分钟（视频已拆出单卖）", PLAN_SPECS.premium.monthlyMins === 800);
 check("长夜版放开资料条数上限", PLAN_SPECS.premium.memoryLimit === -1);
 check("免费档无语音时长", PLAN_SPECS.free.monthlyMins === 0);
 
@@ -72,7 +72,7 @@ check("思念版商品存在", !!basicProduct);
 if (basicProduct) {
   const order = await createOrder({ userId: user.id, productId: basicProduct.id });
   check("订单创建成功", order.status === "pending", order.orderNo);
-  check("订单金额正确 ¥59", order.payAmount === 5900, `实得 ${order.payAmount} 分`);
+  check("订单金额正确 ¥79", order.payAmount === 7900, `实得 ${order.payAmount} 分`);
 
   const paid = await simulatePay(order.orderNo);
   check("支付成功", paid.status === "paid");
@@ -91,8 +91,8 @@ if (basicProduct) {
   const after = await prisma.user.findUnique({ where: { id: user.id } });
   check("用户 premiumUntil 已授予", isPremium(after), `${after?.premiumUntil?.toISOString().slice(0, 10)}`);
 
-  // 校验消费返积分：¥59 → 59×3 = 177 分
-  const expectEarn = Math.floor(5900 / 100) * 3;
+  // 校验消费返积分：¥79 → 79×3 = 237 分
+  const expectEarn = Math.floor(7900 / 100) * 3;
   const pts = await prisma.pointLog.findFirst({
     where: { userId: user.id, reason: { contains: order.orderNo } },
   });
@@ -126,16 +126,16 @@ if (premiumProduct) {
   await simulatePay(order.orderNo);
   q = await getQuota(user.id);
   check("升级后 → premium 档", q.plan === "premium", `plan=${q.plan}`);
-  // 订阅额度重置为 900，但已购买的按次分钟（10）应保留累加
-  check("语音分钟 900 + 保留按次 10 = 910", q.remainingMins === 910, `剩余 ${q.remainingMins}`);
-  check("订阅额度已重置为 900", q.monthlyMins === 900, `monthlyMins=${q.monthlyMins}`);
+  // 订阅额度重置为 800，但已购买的按次分钟（10）应保留累加
+  check("语音分钟 800 + 保留按次 10 = 810", q.remainingMins === 810, `剩余 ${q.remainingMins}`);
+  check("订阅额度已重置为 800", q.monthlyMins === 800, `monthlyMins=${q.monthlyMins}`);
   check("轮次放开", q.remainingRounds > 9000, `剩余 ${q.remainingRounds}`);
 }
 
 // ---------- 9. 分钟耗尽时的降级 ----------
 await prisma.whisperQuota.update({
   where: { userId: user.id },
-  data: { usedMins: 900, extraMins: 0 },
+  data: { usedMins: 800, extraMins: 0 },
 });
 r = await consumeRound(user.id, { minutes: 5, isVoice: true });
 check("分钟耗尽后语音被拒", !r.ok);

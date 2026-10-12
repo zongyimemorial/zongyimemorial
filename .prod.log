@@ -1,0 +1,1206 @@
+ ⨯ Failed to start server
+Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
+    at <unknown> (Error: listen EADDRINUSE: address already in use 0.0.0.0:3000) {
+  code: 'EADDRINUSE',
+  errno: -98,
+  syscall: 'listen',
+  address: '0.0.0.0',
+  port: 3000
+}
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 228ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 83 ms, redirect=/console
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 230ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 85 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 78 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 151ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 80 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 148ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 82 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 152ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 77 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 72 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 152ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 80 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async gb (/workspace/.next/server/chunks/7842.js:404:60224)
+    at async A (/workspace/.next/server/app/api/auth/login/route.js:3:6318)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/login/route.js:3:9507)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/login/route.js:3:10510)
+[login-api] pwd signIn AuthError
+[login-api] entry { pwd: true, sms: false, from: '' }
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async gb (/workspace/.next/server/chunks/7842.js:404:60224)
+    at async A (/workspace/.next/server/app/api/auth/login/route.js:3:6318)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/login/route.js:3:9507)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/login/route.js:3:10510)
+[login-api] pwd signIn AuthError
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[mail] 已发送 → user@test.com (messageId=<cdae2325-8cc7-8509-6bd0-bffa0e838ba5@163.com>)
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async gb (/workspace/.next/server/chunks/7842.js:404:60224)
+    at async A (/workspace/.next/server/app/api/auth/login/route.js:3:6318)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/login/route.js:3:9507)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/login/route.js:3:10510)
+[login-api] pwd signIn AuthError
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async gb (/workspace/.next/server/chunks/7842.js:404:60224)
+    at async A (/workspace/.next/server/app/api/auth/login/route.js:3:6318)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/login/route.js:3:9507)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/login/route.js:3:10510)
+[login-api] pwd signIn AuthError
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async gb (/workspace/.next/server/chunks/7842.js:404:60224)
+    at async A (/workspace/.next/server/app/api/auth/login/route.js:3:6318)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/login/route.js:3:9507)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/login/route.js:3:10510)
+[login-api] pwd signIn AuthError
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 73 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 158ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 80 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 74 ms, redirect=/console
+[Error: Failed to find Server Action "001081a766913175c385832703c5aedcbb47928c57". This request might be from an older or newer deployment.
+Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
+[Error: Failed to find Server Action "001081a766913175c385832703c5aedcbb47928c57". This request might be from an older or newer deployment.
+Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
+[Error: Failed to find Server Action "001081a766913175c385832703c5aedcbb47928c57". This request might be from an older or newer deployment.
+Read more: https://nextjs.org/docs/messages/failed-to-find-server-action]
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async gb (/workspace/.next/server/chunks/7842.js:404:60224)
+    at async A (/workspace/.next/server/app/api/auth/login/route.js:3:6318)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/login/route.js:3:9507)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/login/route.js:3:10510)
+[login-api] pwd signIn AuthError
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 164ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 109 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async gb (/workspace/.next/server/chunks/7842.js:404:60224)
+    at async A (/workspace/.next/server/app/api/auth/login/route.js:3:6318)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/login/route.js:3:9507)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/login/route.js:3:10510)
+[login-api] pwd signIn AuthError
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 78 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 73 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 153ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 82 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 72 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 82 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 76 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 75 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 74 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 74 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 72 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 79 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 78 ms, redirect=/console
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 241ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 96 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 162ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 85 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 72 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 73 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+TypeError: b.mask is not a function
+    at a.exports.mask (.next/server/chunks/1503.js:2:4716)
+    at s.frame (.next/server/chunks/1503.js:1:25214)
+    at s.dispatch (.next/server/chunks/1503.js:1:28132)
+    at s.send (.next/server/chunks/1503.js:1:27665)
+    at J.send (.next/server/chunks/1503.js:1:11635)
+    at J.<anonymous> (.next/server/chunks/9114.js:1:7846)
+    at J.setSocket (.next/server/chunks/1503.js:1:9489)
+    at ClientRequest.<anonymous> (.next/server/chunks/1503.js:1:7857)
+ ⨯ uncaughtException:  TypeError: b.mask is not a function
+    at a.exports.mask (.next/server/chunks/1503.js:2:4716)
+    at s.frame (.next/server/chunks/1503.js:1:25214)
+    at s.dispatch (.next/server/chunks/1503.js:1:28132)
+    at s.send (.next/server/chunks/1503.js:1:27665)
+    at J.send (.next/server/chunks/1503.js:1:11635)
+    at J.<anonymous> (.next/server/chunks/9114.js:1:7846)
+    at J.setSocket (.next/server/chunks/1503.js:1:9489)
+    at ClientRequest.<anonymous> (.next/server/chunks/1503.js:1:7857)
+[whisper] ASR 失败，回退 Mock： Volcano ASR 超时
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+ ⨯ The requested resource "/assets/prod-decor-tpl.svg" has type "image/svg+xml" but dangerouslyAllowSVG is disabled. Consider adding the "unoptimized" property to the <Image>.
+[login-api] entry { pwd: false, sms: false, from: '' }
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 75 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 73 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 153ms
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 158ms
+Killed
+   ▲ Next.js 15.5.26
+   - Local:        http://localhost:3000
+   - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 164ms
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 79 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 75 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 69 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+TypeError: b.mask is not a function
+    at a.exports.mask (.next/server/chunks/1503.js:2:4716)
+    at s.frame (.next/server/chunks/1503.js:1:25214)
+    at s.dispatch (.next/server/chunks/1503.js:1:28132)
+    at s.send (.next/server/chunks/1503.js:1:27665)
+    at J.send (.next/server/chunks/1503.js:1:11635)
+    at J.<anonymous> (.next/server/chunks/9114.js:1:7846)
+    at J.setSocket (.next/server/chunks/1503.js:1:9489)
+    at ClientRequest.<anonymous> (.next/server/chunks/1503.js:1:7857)
+ ⨯ uncaughtException:  TypeError: b.mask is not a function
+    at a.exports.mask (.next/server/chunks/1503.js:2:4716)
+    at s.frame (.next/server/chunks/1503.js:1:25214)
+    at s.dispatch (.next/server/chunks/1503.js:1:28132)
+    at s.send (.next/server/chunks/1503.js:1:27665)
+    at J.send (.next/server/chunks/1503.js:1:11635)
+    at J.<anonymous> (.next/server/chunks/9114.js:1:7846)
+    at J.setSocket (.next/server/chunks/1503.js:1:9489)
+    at ClientRequest.<anonymous> (.next/server/chunks/1503.js:1:7857)
+[whisper] ASR 失败，回退 Mock： Volcano ASR 超时
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 74 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 73 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[31m[auth][error][0m CredentialsSignin: Read more at https://errors.authjs.dev#credentialssignin
+    at fQ (/workspace/.next/server/chunks/7842.js:404:41066)
+    at async fZ (/workspace/.next/server/chunks/7842.js:404:50664)
+    at async f_ (/workspace/.next/server/chunks/7842.js:404:54917)
+    at async rq.do (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:21134)
+    at async rq.handle (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:5:25952)
+    at async k (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:6256)
+    at async rq.handleResponse (/workspace/node_modules/next/dist/compiled/next-server/app-route.runtime.prod.js:1:111423)
+    at async g (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:7259)
+    at async B (/workspace/.next/server/app/api/auth/[...nextauth]/route.js:1:8381)
+    at async NextNodeServer.renderToResponseWithComponentsImpl (/workspace/node_modules/next/dist/server/base-server.js:1430:9)
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 70 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 68 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 66 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 71 ms, redirect=/console
+[login-api] entry { pwd: true, sms: false, from: '' }
+[login-api] ok, 耗时 67 ms, redirect=/console
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }
+prisma:error Error in PostgreSQL connection: Error { kind: Closed, cause: None }

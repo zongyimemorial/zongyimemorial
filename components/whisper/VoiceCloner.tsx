@@ -28,13 +28,15 @@ export type VoiceClonerProps = {
   hasConsent: boolean;
   /** 当前套餐可创建的克隆声线数 */
   cloneLimit: number;
+  /** 是否已支付 ¥10 克隆资格申请（工本费/漏斗入口），置位后解锁克隆入口 */
+  cloneApplied?: boolean;
   planName: string;
   userPoints: number;
   cloneUnlockPoints: number;
 };
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 
 export default function VoiceCloner({
   profileId,
@@ -42,6 +44,7 @@ export default function VoiceCloner({
   selectedVoiceId,
   hasConsent,
   cloneLimit,
+  cloneApplied = false,
   planName,
   userPoints,
   cloneUnlockPoints,
@@ -57,7 +60,9 @@ export default function VoiceCloner({
   const presets = voices.filter((v) => v.isPreset);
   const clones = voices.filter((v) => !v.isPreset);
   const cloneFull = cloneLimit > 0 && clones.length >= cloneLimit;
-  const canClone = hasConsent && (cloneLimit > 0 || clones.length === 0);
+  // 克隆资格闸门 = 订阅档自带额度 OR 已申请资格（cloneApplied）。
+  // 方案 B：免费档不再「首克隆放开」，必须订阅或支付 ¥10 资格申请才解锁入口。
+  const canClone = hasConsent && (cloneLimit > 0 || cloneApplied);
 
   /** 本地读取音频时长（用于提示样本是否达标） */
   function probeDuration(file: File) {
@@ -152,7 +157,7 @@ export default function VoiceCloner({
   }
 
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-6">
+    <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-brand-900">
@@ -160,6 +165,7 @@ export default function VoiceCloner({
           </h2>
           <p className="mt-1 text-xs text-brand-400">
             上传 10 秒以上的清晰录音（无背景音乐、单人说话）。样本属敏感个人信息，仅用于本装置的语音合成。
+            你可随时在下方删除样本文件，删除后不影响已生成的声线。
           </p>
         </div>
         <span className="text-xs text-brand-400">
@@ -186,13 +192,14 @@ export default function VoiceCloner({
           <p className="mt-1 text-amber-700">可删除已有声线，或升级套餐获得更多额度。</p>
         </div>
       )}
-      {hasConsent && cloneLimit === 0 && clones.length === 0 && (
+      {hasConsent && !cloneApplied && cloneLimit === 0 && clones.length === 0 && (
         <div className="mt-4 rounded-lg border border-brand-100 bg-brand-50/60 px-4 py-3 text-xs text-brand-700">
           <p className="font-medium">当前「{planName}」不含声音克隆额度</p>
           <p className="mt-1">
-            可用 <b>{cloneUnlockPoints}</b> 积分兑换一次克隆资格（当前积分 {userPoints}），
-            或升级至「思念版 / 长夜版」。
+            可用 <b>{cloneUnlockPoints}</b> 积分申请一次克隆资格（当前积分 {userPoints}），
+            或升级至「思念版 / 长夜版」（订阅档直接含克隆额度）。
           </p>
+          <p className="mt-1 text-brand-400">克隆资格为一次性工本费，仅解锁克隆入口；真实声线复刻由订阅档承载。</p>
           <button
             type="button"
             onClick={onUnlock}
@@ -200,16 +207,21 @@ export default function VoiceCloner({
             className="mt-2 rounded-md bg-accent-600 px-4 py-1.5 text-xs text-white hover:bg-accent-700 disabled:opacity-50"
           >
             {busy === "unlock"
-              ? "兑换中…"
+              ? "申请中…"
               : userPoints < cloneUnlockPoints
                 ? `积分不足（需 ${cloneUnlockPoints}）`
-                : `用 ${cloneUnlockPoints} 积分兑换克隆资格`}
+                : `用 ${cloneUnlockPoints} 积分申请克隆资格`}
           </button>
+        </div>
+      )}
+      {hasConsent && cloneApplied && cloneLimit === 0 && (
+        <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-700">
+          克隆资格已申请（¥10 工本费 / 积分兑换），可上传样本复刻声线。
         </div>
       )}
 
       {/* —— 上传样本 —— */}
-      <form onSubmit={onSubmit} className="mt-4 rounded-lg border border-dashed border-gray-200 bg-brand-50/40 p-5">
+      <form onSubmit={onSubmit} className="mt-4 rounded-lg border border-dashed border-brand-200 bg-brand-50/40 p-5">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-brand-700">声线名称 *</label>
@@ -330,6 +342,7 @@ export default function VoiceCloner({
           <audio src={audition} controls className="mt-2 w-full" />
           <p className="mt-2 text-xs text-brand-400">
             试听的是你上传的原始样本。对话时由合成引擎按此音色朗读 AI 生成的文字。
+            样本文件可在声线卡片中随时删除（删除后声线仍可用）。
           </p>
         </div>
       )}
@@ -356,7 +369,7 @@ function VoiceCard({
     <div
       className={
         "rounded-lg border p-3 transition " +
-        (active ? "border-accent-400 bg-accent-50/40" : "border-gray-100 bg-white hover:border-gray-200")
+        (active ? "border-accent-400 bg-accent-50/40" : "border-brand-200 bg-brand-100/70 hover:border-brand-200")
       }
     >
       <div className="flex items-start justify-between gap-2">
@@ -380,7 +393,7 @@ function VoiceCard({
           <button
             type="button"
             onClick={onAudition}
-            className="rounded border border-gray-300 px-2.5 py-1 text-xs text-brand-700 hover:bg-gray-50"
+            className="rounded border border-brand-300 px-2.5 py-1 text-xs text-brand-700 hover:bg-gray-50"
           >
             试听
           </button>

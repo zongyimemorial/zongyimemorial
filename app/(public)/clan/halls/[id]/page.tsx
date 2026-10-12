@@ -6,9 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import ClanDecorLayer from "@/components/clan/ClanDecorLayer";
 import ClanWorshipPanel from "@/components/clan/ClanWorshipPanel";
 import HallGallery from "@/components/hall/HallGallery";
-import DecorSpacePreview, { SPACE_LABEL } from "@/components/decor/DecorSpacePreview";
-import SceneLayoutEditor from "@/components/decor/SceneLayoutEditor";
-import PortraitNiche from "@/components/decor/PortraitNiche";
+import ClanHall3DTour from "@/components/clan/ClanHall3DTour";
 import { ALTAR_MAX_ITEMS, topUpFreeOfferings } from "@/lib/offerings";
 import { iconOf } from "@/lib/ritual";
 /*
@@ -26,13 +24,7 @@ import { iconOf } from "@/lib/ritual";
 */
 import { findClanTemplate } from "@/lib/clan-decor";
 import { isPremiumForUser } from "@/lib/premium";
-import {
-  SceneCourtyard,
-  SceneGate,
-  SceneGround,
-  SceneMainHall,
-  SceneShrine,
-} from "@/components/clan/ClanHallScene";
+import { SceneGround } from "@/components/clan/ClanHallScene";
 import {
   CLAN_DEFAULT_DECOR,
   clanArchParams,
@@ -327,25 +319,6 @@ export default async function ClanHallDetailPage({
   // 建筑形制：由墙面素材决定屋面/门楼/台基的等级（纯呈现层，不影响任何 id）
   const arch = clanArchParams(decor.slots.wall, wall);
 
-  /*
-    收费模板的 3D 空间形态。
-    只有**显式选了模板、且不是赠品那套**才取它的 space ——
-    赠品 clan-tpl-ancestral 的 space 是 shrine（≠ classic），
-    若不排除，默认那套会把下方四段实景分镜顶掉，老页面观感回归。
-    这与纪念馆侧同一口径（纪念馆排的是 tpl-niche / niche）。
-  */
-  const clanSpaceKind =
-    decor.templateId && decor.templateId !== "clan-tpl-ancestral"
-      ? findClanTemplate(decor.templateId)?.space
-      : undefined;
-
-  /*
-    是否正在用 3D 空间场景作为寝堂的表达。
-    与上方渲染分支（`clanSpaceKind && clanSpaceKind !== "classic"`）必须**同一口径**，
-    否则遗像的"只渲染一次"约定会错位（一处渲染、另一处也渲染，或两处都不渲染）。
-  */
-  const has3DSpace = !!clanSpaceKind && clanSpaceKind !== "classic";
-
   const clanTypeIcon: Record<string, string> = {
     incense: "🕯️ 上香",
     flower: "🌸 献花",
@@ -362,59 +335,25 @@ export default async function ClanHallDetailPage({
   // 数组里的 node 保持**原样**的 JSX 与条件渲染；resolveSectionOrder 永不删板块。
   const clanSections: { key: string; node: ReactNode }[] = [
     {
-      key: "gate",
+      key: "tour",
       node: (
         <section className="mb-4">
           {/*
-            ① 山门：整座宗祠的"脸面"。
-            屋面形制由 arch.roof 决定（重檐 / 悬山 / 硬山），门楼由 arch.gate 决定。
+            四段 3D 漫游连廊（山门 → 天井 → 享堂 → 寝堂，单屏 Z 轴纵深 + 鼠标环视）。
+            取代原先分散的四段 2D 分镜与付费独立 3D 板块；遗像/牌位/供品/匾额
+            仍由内部复用的 SceneShrine / SceneMainHall 渲染，断言文字零回归。
           */}
-          <SceneGate
+          <ClanHall3DTour
             hallName={hall.hallName}
             surname={hall.surname}
             ancestorTitle={hall.ancestorTitle}
+            plaqueText={hall.name}
+            ancestorName={hall.ancestorName}
+            portrait={portrait}
+            altarGlyphs={altarGlyphs}
           />
         </section>
       ),
-    },
-    {
-      key: "clan3d",
-      node: has3DSpace ? (
-        <section className="mb-4">
-          {/*
-            ⚠️ **不传 height** —— 与纪念馆页同口径：高度由 `aspect-[1000/703]`
-            按宽度推导。写死高度会让画面比例与宽度脱钩（`unitToPx` 只按宽度换算
-            几何），台基会被切掉。两页必须用同一套口径，否则又会出现
-            "纪念馆与宗祠场景规格不一致"（AGENTS.md 记过这类分叉）。
-          */}
-          {/*
-            ⚠️ `engine="v2"` 必须**显式传**（与纪念馆页同口径）：宗祠与纪念馆的
-            3D 场景规格必须一致，一端切了另一端没切就会出现"花了同样积分，
-            两边观感不一样"。
-          */}
-          <SceneLayoutEditor
-            hallId={hall.id}
-            clanSide
-            isOwner={isOwner}
-            initialLayout={decor.layout}
-            decor={decor}
-            spaceKind={clanSpaceKind}
-            engine="v2"
-            className="shadow-lg"
-          >
-            {portrait && (
-              <PortraitNiche
-                src={portrait}
-                alt={`${hall.ancestorName ?? hall.hallName}遗像`}
-                caption={`先祖 ${hall.ancestorName ?? hall.hallName}`}
-              />
-            )}
-          </SceneLayoutEditor>
-          <p className={`mt-2 text-center text-xs ${subText}`}>
-            当前空间：{SPACE_LABEL[clanSpaceKind] ?? "常规厅堂"} · 拖拽画面可环视
-          </p>
-        </section>
-      ) : null,
     },
     {
       key: "info",
@@ -481,28 +420,6 @@ export default async function ClanHallDetailPage({
       ),
     },
     {
-      key: "shrine",
-      node: (
-        <section className="mt-10">
-          {/*
-            ⚠️ 遗像**只在这两处之一**出现，不能同时出现。
-
-            上方 3D 场景（收费模板）已经用 PortraitNiche 把遗像安奉进大龛了；
-            若这里再传一次 portrait，同一位先祖的照片会在同一页出现两次
-            （这与本文件另一处注释里"不再展示遗像竖图"是同一个道理）。
-
-            所以：走 3D 空间时，寝堂只保留牌位墙（昭穆序）与香案 ——
-            牌位墙是族谱秩序的表达，与遗像并不重复；香案仍是献祭的落点。
-          */}
-          <SceneShrine
-            altarItems={altarGlyphs}
-            portrait={has3DSpace ? undefined : portrait}
-            deceasedName={hall.ancestorName ?? hall.hallName}
-          />
-        </section>
-      ),
-    },
-    {
       key: "worship",
       node: (
         <section className={`mt-6 ${cardCls} p-6`} style={skinCardStyle()}>
@@ -534,21 +451,6 @@ export default async function ClanHallDetailPage({
       ),
     },
     {
-      key: "courtyard",
-      node: (
-        <section className="mt-10">
-          {/*
-            ② 天井：立柱与长幡。
-            长幡取姓氏首字/次字，象征"祖"「宗」二脉。
-            建筑序列（天井 → 享堂）作为"纵深"留在献祭之后。
-          */}
-          <SceneCourtyard
-            banners={[hall.surname.slice(0, 1) || "祖", "宗"]}
-          />
-        </section>
-      ),
-    },
-    {
       key: "photos",
       node:
         photos.length > 0 ? (
@@ -560,18 +462,6 @@ export default async function ClanHallDetailPage({
             </div>
           </section>
         ) : null,
-    },
-    {
-      key: "mainhall",
-      node: (
-        <section className="mt-10">
-          {/*
-            ③ 享堂：斗拱 + 额枋 + 匾额（匾额文字为 HTML）。
-            匾额取堂号，是"高悬门楣"的那块匾。
-          */}
-          <SceneMainHall plaqueText={hall.name} />
-        </section>
-      ),
     },
     {
       key: "tributes",
@@ -789,7 +679,7 @@ export default async function ClanHallDetailPage({
             </span>
             <a
               href={`/console/clan-halls/${hall.id}`}
-              className="rounded bg-white/70 px-3 py-1 text-stone-700 hover:bg-white"
+              className="rounded bg-white/70 px-3 py-1 text-stone-700 hover:bg-brand-100/70"
             >
               进入宗祠管理台 →
             </a>
@@ -809,7 +699,7 @@ export default async function ClanHallDetailPage({
         />
 
         {/* 合规底线：一键举报入口 */}
-        <details className="mt-6 rounded-lg border border-gray-100 bg-white p-4">
+        <details className="mt-6 rounded-lg border border-brand-200/80 bg-brand-100/70 p-4">
           <summary className="cursor-pointer text-sm font-medium text-brand-700">
             发现违规内容？举报此宗祠
           </summary>
@@ -818,7 +708,7 @@ export default async function ClanHallDetailPage({
             <input type="hidden" name="from" value={`/clan/halls/${id}`} />
             <div>
               <label className="mb-1 block text-xs font-medium text-brand-700">举报类型</label>
-              <select name="kind" defaultValue="living" className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm">
+              <select name="kind" defaultValue="living" className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm">
                 <option value="living">活人被祭拜</option>
                 <option value="fake">虚假宗祠</option>
                 <option value="other">其他违规</option>
@@ -830,13 +720,13 @@ export default async function ClanHallDetailPage({
                 name="reason"
                 rows={3}
                 maxLength={1000}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm"
                 placeholder="请简述违规情况"
               />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-brand-700">联系方式（选填）</label>
-              <input name="contact" maxLength={100} className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm" placeholder="方便我们回访" />
+              <input name="contact" maxLength={100} className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm" placeholder="方便我们回访" />
             </div>
             <button type="submit" className="rounded-md bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-700">
               提交举报

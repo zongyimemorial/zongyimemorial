@@ -18,9 +18,35 @@ function sql(q) {
 
 const WHISPER_ID = "cmulxs0yb0009vcfqaolxgaen";
 
-// 重置为待审核
+/*
+  重置为待审核 —— 并且**必须一并满足"可以放行"的两个合规闸门**。
+
+  ⚠️ 实测踩过（2026-10）：本套件早先只重置 status，点「通过并开启」却实得 rejected，
+  看着像"通过按钮坏了"。查 actions.ts 才发现是**闸门按设计工作**：
+     blocked = (decision==="active" && !consentOk) || (decision==="active" && ethicsBlocked)
+     finalDecision = blocked ? "rejected" : decision
+  该 profile 有 3 条声音克隆，而 ethicsStatus=pending → ethicsBlocked 为真 → 强制驳回。
+  也就是说：**系统是对的，测试没备货**（AGENTS.md：断言前显式备好前提，别赌库里的状态）。
+
+  所以这里显式把 ethicsStatus 置为 approved（有克隆件时伦理必须先过，这正是闸门要求的），
+  原值在收尾还原，保证脚本可重复跑。
+*/
+const ethicsBefore = sql(`SELECT coalesce("ethicsStatus",'') FROM "WhisperProfile" WHERE id='${WHISPER_ID}';`);
+
+/*
+  同时备份 status/enabled/isPublic —— 本套件最后一步会把装置置为 rejected，
+  若不还原，后续套件（如 verify-whispers-e2e 断言"对话页显示装置名称"）
+  会因为"装置已被关闭"而红。这类**测试顺序污染**排查成本很高（单独跑一切正常），
+  所以这里必须成对备份 + 收尾还原。
+*/
+const stateBefore = sql(
+  `SELECT status||'|'||enabled||'|'||"isPublic" FROM "WhisperProfile" WHERE id='${WHISPER_ID}';`,
+);
+
 const resetPending = () =>
-  sql(`UPDATE "WhisperProfile" SET status='pending', enabled=false, "isPublic"=false WHERE id='${WHISPER_ID}';`);
+  sql(
+    `UPDATE "WhisperProfile" SET status='pending', enabled=false, "isPublic"=false, "ethicsStatus"='approved' WHERE id='${WHISPER_ID}';`,
+  );
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1500, height: 1100 } });
@@ -113,6 +139,26 @@ const realErrors = errors.filter((e) => !/favicon|Download the React DevTools/i.
 check("无控制台错误", realErrors.length === 0, realErrors.slice(0, 2).join(" | "));
 
 await browser.close();
+
+// ---- 收尾：还原伦理状态与装置可见性（脚本可重复跑，不留测试数据 / 不污染后续套件）----
+if (ethicsBefore) {
+  sql(`UPDATE "WhisperProfile" SET "ethicsStatus"='${ethicsBefore}' WHERE id='${WHISPER_ID}';`);
+  const nowEthics = sql(`SELECT coalesce("ethicsStatus",'') FROM "WhisperProfile" WHERE id='${WHISPER_ID}';`);
+  check("测试后伦理状态已还原", nowEthics === ethicsBefore, `${nowEthics} vs ${ethicsBefore}`);
+}
+{
+  // stateBefore 形如 "active|true|true"，逐字写回（值来自本库，不需再转义）
+  const [st, en, pub] = stateBefore.split("|");
+  if (st) {
+    sql(
+      `UPDATE "WhisperProfile" SET status='${st}', enabled=${en === "true"}, "isPublic"=${pub === "true"} WHERE id='${WHISPER_ID}';`,
+    );
+    const nowState = sql(
+      `SELECT status||'|'||enabled||'|'||"isPublic" FROM "WhisperProfile" WHERE id='${WHISPER_ID}';`,
+    );
+    check("测试后装置状态已还原（不污染后续套件）", nowState === stateBefore, `${nowState} vs ${stateBefore}`);
+  }
+}
 
 // ---- 输出 ----
 console.log("");

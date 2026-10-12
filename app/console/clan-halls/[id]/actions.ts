@@ -1,10 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { spendPoints } from "@/lib/points";
-import { removeHallImage, statManagedUpload } from "@/lib/upload";
+import {
+  removeHallAssetsDir,
+  removeHallImage,
+  saveHallImage,
+  statManagedUpload,
+} from "@/lib/upload";
 import {
   CLAN_DEFAULT_DECOR,
   CLAN_KITS,
@@ -29,6 +35,7 @@ import { checkClanDraft, parseDecorDraft } from "@/lib/decor-save";
 import { isPremiumUntil } from "@/lib/premium";
 import { createOrder } from "@/lib/orders";
 import { STORAGE_PLANS } from "@/lib/storage";
+import { MATERIAL_TYPES, normalizeProofs } from "@/lib/hall-review";
 
 // ===========================================================================
 // 1) 基本信息（馆主）
@@ -71,24 +78,175 @@ export async function submitClanHallForReview(formData: FormData) {
   const ctx = await loadClanHall(id);
   if ("error" in ctx) return { ok: false, message: ctx.error };
 
+  // 修「重新送审 isPublic:true」瑕疵：送审即回到待审态，未过审前不得公开
   await prisma.clanHall.update({
     where: { id },
-    data: { status: "pending", isPublic: true },
+    data: { status: "pending", isPublic: false },
   });
   refresh(id);
   return { ok: true, message: "已提交审核，审核通过后将对宗亲公开展示" };
 }
 
-/** 是否公开 */
+/**
+ * 特殊申述通道补传材料（owner 自办）。
+ * 仅创建者可见期间，owner 在 60 天补传期内提交正式材料 → 置 supplementedAt +
+ * isPublic=true，宗祠转公开。材料以「追加/更新」方式并入现有 proofs.materials。
+ */
+export async function supplementClanHallMaterials(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user?.id) redirect("/login");
+  const id = String(formData.get("id") || "");
+  const hall = await prisma.clanHall.findUnique({ where: { id } });
+  if (!hall) redirect("/console");
+  if (hall.ownerUserId !== user.id) redirect("/console");
+  if (hall.reviewChannel !== "appeal" || hall.status !== "active") return;
+
+  const appealTypes = [
+    "clan_obituary",
+    "clan_old_photo",
+    "clan_history_doc",
+    "clan_family_record",
+  ] as const;
+  const existing =
+    normalizeProofs(hall.proofs) ??
+    ({
+      applicantIdCard: "",
+      applicantPhone: "",
+      relation: "宗亲",
+      materials: [] as { type: string; label: string; value?: string; url?: string }[],
+    } as const);
+  const materials = [...(existing.materials ?? [])];
+  for (const type of appealTypes) {
+    const value = String(formData.get(`sup_${type}`) || "").trim().slice(0, 200);
+    const file = formData.get(`supfile_${type}`);
+    let url: string | undefined;
+    if (file instanceof File && file.size > 0) {
+      try {
+        url = await saveHallImage(file, id, "proofs");
+      } catch {
+        return;
+      }
+    }
+    if (value || url) {
+      const item = {
+        type,
+        label: MATERIAL_TYPES[type as keyof typeof MATERIAL_TYPES].label,
+        value: value || undefined,
+        url: url || undefined,
+      };
+      const idx = materials.findIndex((m) => m.type === type);
+      if (idx >= 0) materials[idx] = item;
+      else materials.push(item);
+    }
+  }
+
+  const proofs = { ...existing, materials };
+  await prisma.clanHall.update({
+    where: { id },
+    data: {
+      proofs: proofs as object,
+      supplementedAt: new Date(),
+      isPublic: true,
+    },
+  });
+
+  refresh(id);
+  revalidatePath(`/clan/halls/${id}`);
+  redirect(`/console/clan-halls/${id}?supplemented=1`);
+}
+
+// ===========================================================================
+// 删除宗祠（祠主行使删除权）
+// ===========================================================================
+/**
+ * 删除宗祠（祠主行使数据删除权）。
+ *
+ * 删除范围（显式级联清理 + 磁盘清除）：
+ *   - ClanHall 本体
+ *   - ClanTribute（祭祀 / 消费记录）
+ *   - CommunityMember / CommunityPost（宗亲社区）
+ *   - ClanActivity（本祠宗族活动，含报名）
+ *   - HallReport（建馆审核举报）
+ *   - 磁盘 uploads/clan-halls/<id>/ 整棵目录（照片 + 证明材料）
+ *
+ * 安全：仅祠主本人可删；先落审计日志再删库。
+ * 显式清理所有子表，确保无论 schema 级联设置如何，删父表都不会触发外键约束。
+ */
+export async function deleteClanHall(formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get("clanHallId") || "");
+  const ctx = await loadClanHall(id);
+  if ("error" in ctx) return { ok: false, message: ctx.error };
+
+  const info = await prisma.clanHall.findUnique({
+    where: { id },
+    select: { name: true, hallName: true },
+  });
+
+  // 1) 先落审计日志
+  await prisma.auditLog.create({
+    data: {
+      userId: ctx.user.id!,
+      action: `clan_hall_delete:${info?.hallName ?? info?.name ?? id}`,
+      entity: "ClanHall",
+      entityId: id,
+    },
+  });
+
+  // 2) 显式清理子表（无论 schema 是否级联）
+  await prisma.clanTribute.deleteMany({ where: { clanHallId: id } });
+  await prisma.communityMember.deleteMany({ where: { clanHallId: id } });
+  await prisma.communityPost.deleteMany({ where: { clanHallId: id } });
+  await prisma.clanActivity.deleteMany({ where: { clanHallId: id } });
+  await prisma.hallReport.deleteMany({ where: { clanHallId: id } });
+
+  // 3) 磁盘清理（照片 + 证明材料）；失败不影响主流程
+  try {
+    await removeHallAssetsDir(id, "clan-halls");
+  } catch {
+    /* 文件层失败不阻塞 */
+  }
+
+  // 4) 删本体
+  await prisma.clanHall.delete({ where: { id } });
+
+  revalidatePath("/console");
+  revalidatePath(`/clan/halls/${id}`);
+  redirect("/console?clanHallDeleted=1");
+}
+
+/**
+ * 切换宗祠公开状态 —— 「下架 / 撤回为私密草稿」的可逆操作（与纪念馆侧 setHallPublic 同构）。
+ *
+ * 只翻 isPublic：数据全留、磁盘不动；effectivePublic=false → 公页非祠主 notFound()、
+ * 列表过滤、SEO noindex，祠主仍可看见与重新公开。先落审计日志再改库，可追溯。
+ */
 export async function setClanHallPublic(formData: FormData) {
   const id = String(formData.get("clanHallId") || "");
   const isPublic = String(formData.get("isPublic") || "") === "1";
   const ctx = await loadClanHall(id);
   if ("error" in ctx) return { ok: false, message: ctx.error };
 
+  const info = await prisma.clanHall.findUnique({ where: { id }, select: { hallName: true, name: true } });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: ctx.user.id!,
+      action: isPublic
+        ? `clan_hall_republish:${info?.hallName ?? id}`
+        : `clan_hall_withdraw:${info?.hallName ?? id}`,
+      entity: "ClanHall",
+      entityId: id,
+    },
+  });
+
   await prisma.clanHall.update({ where: { id }, data: { isPublic } });
   refresh(id);
-  return { ok: true, message: isPublic ? "已设为公开" : "已设为私密" };
+  revalidatePath(`/clan/halls/${id}`);
+  revalidatePath("/console");
+  return {
+    ok: true,
+    message: isPublic ? "已重新公开，宗亲可访问本祠" : "已撤回为私密草稿，仅你可见（数据完整保留）",
+  };
 }
 
 // ===========================================================================
@@ -103,6 +261,7 @@ async function loadClanHall(
       hall: {
         id: string;
         ownerUserId: string;
+        surname: string;
         premiumUntil: Date | null;
         archive: unknown;
         templateConfig: unknown;
@@ -116,6 +275,7 @@ async function loadClanHall(
     select: {
       id: true,
       ownerUserId: true,
+      surname: true,
       premiumUntil: true,
       archive: true,
       templateConfig: true,
@@ -138,6 +298,7 @@ async function loadClanHall(
 type ClanHallRow = {
   id: string;
   ownerUserId: string;
+  surname: string;
   premiumUntil: Date | null;
   archive: unknown;
   templateConfig: unknown;
@@ -591,4 +752,62 @@ export async function createClanStorageOrder(
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "下单失败" };
   }
+}
+
+// ===========================================================================
+// 宗族活动：祠主发布本族活动（先审后显）
+// ===========================================================================
+const CLAN_ACTIVITY_KINDS = ["祭祖大典", "宗亲联谊", "修谱研讨", "家族议事"];
+
+/**
+ * 祠主在控制台发布本祠活动。归属校验走 loadClanHall（仅祠主）；
+ * 需实名；新活动一律 reviewStatus="pending"，由平台在「内容审核」通过后才在公页公开。
+ */
+export async function createClanActivity(formData: FormData) {
+  const clanHallId = String(formData.get("clanHallId") || "");
+  const ctx = await loadClanHall(clanHallId);
+  if ("error" in ctx) return { ok: false, message: ctx.error };
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: ctx.user.id },
+    select: { idVerified: true },
+  });
+  if (!dbUser?.idVerified) {
+    return { ok: false, message: "发布活动需先完成实名认证（控制台 → 账号设置）" };
+  }
+
+  const title = String(formData.get("title") || "").trim().slice(0, 80);
+  const location = String(formData.get("location") || "").trim().slice(0, 120);
+  const startAtRaw = String(formData.get("startAt") || "").trim();
+  if (!title) return { ok: false, message: "请填写活动标题" };
+  if (!location) return { ok: false, message: "请填写活动地点" };
+  if (!startAtRaw) return { ok: false, message: "请选择活动时间" };
+  const startAt = new Date(startAtRaw);
+  if (Number.isNaN(startAt.getTime())) return { ok: false, message: "活动时间格式不正确" };
+
+  const kindRaw = String(formData.get("kind") || "");
+  const kind = CLAN_ACTIVITY_KINDS.includes(kindRaw) ? kindRaw : "家族议事";
+  const capacity = Math.max(1, Number(formData.get("capacity") || 100) || 100);
+
+  await prisma.clanActivity.create({
+    data: {
+      title,
+      kind,
+      surname: ctx.hall.surname || null,
+      location,
+      onlineLink: String(formData.get("onlineLink") || "").trim() || null,
+      coverImage: String(formData.get("coverImage") || "").trim() || null,
+      description: String(formData.get("description") || "").trim().slice(0, 2000) || null,
+      startAt,
+      capacity,
+      clanHallId,
+      createdByUserId: ctx.user.id!,
+      reviewStatus: "pending",
+    },
+  });
+
+  refresh(clanHallId);
+  revalidatePath("/clan/activities");
+  revalidatePath("/clan");
+  return { ok: true, message: "活动已提交审核，管理员通过后即在「宗族活动」公开（下方可查看审核状态）" };
 }

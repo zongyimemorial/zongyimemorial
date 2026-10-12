@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { registerAction } from "./actions";
 import type { AuthState } from "@/app/login/actions";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 export default function RegisterPage() {
   return (
@@ -25,7 +26,7 @@ function RegisterForm() {
 
   return (
     <div className="container-page flex min-h-[70vh] items-center justify-center py-12">
-      <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="w-full max-w-md rounded-xl border border-brand-200 bg-brand-100/70 p-8 shadow-sm">
         <h1 className="mb-1 text-2xl font-semibold text-brand-900">注册</h1>
         <p className="mb-6 text-sm text-brand-500">创建账号以使用数字纪念服务</p>
 
@@ -37,18 +38,12 @@ function RegisterForm() {
               type="email"
               autoComplete="email"
               placeholder="you@example.com"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+              className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
             />
           </div>
           <div>
             <label className="mb-1 block text-sm text-brand-700">密码</label>
-            <input
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              placeholder="至少 6 位"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
-            />
+            <PasswordInput name="password" autoComplete="new-password" placeholder="至少 6 位" />
           </div>
           <div>
             <label className="mb-1 block text-sm text-brand-700">
@@ -59,7 +54,7 @@ function RegisterForm() {
               type="text"
               defaultValue={invite}
               placeholder="有好友邀请可填写其邀请码"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm uppercase outline-none focus:border-brand-500"
+              className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm uppercase outline-none focus:border-brand-500"
             />
           </div>
 

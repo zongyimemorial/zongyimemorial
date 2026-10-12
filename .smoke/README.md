@@ -95,16 +95,18 @@ COMMIT;
 
 ## 宗祠建立审核烟测（scripts/smoke-clan-review.mjs）
 
-与纪念馆烟测同构，但验证**宗祠**建立审核闭环：
+与纪念馆烟测同构，但验证**宗祠**建立审核闭环，且**三通道全覆盖**（把纪念馆的三通道判据镜像到宗祠）：
 
 ```
-建馆(standard 通道，填基本信息 + 至少一项宗祠佐证材料)
-  → 后台「宗祠设立审核」通过并公开
-  → 公页 /clan/halls/[id] 对非创建者可见
+standard    通道：填基本信息 + 一项宗祠资质证明 → 后台通过并公开 → 公页可见
+alternative 通道：切换替代通道 + 一项替代核验材料（宗亲会/邻里证明）→ 后台通过并公开 → 公页可见
+appeal      通道：切换申述通道 + 一项申述材料 + 关系说明 + 真实性承诺书 + 勾选
+                 → 后台通过（仅创建者可见）→ 公页对非创建者不可见
+                 → owner 控制台补传正式材料 → 公页转公开可见
 ```
 
-- 6 项断言：`/clan/halls/new` 加载 → 提交成功跳控制台 → **审批前公页对非创建者不可见（先审后显）** → 后台队列出现该待审宗祠 → 点「通过并公开」→ 公页可见（含馆名 + 堂号）。
-- 截图：`clan-01-new-form.png` … `clan-06-public-visible.png`（共 6 张）。
+- 断言（约 12 项）：`/clan/halls/new` 加载 → standard 提交跳控制台 → **审批前公页不可见（先审后显）** → 后台通过 → 公页可见（含馆名 + 堂号）；alternative 同构（替代通道审核通过即公开）；appeal 提交 → 审批前不可见 → 通过后仍仅创建者可见 → owner 补传后公页转公开。
+- 截图：`clan-01-new-form.png`、`clan-02-filled.png`、`clan-03-created.png`、`clan-06-public-visible.png`（standard）；`clan-alt-01-filled.png`、`clan-alt-02-public.png`（alternative）；`clan-appeal-01-channel.png` … `clan-appeal-06-public.png`（appeal 含待补传横幅与补传表单）。
 - 运行（需 dev server 在 `BASE`，默认 `:3000`；令牌签发见上文「运行步骤」）：
 
 ```bash
@@ -112,7 +114,7 @@ BASE=http://localhost:3000 OWNER_TOKEN="<owner>" ADMIN_TOKEN="<admin>" \
   node scripts/smoke-clan-review.mjs
 ```
 
-- 清理：测试会在 `ClanHall` 写入一条记录（及其可能的子表 `ClanTribute` / `CommunityMember` / `CommunityPost` / `HallReport` / `OfferingOnAltar`，均经 `clanHallId` 外键引用），测试后按上文「测试数据清理」同法 DELETE。
+- 清理：测试会在 `ClanHall` 写入三条记录（standard / alternative / appeal 各一），及其可能的子表 `ClanTribute` / `CommunityMember` / `CommunityPost` / `HallReport` / `OfferingOnAltar`（均经 `clanHallId` 外键引用）。脚本把三个 `id` 写到 `/tmp/smoke-clan-ids.txt`（每行一个），测试后按上文「测试数据清理」同法 DELETE。
 
 ## 截图走 Git LFS
 

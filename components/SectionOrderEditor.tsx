@@ -11,7 +11,6 @@ export const HALL_SECTION_LABELS: Record<string, string> = {
   couplet: "挽联横版",
   paidTributes: "敬献祭品",
   archive: "故人数字档案",
-  reserve: "分时预约",
   tributes: "追思记录",
   community: "亲友交流社区",
   panorama: "3D 全景",
@@ -100,7 +99,7 @@ export default function SectionOrderEditor({
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5">
+    <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
       <div className="mb-1 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-stone-800">页面板块排序</h3>
         <span className="text-[11px] text-stone-400">拖拽或点 ↑/↓ 调整</span>
@@ -119,7 +118,7 @@ export default function SectionOrderEditor({
               "flex items-center justify-between rounded-lg border px-3 py-2 text-sm transition-colors " +
               (dragIndex === i
                 ? "border-amber-400 bg-amber-50"
-                : "border-gray-200 bg-white hover:border-stone-300")
+                : "border-brand-200 bg-brand-100/70 hover:border-stone-300")
             }
           >
             <span className="flex items-center gap-2">
@@ -134,7 +133,7 @@ export default function SectionOrderEditor({
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
                 aria-label="上移"
-                className="rounded border border-gray-200 px-2 py-0.5 text-xs text-stone-600 hover:bg-gray-50 disabled:opacity-30"
+                className="rounded border border-brand-200 px-2 py-0.5 text-xs text-stone-600 hover:bg-gray-50 disabled:opacity-30"
               >
                 ↑
               </button>
@@ -143,7 +142,7 @@ export default function SectionOrderEditor({
                 onClick={() => move(i, 1)}
                 disabled={i === order.length - 1}
                 aria-label="下移"
-                className="rounded border border-gray-200 px-2 py-0.5 text-xs text-stone-600 hover:bg-gray-50 disabled:opacity-30"
+                className="rounded border border-brand-200 px-2 py-0.5 text-xs text-stone-600 hover:bg-gray-50 disabled:opacity-30"
               >
                 ↓
               </button>
@@ -165,7 +164,7 @@ export default function SectionOrderEditor({
           type="button"
           onClick={reset}
           disabled={pending || !dirty}
-          className="rounded-lg border border-gray-200 px-4 py-1.5 text-sm text-stone-600 hover:bg-gray-50 disabled:opacity-40"
+          className="rounded-lg border border-brand-200 px-4 py-1.5 text-sm text-stone-600 hover:bg-gray-50 disabled:opacity-40"
         >
           还原
         </button>

@@ -56,7 +56,7 @@ export default async function WhisperHallPage({
             </Link>
             <Link
               href={`/halls/${hallId}`}
-              className="rounded-md border border-gray-300 bg-white px-5 py-2 text-sm text-brand-700 hover:bg-gray-50"
+              className="rounded-md border border-brand-300 bg-brand-100/70 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50"
             >
               返回纪念馆
             </Link>
@@ -66,13 +66,7 @@ export default async function WhisperHallPage({
     );
   }
 
-  const [quota, avatars] = await Promise.all([
-    getQuota(user.id),
-    prisma.whisperAvatar.findMany({
-      where: { profileId: profile.id, isSelected: true },
-      take: 1,
-    }),
-  ]);
+  const quota = await getQuota(user.id);
 
   const spec = PLAN_SPECS[quota.plan] ?? PLAN_SPECS.free;
   const voiceEnabled = quota.remainingMins > 0 && spec.monthlyMins > 0;
@@ -83,8 +77,6 @@ export default async function WhisperHallPage({
     orderBy: { createdAt: "desc" },
     select: { id: true },
   });
-
-  const avatarUrl = avatars[0]?.imageUrl ?? null;
 
   return (
     <div className="container-page max-w-3xl py-8">
@@ -100,7 +92,7 @@ export default async function WhisperHallPage({
         <span className="text-brand-600">与 {profile.personaName} 说话</span>
         <a
           href="/"
-          className="ml-auto rounded-md border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+          className="ml-auto rounded-md border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
         >
           ← 返回首页
         </a>
@@ -133,8 +125,6 @@ export default async function WhisperHallPage({
         profileId={profile.id}
         personaName={profile.personaName}
         personTitle={profile.personTitle ?? ""}
-        avatarUrl={avatarUrl}
-        mode={profile.mode}
         greeting={greetingFor(profile)}
         voiceEnabled={voiceEnabled}
         remainingMins={quota.remainingMins}
@@ -151,6 +141,9 @@ export default async function WhisperHallPage({
               : "当前套餐不含语音，仅支持文字交流。"}
         </span>
         <span className="flex flex-wrap gap-3">
+          <Link href={`/whispers/${hallId}/history`} className="text-accent-600 hover:underline">
+            回顾说过的话 →
+          </Link>
           <Link href="/whispers" className="text-accent-600 hover:underline">
             购买时长 / 升级套餐 →
           </Link>

@@ -32,13 +32,13 @@ export default function ObituaryManageBar({ obituaryId, status, publicHref }: Pr
   }
 
   return (
-    <div className="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4" data-obituary-manage>
+    <div className="mb-6 rounded-lg border border-brand-200 bg-gray-50 p-4" data-obituary-manage>
       <div className="flex flex-wrap items-center gap-2">
         <a
           href={publicHref}
           target="_blank"
           rel="noreferrer"
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-brand-700 hover:bg-gray-50"
+          className="rounded-md border border-brand-300 bg-brand-100/70 px-3 py-1.5 text-sm text-brand-700 hover:bg-gray-50"
         >
           查看公开页 ↗
         </a>
@@ -51,7 +51,7 @@ export default function ObituaryManageBar({ obituaryId, status, publicHref }: Pr
             fd.set("obituaryId", obituaryId);
             run(fd, toggleObituaryStatus);
           }}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-brand-700 hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-md border border-brand-300 bg-brand-100/70 px-3 py-1.5 text-sm text-brand-700 hover:bg-gray-50 disabled:opacity-50"
         >
           {published ? "下架" : "重新发布"}
         </button>
@@ -70,7 +70,7 @@ export default function ObituaryManageBar({ obituaryId, status, publicHref }: Pr
               else setMsg(res.message || "删除失败");
             });
           }}
-          className="rounded-md border border-red-200 bg-white px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+          className="rounded-md border border-red-200 bg-brand-100/70 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
         >
           删除
         </button>

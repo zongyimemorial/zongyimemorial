@@ -61,7 +61,7 @@ export default function CommunityInviteCard({
           type="text"
           readOnly
           value={joinUrl}
-          className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600"
+          className="flex-1 rounded-lg border border-brand-200 bg-brand-100/70 px-3 py-2 text-xs text-gray-600"
         />
         <button
           type="button"
@@ -77,7 +77,7 @@ export default function CommunityInviteCard({
           type="text"
           readOnly
           value={inviteCode}
-          className="flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs text-gray-600 font-mono"
+          className="flex-1 rounded-lg border border-brand-200 bg-brand-100/70 px-3 py-2 text-xs text-gray-600 font-mono"
         />
         <button
           type="button"
@@ -90,7 +90,7 @@ export default function CommunityInviteCard({
           type="button"
           onClick={onRegenerate}
           disabled={busy}
-          className="rounded-lg border border-gray-200 px-3 py-2 text-xs text-gray-500 hover:bg-gray-50"
+          className="rounded-lg border border-brand-200 px-3 py-2 text-xs text-gray-500 hover:bg-gray-50"
         >
           {busy ? "…" : "重新生成"}
         </button>

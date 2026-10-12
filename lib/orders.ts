@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/db";
 import { genOrderNo } from "@/lib/utils";
 import { bonusFor, validateTopup, totalFor } from "@/lib/fortune";
+import {
+  WREATH_PRODUCT_SLUG,
+  WREATH_MAX_PER_HALL,
+  countActiveWreaths,
+} from "@/lib/wreaths";
 import type { Order } from "@prisma/client";
 
 export async function createOrder(params: {
@@ -28,6 +33,7 @@ export async function createOrder(params: {
   */
   let targetHallId = params.targetHallId ?? null;
   let targetKind = params.targetKind ?? null;
+  const isWreath = product.slug === WREATH_PRODUCT_SLUG;
   if (product.type === "storage") {
     if (!targetHallId) throw new Error("请先在控制台选择要扩容的纪念馆或宗祠");
     targetKind = targetKind === "clan" ? "clan" : "hall";
@@ -42,6 +48,23 @@ export async function createOrder(params: {
             select: { id: true },
           });
     if (!owned) throw new Error("找不到该纪念馆/宗祠，或你没有管理权限");
+  } else if (isWreath) {
+    /*
+      敬献大花圈：目标是「被祭献的馆」，任何登录用户都可敬献（公开祭拜口径，
+      与 MemorialTribute 一致），故**不做归属校验**；但馆必须真实存在。
+      同时在下单时做一次「满 2 拒单」（履约时 simulatePay 还会再校验一次，
+      两处同源常量 WREATH_MAX_PER_HALL，防止并发超卖靠事务内复查兜底）。
+    */
+    if (!targetHallId) throw new Error("缺少祭献目标馆");
+    const hall = await prisma.memorialHall.findUnique({
+      where: { id: targetHallId },
+      select: { id: true },
+    });
+    if (!hall) throw new Error("找不到要祭献的纪念馆");
+    if ((await countActiveWreaths(targetHallId)) >= WREATH_MAX_PER_HALL) {
+      throw new Error(`该馆花圈已满（最多 ${WREATH_MAX_PER_HALL} 个），请待其自然凋谢后再敬献`);
+    }
+    targetKind = "hall";
   } else {
     // 非容量商品不带目标馆，避免脏字段混入
     targetHallId = null;

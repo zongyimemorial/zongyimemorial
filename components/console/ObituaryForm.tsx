@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { ObituaryResult } from "@/app/console/obituaries/actions";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 type HallOption = { id: string; name: string; deceasedName: string };
 
@@ -71,7 +72,7 @@ export default function ObituaryForm({ obituary, halls, action, quotaLeft }: Pro
           maxLength={30}
           defaultValue={obituary?.deceasedName ?? ""}
           placeholder="如：张公讳明德"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
+          className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
         />
       </div>
 
@@ -82,7 +83,7 @@ export default function ObituaryForm({ obituary, halls, action, quotaLeft }: Pro
             type="date"
             name="birthDate"
             defaultValue={obituary?.birthDate ?? ""}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
+            className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
           />
         </div>
         <div>
@@ -91,7 +92,7 @@ export default function ObituaryForm({ obituary, halls, action, quotaLeft }: Pro
             type="date"
             name="deathDate"
             defaultValue={obituary?.deathDate ?? ""}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
+            className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
           />
         </div>
       </div>
@@ -104,7 +105,7 @@ export default function ObituaryForm({ obituary, halls, action, quotaLeft }: Pro
           maxLength={2000}
           defaultValue={obituary?.biography ?? ""}
           placeholder="简述逝者生平、品行与一生行迹……"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
+          className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
         />
       </div>
 
@@ -116,7 +117,7 @@ export default function ObituaryForm({ obituary, halls, action, quotaLeft }: Pro
           maxLength={2000}
           defaultValue={obituary?.funeralInfo ?? ""}
           placeholder="时间、地点、流程、注意事项……"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
+          className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
         />
       </div>
 
@@ -128,7 +129,7 @@ export default function ObituaryForm({ obituary, halls, action, quotaLeft }: Pro
           maxLength={500}
           defaultValue={obituary?.contactInfo ?? ""}
           placeholder="亲属 / 治丧委员会联系方式（将公开展示，请注意隐私）"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
+          className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
         />
       </div>
 
@@ -137,7 +138,7 @@ export default function ObituaryForm({ obituary, halls, action, quotaLeft }: Pro
         <select
           name="hallId"
           defaultValue={obituary?.hallId ?? ""}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
+          className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
         >
           <option value="">不关联（独立讣告）</option>
           {halls.map((h) => (
@@ -153,19 +154,18 @@ export default function ObituaryForm({ obituary, halls, action, quotaLeft }: Pro
         <label className="mb-1 block text-sm font-medium text-brand-800">
           访问密码{isEdit ? "（留空则不修改）" : "（可选）"}
         </label>
-        <input
-          type="password"
+        <PasswordInput
           name="password"
           autoComplete="new-password"
           placeholder={isEdit && obituary?.hasPassword ? "已设置密码 · 留空保持不变" : "留空则任何人凭链接可看"}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-accent-500 focus:outline-none"
+          className="w-full rounded-md border border-brand-300 px-3 py-2 pr-10 text-sm focus:border-accent-500 focus:outline-none"
         />
         <p className="mt-1 text-xs text-brand-400">
           设置后，亲友需输入密码才能查看此讣告。
         </p>
       </div>
 
-      <div className="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+      <div className="space-y-2 rounded-md border border-brand-200 bg-gray-50 p-3">
         <label className="flex items-center gap-2 text-sm text-brand-800">
           <input
             type="checkbox"

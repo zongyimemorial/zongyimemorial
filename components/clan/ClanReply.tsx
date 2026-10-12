@@ -36,7 +36,7 @@ export default function ClanReply({
             rows={2}
             maxLength={500}
             placeholder="友善交流，理性协商…（回帖先审后显）"
-            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm"
           />
           <div className="mt-2 flex items-center gap-3">
             <button

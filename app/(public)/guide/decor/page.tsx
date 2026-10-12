@@ -34,7 +34,7 @@ export default function DecorGuidePage() {
         也可以挑选更精致的模板与装饰套件，让空间更贴合故人或宗族的气质。
       </p>
 
-      <nav className="mt-6 rounded-lg border border-gray-100 bg-brand-50/50 p-5">
+      <nav className="mt-6 rounded-lg border border-brand-200 bg-brand-50/50 p-5">
         <div className="text-xs font-medium text-brand-700">目录</div>
         <ul className="mt-2 grid gap-1.5 text-[13px] sm:grid-cols-2">
           {TOC.map((x) => (
@@ -94,7 +94,7 @@ export default function DecorGuidePage() {
               d: "点右上角「保存并完成装修」才真正生效。保存前顶部会一直提示「有未保存的改动」。",
             },
           ].map((s) => (
-            <li key={s.n} className="flex gap-4 rounded-xl border border-gray-100 bg-white p-5">
+            <li key={s.n} className="flex gap-4 rounded-xl border border-brand-200 bg-brand-100/70 p-5">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent-500 text-sm font-medium text-white">
                 {s.n}
               </span>
@@ -112,19 +112,19 @@ export default function DecorGuidePage() {
         <div className="mt-4 overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-brand-700">
+              <tr className="border-b border-brand-200 text-left text-brand-700">
                 <th className="py-2 pr-4 font-medium">类型</th>
                 <th className="py-2 pr-4 font-medium">换掉什么</th>
                 <th className="py-2 font-medium">会不会改变空间形态</th>
               </tr>
             </thead>
             <tbody className="text-gray-600">
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-brand-200">
                 <td className="py-2.5 pr-4 font-medium text-brand-800">整套模板</td>
                 <td className="py-2.5 pr-4">五个槽位全部替换</td>
                 <td className="py-2.5">会（立体模板呈现 3D 空间）</td>
               </tr>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-brand-200">
                 <td className="py-2.5 pr-4 font-medium text-brand-800">装饰套件</td>
                 <td className="py-2.5 pr-4">只换挂饰 / 相框 / 字体</td>
                 <td className="py-2.5">不会，保留你挑好的墙与地</td>
@@ -164,7 +164,7 @@ export default function DecorGuidePage() {
               d: "在纪念商城的「空间装修」分类下用货币购买，与积分兑换落到同一份权益，两者不叠加。",
             },
           ].map((x) => (
-            <div key={x.t} className="rounded-lg border border-gray-100 bg-white p-4">
+            <div key={x.t} className="rounded-lg border border-brand-200 bg-brand-100/70 p-4">
               <div className="text-[13px] font-medium text-brand-900">{x.t}</div>
               <p className="mt-1.5 text-[12px] leading-6 text-gray-600">{x.d}</p>
             </div>
@@ -189,7 +189,7 @@ export default function DecorGuidePage() {
             不依赖任何外部图片素材。这样做是为了在网络不稳定时也能稳定呈现，
             不会出现"图加载不出来，馆变成一片空白"的情况。
           </p>
-          <p className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-[13px] text-gray-600">
+          <p className="rounded-lg border border-brand-200 bg-gray-50 p-4 text-[13px] text-gray-600">
             说明：只换壁纸、地纹、挂饰等<strong>单件素材不会</strong>改变空间形态 ——
             空间骨架由模板决定。想让空间"立起来"，需要选一套立体模板。
           </p>
@@ -201,24 +201,24 @@ export default function DecorGuidePage() {
         <div className="mt-4 overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-brand-700">
+              <tr className="border-b border-brand-200 text-left text-brand-700">
                 <th className="py-2 pr-4 font-medium">操作</th>
                 <th className="py-2 pr-4 font-medium">什么时候生效</th>
                 <th className="py-2 font-medium">说明</th>
               </tr>
             </thead>
             <tbody className="text-gray-600">
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-brand-200">
                 <td className="py-2.5 pr-4 font-medium text-brand-800">点素材 / 套件 / 模板</td>
                 <td className="py-2.5 pr-4">仅改动预览</td>
                 <td className="py-2.5">属于草稿，不写库，可以随便试</td>
               </tr>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-brand-200">
                 <td className="py-2.5 pr-4 font-medium text-brand-800">保存并完成装修</td>
                 <td className="py-2.5 pr-4">立即写库</td>
                 <td className="py-2.5">馆页同步更新，装修完成</td>
               </tr>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-brand-200">
                 <td className="py-2.5 pr-4 font-medium text-brand-800">放弃改动</td>
                 <td className="py-2.5 pr-4">—</td>
                 <td className="py-2.5">退回上次保存的样子，不影响已保存内容</td>
@@ -283,7 +283,7 @@ export default function DecorGuidePage() {
               a: "装修本身不消耗积分（只有兑换素材时才扣）。装修与供奉、祭祀记录完全独立，互不影响。",
             },
           ].map((f) => (
-            <div key={f.q} className="rounded-lg border border-gray-100 bg-white p-4">
+            <div key={f.q} className="rounded-lg border border-brand-200 bg-brand-100/70 p-4">
               <div className="text-[13px] font-medium text-brand-900">Q：{f.q}</div>
               <p className="mt-1.5 text-[13px] leading-6 text-gray-600">A：{f.a}</p>
             </div>
@@ -291,7 +291,7 @@ export default function DecorGuidePage() {
         </div>
       </section>
 
-      <div className="mt-10 flex flex-wrap gap-3 border-t border-gray-100 pt-6">
+      <div className="mt-10 flex flex-wrap gap-3 border-t border-brand-200 pt-6">
         <Link
           href="/halls/guide"
           className="rounded-lg bg-brand-800 px-5 py-2.5 text-sm text-white hover:bg-brand-700"
@@ -300,7 +300,7 @@ export default function DecorGuidePage() {
         </Link>
         <Link
           href="/clan/halls/guide"
-          className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm text-brand-700 hover:bg-gray-50"
+          className="rounded-lg border border-brand-300 px-5 py-2.5 text-sm text-brand-700 hover:bg-gray-50"
         >
           宗祠设立指引
         </Link>

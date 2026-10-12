@@ -114,7 +114,7 @@ export default async function CommunityPage({
           <Link
             key={t}
             href={topic === t ? "/clan/community" : `/clan/community?topic=${encodeURIComponent(t)}`}
-            className={`rounded-full border px-3 py-1 text-xs ${topic === t ? "border-accent-400 bg-accent-50 text-accent-700" : "border-gray-200 text-brand-500 hover:border-accent-300"}`}
+            className={`rounded-full border px-3 py-1 text-xs ${topic === t ? "border-accent-400 bg-accent-50 text-accent-700" : "border-brand-200 text-brand-500 hover:border-accent-300"}`}
           >
             {t}
           </Link>
@@ -127,7 +127,7 @@ export default async function CommunityPage({
 
       <div className="mt-8 space-y-5">
         {posts.map((p) => (
-          <article key={p.id} className="rounded-xl border border-gray-100 bg-white p-5">
+          <article key={p.id} className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
             <div className="flex flex-wrap items-center gap-2 text-xs text-brand-400">
               <span className={`rounded-full px-2 py-0.5 ${TOPIC_STYLE[p.topic] ?? "bg-gray-50 text-gray-600"}`}>
                 {p.topic}
@@ -157,7 +157,7 @@ export default async function CommunityPage({
           </article>
         ))}
         {posts.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-brand-400">
+          <div className="rounded-xl border border-dashed border-brand-200 bg-brand-100/70 p-10 text-center text-sm text-brand-400">
             暂无话题，欢迎发布第一个帖子
           </div>
         )}

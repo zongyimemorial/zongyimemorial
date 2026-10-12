@@ -11,7 +11,7 @@ export const HALL_CREATE_POINTS = 50;
 /** 每日登录祭拜奖励 */
 export const DAILY_LOGIN_POINTS = 5;
 /** 邀请好友注册奖励（每人） */
-export const INVITE_REGISTER_POINTS = 20;
+export const INVITE_REGISTER_POINTS = 30;
 /** 完善逝者档案一次性奖励 */
 export const PROFILE_COMPLETE_POINTS = 30;
 /** 发布追思留言奖励（每条） */

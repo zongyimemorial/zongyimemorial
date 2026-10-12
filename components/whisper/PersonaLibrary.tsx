@@ -8,7 +8,7 @@ import {
 } from "@/app/console/whispers/[id]/actions";
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 
 export type MemoryItem = { id?: string; year?: string; title?: string; content?: string };
 export type RelationItem = { name?: string; relation?: string; note?: string };
@@ -100,7 +100,7 @@ export default function PersonaLibrary(props: PersonaLibraryProps) {
   }
 
   return (
-    <section className="rounded-xl border border-gray-100 bg-white p-6">
+    <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="text-sm font-semibold text-brand-900">
@@ -265,7 +265,7 @@ export default function PersonaLibrary(props: PersonaLibraryProps) {
             type="button"
             onClick={onRegenerate}
             disabled={busy !== null}
-            className="rounded-md border border-gray-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-md border border-brand-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50 disabled:opacity-50"
           >
             {busy === "regen" ? "生成中…" : "保存并重新生成人格"}
           </button>
@@ -273,7 +273,7 @@ export default function PersonaLibrary(props: PersonaLibraryProps) {
       </form>
 
       {/* —— 人格提示词（进阶） —— */}
-      <div className="mt-6 border-t border-gray-100 pt-4">
+      <div className="mt-6 border-t border-brand-200 pt-4">
         <button
           type="button"
           onClick={() => setShowPrompt((v) => !v)}
@@ -306,7 +306,7 @@ export default function PersonaLibrary(props: PersonaLibraryProps) {
                 type="button"
                 onClick={onSavePrompt}
                 disabled={busy !== null}
-                className="rounded-md border border-gray-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-md border border-brand-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 {busy === "prompt" ? "保存中…" : "保存提示词"}
               </button>

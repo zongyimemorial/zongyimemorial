@@ -18,7 +18,7 @@ export default function HallBuyButton({ productId }: { productId: string }) {
     relation: "亲属",
   });
 
-  const field = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm";
+  const field = "w-full rounded-md border border-brand-300 px-3 py-2 text-sm";
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -63,7 +63,7 @@ export default function HallBuyButton({ productId }: { productId: string }) {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-brand-100/70 p-6">
             <h2 className="text-lg font-semibold text-brand-900">建馆申请 · 实名材料</h2>
             <p className="mt-1 text-xs text-brand-400">
               依据《网络祭祀要求》（MZ/T 173—2025）：建馆须提供火化证明、经办人身份证、
@@ -133,7 +133,7 @@ export default function HallBuyButton({ productId }: { productId: string }) {
             <div className="mt-5 flex justify-end gap-3">
               <button
                 onClick={() => setOpen(false)}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm text-brand-600"
+                className="rounded-md border border-brand-300 px-4 py-2 text-sm text-brand-600"
               >
                 取消
               </button>

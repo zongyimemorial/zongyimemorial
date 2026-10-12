@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { listPublishedArticles, listCategories } from "@/lib/articles";
+import Reveal from "@/components/site/Reveal";
 
 export const metadata = { title: "新闻资讯" };
 
@@ -22,15 +23,15 @@ export default async function NewsListPage() {
       <div className="grid gap-8 md:grid-cols-[1fr_240px]">
         <div className="space-y-4">
           {articles.length === 0 && (
-            <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-brand-500">
+            <div className="rounded-lg border border-dashed border-brand-300 bg-brand-100/70 p-10 text-center text-sm text-brand-500">
               暂无已发布文章
             </div>
           )}
-          {articles.map((a) => (
-            <article
-              key={a.id}
-              className="flex gap-4 rounded-lg border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md"
-            >
+          {articles.map((a, i) => (
+            <Reveal key={a.id} delay={i * 60}>
+              <article
+                className="shine flex gap-4 rounded-lg border border-brand-200 bg-brand-100/70 p-4 shadow-sm transition hover:shadow-md"
+              >
               <Link
                 href={`/news/${a.slug}`}
                 className="relative block h-24 w-36 shrink-0 overflow-hidden rounded-md bg-brand-100"
@@ -67,12 +68,13 @@ export default async function NewsListPage() {
                   阅读 {a.viewCount} · 作者 {a.author?.realName ?? "编辑部"}
                 </div>
               </div>
-            </article>
-          ))}
-        </div>
+              </article>
+              </Reveal>
+            ))}
+          </div>
 
-        <aside>
-          <div className="rounded-lg border border-gray-100 bg-white p-4">
+          <aside>
+          <div className="rounded-lg border border-brand-200 bg-brand-100/70 p-4">
             <div className="mb-3 text-sm font-semibold text-brand-900">栏目</div>
             <ul className="space-y-1 text-sm">
               {categories.map((c) => (

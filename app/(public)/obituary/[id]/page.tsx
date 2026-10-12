@@ -86,7 +86,7 @@ export default async function ObituaryPage({ params }: { params: Promise<{ id: s
     // 不要改用"等固定毫秒数"来判，那是时序假象的来源。
     <article className="mx-auto max-w-2xl px-4 py-12" data-obituary-view>
       {/* 讣告头 */}
-      <header className="mb-8 border-b border-gray-200 pb-6 text-center">
+      <header className="mb-8 border-b border-brand-200 pb-6 text-center">
         <div className="mb-2 text-4xl">🕯️</div>
         <h1 className="text-2xl font-semibold text-brand-900" data-obituary-name>
           {ob.deceasedName}
@@ -107,7 +107,7 @@ export default async function ObituaryPage({ params }: { params: Promise<{ id: s
 
       {/* 告别仪式信息 */}
       {ob.funeralInfo && (
-        <section className="mb-8 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <section className="mb-8 rounded-lg border border-brand-200 bg-gray-50 p-4">
           <h2 className="mb-2 text-sm font-medium text-brand-800">告别仪式</h2>
           <p className="whitespace-pre-wrap leading-7 text-brand-700">{ob.funeralInfo}</p>
         </section>
@@ -146,7 +146,7 @@ export default async function ObituaryPage({ params }: { params: Promise<{ id: s
           ) : (
             <ul className="space-y-3">
               {ob.messages.map((m) => (
-                <li key={m.id} className="rounded-lg border border-gray-100 bg-white p-3">
+                <li key={m.id} className="rounded-lg border border-brand-200 bg-brand-100/70 p-3">
                   <div className="mb-1 text-xs text-brand-400">
                     {m.displayName} · {m.createdAt.toLocaleDateString("zh-CN")}
                   </div>
@@ -159,7 +159,7 @@ export default async function ObituaryPage({ params }: { params: Promise<{ id: s
       )}
 
       {/* 分享 */}
-      <div className="border-t border-gray-200 pt-6">
+      <div className="border-t border-brand-200 pt-6">
         <ShareBar
           url={shareUrl}
           title={`${ob.deceasedName} · 讣告`}

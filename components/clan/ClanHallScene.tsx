@@ -164,22 +164,31 @@ export function SceneGate({
   hallName,
   surname,
   ancestorTitle,
+  sky = true,
 }: {
   palette?: ArchPalette;
   hallName: string;
   surname: string;
   ancestorTitle?: string | null;
+  /**
+   * 是否渲染顶部"天空渐变"。默认 true（浅色纸面页面上把建筑从纸面托起）；
+   * 3D 漫游（ClanHall3DTour）的深色舞台上它是刺眼的白色横带，传 false 关掉。
+   * 不传时行为与改造前逐字节一致 —— 零回归。
+   */
+  sky?: boolean;
 }) {
   return (
     <div className="relative select-none" aria-hidden>
       {/* 天空渐变：把建筑从纸面上"托"起来 */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-64"
-        style={{
-          background:
-            "radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.85), rgba(255,255,255,0) 70%)",
-        }}
-      />
+      {sky && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-64"
+          style={{
+            background:
+              "radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.85), rgba(255,255,255,0) 70%)",
+          }}
+        />
+      )}
       {/*
         宽度约束：山门画幅是 900×656（近方形），若放任到 max-w-4xl 会占满整屏、
         把正文全挤到下面去。收到 max-w-2xl（约 672px）后高度约 490px，

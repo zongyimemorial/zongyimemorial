@@ -7,6 +7,7 @@ import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { grantInitialPointsOnRegister, applyInviteOnRegister, ensureInviteCode } from "@/lib/points";
 import { currentOrigin } from "@/lib/origin";
+import { track, acqChannelFromCookie } from "@/lib/analytics";
 import type { AuthState } from "@/app/login/actions";
 
 export async function registerAction(
@@ -33,10 +34,17 @@ export async function registerAction(
   const newUser = await prisma.user.create({
     data: { email, passwordHash: hash, role: "user" }
   });
+  // 分析埋点：注册转化（渠道归因读首访 acq_channel cookie）
+  await track({
+    type: "register",
+    userId: newUser.id,
+    channel: await acqChannelFromCookie(),
+    path: "/register",
+  });
   await grantInitialPointsOnRegister(newUser.id);
   // 为自己生成邀请码（供后续邀请他人）
   await ensureInviteCode(newUser.id);
-  // 若填写了邀请码，给邀请人 +20 积分
+  // 若填写了邀请码，给邀请人 +30 积分（INVITE_REGISTER_POINTS）
   if (inviteCode) {
     await applyInviteOnRegister({ newUserId: newUser.id, inviteCode });
   }

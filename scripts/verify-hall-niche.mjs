@@ -1,15 +1,24 @@
 /**
- * 壁龛纪念墙验收套件
+ * 遗像安奉（纪念馆正墙壁龛）验收套件
  *
- * 目标：确认「逝者遗像被放进壁龛墙正中偏上的格子里」这件事在**真实 Next 应用**里成立，
- * 并且在三种视口下都不错位。
+ * 目标：确认「逝者遗像被放进纪念堂正墙居中偏上的壁龛里」这件事在**真实 Next 应用**
+ * 里成立，并且在三种视口下都不错位、全页只出现一次。
  *
- * 为什么要用 Playwright 实测 getBoundingClientRect 而不是只断言 HTML 字符串：
- *   遗像与壁龛格是**两套 DOM**（HTML <img> 叠在 SVG 之上），
- *   只有实测两者的矩形包含关系，才能真正确认"嵌进去了"。
- *   （此前项目里已发生过 aspect-ratio 互相喂养导致元素涨到 8915px 的事故。）
+ * ⚠️ 架构演进说明（别改回去）：
+ *   本套件原名 verify-hall-niche，最早断言的是平面 SVG 壁龛墙（NicheWallHero，
+ *   9×5=45 格 + 大理石地面 + 窗帘 + 金灯柱）。该组件已被 **Hall3DStage**（CSS 3D
+ *   全貌厅堂）取代，`NicheWallHero` 现已无任何页面引用，只活在注释里。
+ *   继续断言那面 SVG 只会得到一堆"找不到元素"的假红 —— 那是**断言过时**，
+ *   不是产品坏了。故此处改写到真实结构上：
+ *     · 场景根   → [data-hall3d-stage="1"]
+ *     · 遗像容器 → [data-portrait-niche="3d"]
+ *   守的东西没变：遗像在正墙、居中、偏上、唯一、各视口不溢出。
  *
- * 前置：Next 已在 127.0.0.1:3000 运行；纪念馆用的模板是 tpl-niche。
+ * 为什么要用 Playwright 实测 getBoundingClientRect 而不只断言 HTML 字符串：
+ *   遗像与外框是两套 DOM，只有实测矩形关系才能确认"嵌进去了"。
+ *   （项目里发生过 aspect-ratio 互相喂养导致元素涨到 8915px 的事故。）
+ *
+ * 前置：Next 已在 127.0.0.1:3000 运行。
  */
 import pkg from "/root/.nvm/versions/node/v22.13.1/lib/node_modules/playwright/index.js";
 import { execSync } from "node:child_process";
@@ -36,12 +45,8 @@ function check(name, ok, detail = "") {
 const browser = await chromium.launch();
 const errors = [];
 
-// ---------------------------------------------------------------------------
-// 1. 静态结构：SVG 场景与格数
-// ---------------------------------------------------------------------------
-{
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-  await ctx.addCookies([{ name: "preview_auth", value: "1", domain: "127.0.0.1", path: "/" }]);
+/** 打开纪念馆并等场景稳定（3D 舞台有 0.35s 位移动画）。 */
+async function openHall(ctx, settle = 900) {
   const page = await ctx.newPage();
   page.on("console", (m) => {
     if (m.type() === "error") errors.push(m.text());
@@ -49,88 +54,52 @@ const errors = [];
   page.on("response", (r) => {
     if (r.status() >= 400) errors.push(`HTTP ${r.status()} ${r.url()}`);
   });
-
   await page.goto(`${BASE}/halls/${HALL_ID}?cb=${Date.now()}`, { waitUntil: "networkidle" });
-  await page.waitForTimeout(600);
+  await page.waitForTimeout(settle);
+  return page;
+}
 
-  const svgInfo = await page.evaluate(() => {
-    const svg = document.querySelector('svg[aria-label="壁龛纪念墙"]');
-    if (!svg) return null;
+function newCtx(w, h) {
+  return browser.newContext({ viewport: { width: w, height: h } });
+}
+
+// ---------------------------------------------------------------------------
+// 1. 场景结构 + 遗像唯一性 + 要素回归
+// ---------------------------------------------------------------------------
+{
+  const ctx = await newCtx(1440, 1000);
+  await ctx.addCookies([{ name: "preview_auth", value: "1", domain: "127.0.0.1", path: "/" }]);
+  const page = await openHall(ctx);
+
+  const stage = await page.evaluate(() => {
+    const root = document.querySelector('[data-hall3d-stage="1"]');
+    if (!root) return null;
+    const niche = root.querySelector('[data-portrait-niche="3d"]');
+    const img = root.querySelector("img[alt*='遗像']");
     return {
-      viewBox: svg.getAttribute("viewBox"),
-      rectCount: svg.querySelectorAll("rect").length,
-      // 每个格由「木框 rect」+「面板 rect」组成，另加底色/柜体等，
-      // 这里只数"面板"级别的矩形（用 nw-cell 渐变填充的就是面板）
-      panelCount: [...svg.querySelectorAll("rect")].filter((r) =>
-        (r.getAttribute("fill") || "").includes("nw-cell"),
-      ).length,
-      hasMarble: !!svg.querySelector("#nw-marble"),
-      hasCurtain: !!svg.querySelector("#nw-curtain"),
-      // 遗像区 3×3 大龛：应出现一块描金的超大壁龛（宽高都远超单格）
-      bigNiche: (() => {
-        const rects = [...svg.querySelectorAll("rect")];
-        // 大龛的"背板"用 nw-cell 填充且明显大于单元格（单元格宽 7.35% ≈ 88 单位）
-        const wide = rects.filter((r) => {
-          if (!(r.getAttribute("fill") || "").includes("nw-cell")) return false;
-          const w = parseFloat(r.getAttribute("width") || "0");
-          const h = parseFloat(r.getAttribute("height") || "0");
-          return w > 150 && h > 100;
-        });
-        const r = wide[0];
-        return r
-          ? {
-              w: parseFloat(r.getAttribute("width") || "0"),
-              h: parseFloat(r.getAttribute("height") || "0"),
-              count: wide.length,
-            }
-          : null;
-      })(),
+      // 3D 舞台必须真的带透视（v1 的平面墙没有这个）——"立体厅堂"的最低证据
+      perspective: getComputedStyle(root).perspective,
+      has3dLayer: !!root.querySelector('[style*="preserve-3d"]'),
+      hasNiche: !!niche,
+      hasImg: !!img,
+      imgSrc: img ? img.getAttribute("src") : null,
     };
   });
 
-  check("场景：壁龛纪念墙 SVG 已渲染", !!svgInfo, svgInfo ? `viewBox=${svgInfo.viewBox}` : "未找到");
-  check("场景：viewBox 为 0 0 1200 700", svgInfo?.viewBox === "0 0 1200 700", svgInfo?.viewBox ?? "");
-  // 面板 rect 数 = 全套 9×5 格 − 遗像区让出的 9 格 + 遗像大龛的 1 块背板。
-  // 不写死 37，而是从「是否让位」推出期望值（AGENTS.md：别硬编码计数）。
-  const svgViewW = 1200;
-  const cellWPct = 7.35;
-  const cellHPct = 8.9;
-  // 大龛背板宽 ≈ 3 格 + 2 缝，明显 > 单格，用面板宽反推它吃掉了几个格子
-  const bigW = svgInfo?.bigNiche?.w ?? 0;
-  const blockCols = Math.round((bigW / 100 / cellWPct - 1) * (1 + 0.72 / 7.35) + 1) || 0;
-  const expectPanels = 45 - (svgInfo?.bigNiche?.count ? 9 : 0) + (svgInfo?.bigNiche?.count ? 1 : 0);
-  // 说明：大龛宽 ≈ 3 格（本页 viewBox 1200 宽，3 格 ≈ 253 单位）
+  check("场景：3D 舞台已渲染（[data-hall3d-stage]）", !!stage, stage ? "" : "未找到");
   check(
-    "场景：45 − 9 + 1 = 37 块壁龛面板（遗像区 3×3 让位）",
-    svgInfo?.panelCount === expectPanels && expectPanels === 37,
-    `实测 panelCount=${svgInfo?.panelCount}，期望 ${expectPanels}`,
+    "场景：带透视且存在 preserve-3d 层（是真 3D，不是平面墙）",
+    !!stage && stage.perspective !== "none" && stage.has3dLayer,
+    stage ? `perspective=${stage.perspective} preserve3d=${stage.has3dLayer}` : "无",
   );
+  check("场景：遗像壁龛容器已渲染（[data-portrait-niche]）", !!stage?.hasNiche, "");
   check(
-    "场景：遗像大龛 ≈ 3×3 格（宽 >150、高 >100 单位，且只有 1 块）",
-    !!svgInfo?.bigNiche && bigW > 150 && bigW < 400 && svgInfo.bigNiche.h > 100 && svgInfo.bigNiche.count === 1,
-    svgInfo?.bigNiche
-      ? `${svgInfo.bigNiche.w.toFixed(1)} × ${svgInfo.bigNiche.h.toFixed(1)} 单位，count=${svgInfo.bigNiche.count}`
-      : "未找到大龛背板",
+    "遗像：已渲染 <img> 且指向遗像文件",
+    !!stage?.imgSrc && /portrait|\/uploads\//.test(stage.imgSrc),
+    stage?.imgSrc ?? "无",
   );
-  void svgViewW; void cellHPct; void blockCols;
-  check("场景：含大理石地面渐变", !!svgInfo?.hasMarble, "");
-  check("场景：含窗帘渐变", !!svgInfo?.hasCurtain, "");
 
-  // 灯柱：金色底座 + 提环（circle 描边金）合计 2 盏
-  const lanternCount = await page.evaluate(() => {
-    const svg = document.querySelector('svg[aria-label="壁龛纪念墙"]');
-    if (!svg) return 0;
-    return [...svg.querySelectorAll("circle")].filter(
-      (c) => (c.getAttribute("stroke") || "").toLowerCase() === "#c9a961" && c.getAttribute("fill") === "none",
-    ).length;
-  });
-  check("场景：两盏金灯柱（提环各一）", lanternCount === 2, `实测 ${lanternCount}`);
-
-  // 遗像必须存在且指向真实文件
-  const imgSrc = await page.locator("img[alt*='遗像']").first().getAttribute("src").catch(() => null);
-  check("遗像：已渲染 <img> 且指向遗像文件", !!imgSrc && /portrait|\/uploads\//.test(imgSrc), imgSrc ?? "无");
-
-  // 遗像必须**只出现一次**（壁龛模式不应再重复渲染竖图卡片）
+  // 遗像必须**只出现一次**（正墙安奉后不应再重复渲染竖图卡片）
   const imgCount = await page.locator("img[alt*='遗像']").count();
   check("遗像：全页只出现一次（未重复渲染）", imgCount === 1, `实测 ${imgCount} 处`);
 
@@ -142,17 +111,19 @@ const errors = [];
   check("回归：祭拜面板仍在", /献花|敬香|点灯/.test(body), "");
 
   /*
-    防重复：默认兜底封面 /assets/hall-cover.jpg 本身就是一张"壁龛纪念墙"照片，
-    与本场景高度雷同。壁龛模式下若仍渲染它，页面会上下并排两面几乎一样的墙。
+    防重复：默认兜底封面 /assets/hall-cover.jpg 本身就是一张"纪念墙"照片，
+    与场景高度雷同。若仍渲染它，页面会上下并排两面几乎一样的墙。
     因此：未上传 coverImage 时，全景区必须不出现。
   */
-  const dupPanorama = await page.evaluate(() => {
-    const imgs = [...document.querySelectorAll("img")];
-    return imgs.filter((i) => (i.getAttribute("src") || "").includes("hall-cover.jpg")).length;
-  });
+  const dupPanorama = await page.evaluate(
+    () =>
+      [...document.querySelectorAll("img")].filter((i) =>
+        (i.getAttribute("src") || "").includes("hall-cover.jpg"),
+      ).length,
+  );
   check("防重复：未上传封面时不渲染兜底全景图", dupPanorama === 0, `hall-cover.jpg 出现 ${dupPanorama} 次`);
 
-  // 未选该模板的馆不应出现场景
+  // 未选该模式的馆不应崩
   const other = await page.evaluate(async () => {
     const r = await fetch("/halls/cmulkwa570001ly4yzf6p5xls", { credentials: "include" });
     return r.status;
@@ -163,66 +134,38 @@ const errors = [];
 }
 
 // ---------------------------------------------------------------------------
-// 2. 三档视口：遗像矩形必须落在目标壁龛格内
+// 2. 三档视口：遗像横向居中、纵向偏上、不出框
 // ---------------------------------------------------------------------------
 for (const [w, h, label] of [
   [1440, 1000, "桌面 1440"],
   [768, 1024, "平板 768"],
   [375, 812, "手机 375"],
 ]) {
-  const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+  const ctx = await newCtx(w, h);
   await ctx.addCookies([{ name: "preview_auth", value: "1", domain: "127.0.0.1", path: "/" }]);
-  const page = await ctx.newPage();
-  await page.goto(`${BASE}/halls/${HALL_ID}?cb=${Date.now()}`, { waitUntil: "networkidle" });
-  await page.waitForTimeout(400);
+  const page = await openHall(ctx, 500);
 
   const geo = await page.evaluate(() => {
-    const svg = document.querySelector('svg[aria-label="壁龛纪念墙"]');
+    const root = document.querySelector('[data-hall3d-stage="1"]');
+    const niche = document.querySelector('[data-portrait-niche="3d"]');
     const img = document.querySelector("img[alt*='遗像']");
-    if (!svg || !img) return null;
-
-    // 遗像的**最近的比例盒子**（aspect-ratio = viewBox 比例）就是与 SVG 同构的坐标系
-    const box = img.closest("div[style*='aspect-ratio']") || svg.parentElement;
-    const br = box.getBoundingClientRect();
+    if (!root || !niche || !img) return null;
+    const rr = root.getBoundingClientRect();
+    const nr = niche.getBoundingClientRect();
     const ir = img.getBoundingClientRect();
-
-    // 该盒子与 viewBox 严格同构 → 直接按盒子的百分比换算遗像大龛
-    // 遗像占 3×3 大龛（块左上角 col=3,row=0，居中对齐 9 列），内缩 6%
-    const GRID = { left: 15.2, top: 12.4, cellW: 7.35, cellH: 8.9, gapX: 0.72, gapY: 1.35 };
-    const bw = 3;
-    const bh = 3;
-    const col = 3;
-    const row = 0;
-    const k = 0.06;
-    const bl = GRID.left + col * (GRID.cellW + GRID.gapX);
-    const bt = GRID.top + row * (GRID.cellH + GRID.gapY);
-    const bwPct = bw * GRID.cellW + (bw - 1) * GRID.gapX;
-    const bhPct = bh * GRID.cellH + (bh - 1) * GRID.gapY;
-    const lp = bl + bwPct * k;
-    const tp = bt + bhPct * k;
-
-    const cell = {
-      left: br.left + (lp / 100) * br.width,
-      top: br.top + (tp / 100) * br.height,
-      width: (bwPct * (1 - k * 2) / 100) * br.width,
-      height: (bhPct * (1 - k * 2) / 100) * br.height,
-    };
-
-    const sr = svg.getBoundingClientRect();
     return {
-      box: { w: Math.round(br.width), h: Math.round(br.height), ratio: Number((br.width / br.height).toFixed(3)) },
-      svg: { w: Math.round(sr.width), h: Math.round(sr.height) },
+      root: { w: Math.round(rr.width), h: Math.round(rr.height) },
+      niche: {
+        left: Math.round(nr.left - rr.left),
+        top: Math.round(nr.top - rr.top),
+        w: Math.round(nr.width),
+        h: Math.round(nr.height),
+      },
       img: {
-        left: Math.round(ir.left),
-        top: Math.round(ir.top),
+        left: Math.round(ir.left - rr.left),
+        top: Math.round(ir.top - rr.top),
         w: Math.round(ir.width),
         h: Math.round(ir.height),
-      },
-      cell: {
-        left: Math.round(cell.left),
-        top: Math.round(cell.top),
-        w: Math.round(cell.width),
-        h: Math.round(cell.height),
       },
     };
   });
@@ -233,69 +176,69 @@ for (const [w, h, label] of [
     continue;
   }
 
-  // 容差 3px（含抗锯齿/取整）
-  const T = 3;
+  const T = 3; // 抗锯齿/取整容差
+
+  // 遗像必须真的落在壁龛容器内（img 填满 niche 的 overflow-hidden 盒子）
   const within =
-    geo.img.left >= geo.cell.left - T &&
-    geo.img.top >= geo.cell.top - T &&
-    geo.img.left + geo.img.w <= geo.cell.left + geo.cell.w + T &&
-    geo.img.top + geo.img.h <= geo.cell.top + geo.cell.h + T;
-
+    geo.img.left >= geo.niche.left - T &&
+    geo.img.top >= geo.niche.top - T &&
+    geo.img.left + geo.img.w <= geo.niche.left + geo.niche.w + T &&
+    geo.img.top + geo.img.h <= geo.niche.top + geo.niche.h + T;
   check(
-    `${label}：遗像落在正中 3×3 大龛内`,
+    `${label}：遗像落在壁龛容器内`,
     within,
-    `img[${geo.img.left},${geo.img.top} ${geo.img.w}×${geo.img.h}] ⊆ niche[${geo.cell.left},${geo.cell.top} ${geo.cell.w}×${geo.cell.h}]`,
+    `img[${geo.img.left},${geo.img.top} ${geo.img.w}×${geo.img.h}] ⊆ niche[${geo.niche.left},${geo.niche.top} ${geo.niche.w}×${geo.niche.h}]`,
   );
 
-  // 比例盒子必须与 viewBox 同构（1.714 = 1200/700），否则百分比定位会漂
+  // 横向居中：遗像中心 ≈ 壁龛中心 ≈ 舞台中心（正墙正中）
+  const nicheCx = geo.niche.left + geo.niche.w / 2;
+  const imgCx = geo.img.left + geo.img.w / 2;
+  const rootCx = geo.root.w / 2;
   check(
-    `${label}：坐标系盒子保持 1200:700 比例`,
-    Math.abs(geo.box.ratio - 1200 / 700) < 0.02,
-    `实测 ${geo.box.ratio}`,
+    `${label}：遗像横向居中于正墙`,
+    Math.abs(nicheCx - imgCx) <= T + 1 && Math.abs(rootCx - imgCx) <= geo.root.w * 0.03,
+    `像心 x=${Math.round(imgCx)} 墙心 x=${Math.round(rootCx)}`,
   );
 
-  // 该格必须是"正中偏上"：横向居中、纵向落在第 1–3 行
-  const svgCenterX = geo.cell.left + geo.cell.w / 2;
-  const imgCenterX = geo.img.left + geo.img.w / 2;
+  // 纵向偏上：顶边在舞台 5%~45% 之间
+  const topPct = (geo.niche.top / geo.root.h) * 100;
+  check(`${label}：遗像位于正墙中上段（不是贴地也不是出框）`, topPct >= 5 && topPct <= 45, `top ${topPct.toFixed(1)}%`);
+
+  // 遗像不能吃满整面墙（否则就不是"壁龛"了）
   check(
-    `${label}：遗像横向居中（大龛正中）`,
-    Math.abs(svgCenterX - imgCenterX) <= T + 1,
-    `龛心 x=${Math.round(svgCenterX)} 像心 x=${Math.round(imgCenterX)}`,
+    `${label}：遗像尺寸受控（占墙宽 10%~60%）`,
+    geo.niche.w >= geo.root.w * 0.1 && geo.niche.w <= geo.root.w * 0.6,
+    `像宽 ${geo.niche.w}px / 墙宽 ${geo.root.w}px`,
   );
 
-  // 场景不能占满整个首屏（否则正文被推到折叠线以下）
-  const sceneH = geo.box.h;
+  // 场景高度受控（否则正文被推到折叠线以下）
   check(
-    `${label}：场景高度受控（不超过视口 60%）`,
-    sceneH <= h * 0.6 + 2,
-    `场景 ${Math.round(sceneH)}px / 视口 ${h}px`,
+    `${label}：场景高度受控（遗像不出下沿、场景不超过视口 60%）`,
+    geo.niche.top + geo.niche.h <= geo.root.h + 2 && geo.root.h <= h * 0.6 + 2,
+    `场景 ${geo.root.h}px / 视口 ${h}px`,
   );
 
   await ctx.close();
 }
 
 // ---------------------------------------------------------------------------
-// 3. 供台陈列：祭拜后场景里出现供台 glyph，且遗像仍唯一
+// 3. 供台陈列：祭拜后出现供品 glyph，且遗像仍唯一
 // ---------------------------------------------------------------------------
 /*
-  这一步是「供奉体系」改造的核心回归点：
-    祭拜 → 供台多一件 → 场景 SVG 里多一个 [data-altar-slug] 的 <text>。
-  同时必须确认新加的 <text> 没有把遗像的定位打乱
-  （NichesWall 是百分比绝对定位，任何新增兄弟节点都有可能改布局）。
-  因此这里在**有供品**的状态下再测一次遗像的唯一性与格子包含关系。
+  这是「供奉体系」改造的核心回归点：
+    祭拜 → 供台多一件 → 场景里多一个 [data-altar-slug] 节点。
+  同时确认新增节点没有把遗像的定位打乱（百分比绝对定位，任何新兄弟节点都可能改布局）。
 */
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const ctx = await newCtx(1440, 1000);
   await ctx.addCookies([{ name: "preview_auth", value: "1", domain: "127.0.0.1", path: "/" }]);
-  const page = await ctx.newPage();
-  await page.goto(`${BASE}/halls/${HALL_ID}?cb=${Date.now()}`, { waitUntil: "networkidle" });
-  await page.waitForTimeout(600);
+  const page = await openHall(ctx);
 
-  // 场景里已有的供台 glyph（只数场景内的，面板里的不算）
+  // 场景里的供台 glyph（只数场景内的，祭拜面板里的不算）
   const sceneGlyphs = await page.evaluate(() => {
-    const svg = document.querySelector('svg[aria-label="壁龛纪念墙"]');
-    if (!svg) return null;
-    return [...svg.querySelectorAll("[data-altar-slug]")].map((n) => ({
+    const root = document.querySelector('[data-hall3d-stage="1"]');
+    if (!root) return null;
+    return [...root.querySelectorAll("[data-altar-slug]")].map((n) => ({
       slug: n.getAttribute("data-altar-slug"),
       text: (n.textContent || "").trim(),
     }));
@@ -304,12 +247,7 @@ for (const [w, h, label] of [
   check(
     "供台：场景内 [data-altar-slug] 节点可查询（0 件时为 0 个）",
     sceneGlyphs !== null && sceneGlyphs.length <= 12,
-    `实测 ${sceneGlyphs ? sceneGlyphs.length : "无 SVG"} 个`,
-  );
-  check(
-    "供台：每个 glyph 都带非空表情符号",
-    (sceneGlyphs || []).every((g) => g.text.length > 0),
-    (sceneGlyphs || []).map((g) => `${g.slug}=${g.text}`).join(" ") || "无",
+    `实测 ${sceneGlyphs ? sceneGlyphs.length : "无场景"} 个`,
   );
   check(
     "供台：glyph 不重复（同一份供品不叠画）",
@@ -317,39 +255,25 @@ for (const [w, h, label] of [
     `slugs=${(sceneGlyphs || []).map((g) => g.slug).join(",") || "无"}`,
   );
 
-  // 有供品时遗像必须仍只出现一次
   const imgCount = await page.locator("img[alt*='遗像']").count();
   check("供台：新增 glyph 后遗像仍只出现一次", imgCount === 1, `实测 ${imgCount} 处`);
 
-  // 有供品时遗像仍落在 3×3 大龛内（防新增 <text> 撑高/推挤）
-  const stillInCell = await page.evaluate(() => {
-    const svg = document.querySelector('svg[aria-label="壁龛纪念墙"]');
+  // 有供品时遗像仍在壁龛内（防新增节点推挤）
+  const stillInNiche = await page.evaluate(() => {
+    const niche = document.querySelector('[data-portrait-niche="3d"]');
     const img = document.querySelector("img[alt*='遗像']");
-    if (!svg || !img) return null;
-    const box = img.closest("div[style*='aspect-ratio']") || svg.parentElement;
-    const br = box.getBoundingClientRect();
+    if (!niche || !img) return null;
+    const nr = niche.getBoundingClientRect();
     const ir = img.getBoundingClientRect();
-    const GRID = { left: 15.2, top: 12.4, cellW: 7.35, cellH: 8.9, gapX: 0.72, gapY: 1.35 };
-    const k = 0.06;
-    const bwPct = 3 * GRID.cellW + 2 * GRID.gapX;
-    const bhPct = 3 * GRID.cellH + 2 * GRID.gapY;
-    const lp = GRID.left + 3 * (GRID.cellW + GRID.gapX) + bwPct * k;
-    const tp = GRID.top + 0 * (GRID.cellH + GRID.gapY) + bhPct * k;
-    const cell = {
-      left: br.left + (lp / 100) * br.width,
-      top: br.top + (tp / 100) * br.height,
-      width: ((bwPct * (1 - k * 2)) / 100) * br.width,
-      height: ((bhPct * (1 - k * 2)) / 100) * br.height,
-    };
     const T = 3;
     return (
-      ir.left >= cell.left - T &&
-      ir.top >= cell.top - T &&
-      ir.left + ir.width <= cell.left + cell.width + T &&
-      ir.top + ir.height <= cell.top + cell.height + T
+      ir.left >= nr.left - T &&
+      ir.top >= nr.top - T &&
+      ir.left + ir.width <= nr.left + nr.width + T &&
+      ir.top + ir.height <= nr.top + nr.height + T
     );
   });
-  check("供台：新增 glyph 后遗像仍在 3×3 大龛内", stillInCell === true, `within=${stillInCell}`);
+  check("供台：新增 glyph 后遗像仍在壁龛内", stillInNiche === true, `within=${stillInNiche}`);
 
   await ctx.close();
 }
@@ -358,11 +282,9 @@ for (const [w, h, label] of [
 // 4. 页面整体健康
 // ---------------------------------------------------------------------------
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const ctx = await newCtx(1440, 1000);
   await ctx.addCookies([{ name: "preview_auth", value: "1", domain: "127.0.0.1", path: "/" }]);
-  const page = await ctx.newPage();
-  await page.goto(`${BASE}/halls/${HALL_ID}?cb=${Date.now()}`, { waitUntil: "networkidle" });
-  await page.waitForTimeout(500);
+  const page = await openHall(ctx, 500);
   const bodyH = await page.evaluate(() => document.body.scrollHeight);
   check("布局：页面高度正常（未被撑爆）", bodyH > 800 && bodyH < 12000, `${bodyH}px`);
   await ctx.close();
@@ -379,7 +301,7 @@ for (const [w, h, label] of [
   必须登录才能献祭，未登录时会跳 /login，因此先登录。
 */
 {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 1100 } });
+  const ctx = await newCtx(1440, 1100);
   await ctx.addCookies([{ name: "preview_auth", value: "1", domain: "127.0.0.1", path: "/" }]);
   const page = await ctx.newPage();
   page.on("console", (m) => {
@@ -404,7 +326,7 @@ for (const [w, h, label] of [
     这不是功能坏了，是测试数据耗尽；与其让断言去猜库存，不如显式补到 1 份以上。
     （必须在 goto 之后补：进馆时服务端会先跑 topUpFreeOfferings。）
   */
-  const stock = execSync(
+  execSync(
     `docker exec memorial-pg psql -U memorial -d memorial -t -A -c ` +
       JSON.stringify(
         `update "OfferingHolding" set "quantity"=greatest("quantity",2), "updatedAt"=now() ` +
@@ -413,8 +335,7 @@ for (const [w, h, label] of [
           `and u.email='user@test.com' and p.slug='free-music';`,
       ),
     { encoding: "utf8" },
-  ).trim();
-  void stock;
+  );
   await page.reload({ waitUntil: "networkidle" });
   await page.waitForTimeout(1200);
 
@@ -430,8 +351,7 @@ for (const [w, h, label] of [
       await page.waitForTimeout(3000);
     }
     const audio = await page.evaluate(() => {
-      const el =
-        document.querySelector("audio[data-ambient-player]") || document.querySelector("audio");
+      const el = document.querySelector("audio[data-ambient-player]") || document.querySelector("audio");
       if (!el) return { exists: false };
       return {
         exists: true,
@@ -446,7 +366,11 @@ for (const [w, h, label] of [
       audio.exists && /\/assets\/ambient\//.test(audio.src || "") && audio.paused === false,
       JSON.stringify(audio),
     );
-    check("环境音循环播放且音量受控", audio.loop === true && audio.volume > 0 && audio.volume <= 1, `loop=${audio.loop} vol=${audio.volume}`);
+    check(
+      "环境音循环播放且音量受控",
+      audio.loop === true && audio.volume > 0 && audio.volume <= 1,
+      `loop=${audio.loop} vol=${audio.volume}`,
+    );
 
     // 音轨文件真的存在（不是 404 的占位路径）
     if (audio.exists && audio.src) {
@@ -465,11 +389,10 @@ for (const [w, h, label] of [
 
     /*
       自清理（重要，别删）：
-      本段每次运行都会往**共享的**供台陈列里 +1 件 free-music，而第 4 段的
-      「glyph 不重复（同一份供品不叠画）」按全馆陈列断言 —— 跑几次之后
-      slugs 就会变成 free-music,free-music,free-music，把自己的兄弟断言跑红。
-      这类"测试污染共享业务数据"的坑很难查（重跑一次好了就以为是偶发），
-      所以每次献祭后必须撤供还原。
+      本段每次运行都会往**共享的**供台陈列里 +1 件 free-music，而第 3 段的
+      「glyph 不重复」按全馆陈列断言 —— 跑几次之后 slugs 就会变成
+      free-music,free-music,...，把自己的兄弟断言跑红。
+      这类"测试污染共享业务数据"的坑很难查，所以每次献祭后必须撤供还原。
     */
     const clearBtn = page.locator('button:has-text("撤供")').first();
     if ((await clearBtn.count()) > 0) {

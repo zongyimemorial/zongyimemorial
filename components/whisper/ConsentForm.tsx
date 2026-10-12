@@ -4,7 +4,7 @@ import { useState } from "react";
 import { revokeConsent, saveConsent } from "@/app/console/whispers/[id]/actions";
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 
 export type ConsentState = {
   applicantName: string;
@@ -176,7 +176,7 @@ export default function ConsentForm({
             type="checkbox"
             checked={ack}
             onChange={(e) => setAck(e.target.checked)}
-            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-accent-600"
+            className="mt-0.5 h-4 w-4 rounded border-brand-300 text-accent-600"
           />
           <span className="text-xs leading-relaxed text-brand-700">
             <b>我确认：其他近亲属对设立本装置无异议。</b>
@@ -214,7 +214,7 @@ export default function ConsentForm({
                   <button
                     type="button"
                     onClick={() => setShowRevoke(false)}
-                    className="rounded border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+                    className="rounded border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
                   >
                     取消
                   </button>

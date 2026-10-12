@@ -85,7 +85,7 @@ export default async function ArticleDetailPage({
           />
         </div>
       )}
-      <header className="mt-5 border-b border-gray-100 pb-5">
+      <header className="mt-5 border-b border-brand-200 pb-5">
         <div className="mb-2 flex items-center gap-2 text-xs text-brand-400">
           <span className="rounded bg-brand-50 px-2 py-0.5 text-brand-700">
             {article.category?.name ?? "未分类"}
@@ -107,7 +107,7 @@ export default async function ArticleDetailPage({
       {/* 一键分享：文章是传播主力，分享条紧随正文（读完之后最想转发的时刻） */}
       <ShareBar url={shareUrl} title={article.title} summary={article.summary ?? undefined} scope="news" />
 
-      <footer className="mt-10 border-t border-gray-100 pt-4 text-xs text-brand-400">
+      <footer className="mt-10 border-t border-brand-200 pt-4 text-xs text-brand-400">
         作者 {article.author?.realName ?? "编辑部"} · 阅读 {article.viewCount}
         {article.isAiGenerated && " · AI 辅助生成（经人工编辑）"}
       </footer>

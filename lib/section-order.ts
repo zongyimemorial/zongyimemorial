@@ -15,7 +15,6 @@ export const HALL_DEFAULT_ORDER = [
   "couplet", // 挽联横版（条件）
   "paidTributes", // 敬献祭品（条件）
   "archive", // 故人数字档案（条件）
-  "reserve", // 分时预约
   "tributes", // 追思记录
   "community", // 亲友交流社区
   "panorama", // 3D 全景（条件）
@@ -23,14 +22,10 @@ export const HALL_DEFAULT_ORDER = [
 ] as const;
 
 export const CLAN_DEFAULT_ORDER = [
-  "gate", // 山门
-  "clan3d", // 3D 空间（条件）
+  "tour", // 四段 3D 漫游连廊（山门→天井→享堂→寝堂）
   "info", // 主图 + 名号 + 字辈诗
-  "shrine", // 寝堂（牌位墙 + 香案）
   "worship", // 献祭 · 敬奉先祖
-  "courtyard", // 天井
   "photos", // 宗祠影像（条件）
-  "mainhall", // 享堂
   "tributes", // 祭祀记录
   "community", // 宗亲交流社区
   "decorSummary", // 当前陈设

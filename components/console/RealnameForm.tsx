@@ -45,14 +45,14 @@ export default function RealnameForm({
   }
 
   return (
-    <form action={formAction} className="space-y-4 rounded-lg border border-gray-100 bg-white p-6">
+    <form action={formAction} className="space-y-4 rounded-lg border border-brand-200 bg-brand-100/70 p-6">
       <div>
         <label className="block text-sm text-brand-700">真实姓名</label>
         <input
           name="realName"
           defaultValue={initialRealName}
           required
-          className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded border border-brand-200 px-3 py-2 text-sm"
         />
       </div>
       <div>
@@ -61,7 +61,7 @@ export default function RealnameForm({
           name="idCard"
           required
           placeholder="内测测试号码（≥6 位）"
-          className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded border border-brand-200 px-3 py-2 text-sm"
         />
       </div>
       <div>
@@ -71,14 +71,14 @@ export default function RealnameForm({
           name="phone"
           defaultValue={initialPhone}
           required
-          className="mt-1 w-full rounded border border-gray-200 px-3 py-2 text-sm"
+          className="mt-1 w-full rounded border border-brand-200 px-3 py-2 text-sm"
         />
       </div>
       <div className="flex gap-2">
         <input
           name="otp"
           placeholder="短信验证码"
-          className="mt-1 flex-1 rounded border border-gray-200 px-3 py-2 text-sm"
+          className="mt-1 flex-1 rounded border border-brand-200 px-3 py-2 text-sm"
         />
         <button
           type="button"

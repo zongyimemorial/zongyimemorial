@@ -21,7 +21,7 @@ const typeLabel: Record<ProductType, string> = {
 
 export default async function AdminProducts() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "editor")) redirect("/console");
+  if (!user || (user.role !== "admin" && user.role !== "editor" && user.role !== "super_admin")) redirect("/console");
 
   const products = await prisma.product.findMany({
     orderBy: { createdAt: "desc" },

@@ -5,7 +5,7 @@
 export default function GateAuthed() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-brand-100 bg-white p-8 text-center shadow-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-brand-100 bg-brand-100/70 p-8 text-center shadow-sm">
         <p className="text-xs font-medium uppercase tracking-widest text-brand-400">INTERNAL TEST</p>
         <h1 className="mt-2 text-2xl font-semibold text-brand-900">您已通过验证</h1>
         <p className="mt-1 text-sm text-brand-500">可直接浏览平台各板块</p>

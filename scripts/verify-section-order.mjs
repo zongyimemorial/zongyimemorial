@@ -62,7 +62,7 @@ function setOrder(table, id, order) {
 // HALL_DEFAULT_ORDER（与 lib/section-order.ts 保持一致，用于构造交换序）
 const HALL_DEFAULT_ORDER = [
   "hero", "worship", "cover", "profile", "couplet", "paidTributes",
-  "archive", "reserve", "tributes", "community", "panorama", "decorInfo",
+  "archive", "tributes", "community", "panorama", "decorInfo",
 ];
 
 // 选一个 user@test.com 名下的 active 纪念馆
@@ -228,7 +228,7 @@ try {
       check("保存后 DB 写入了 sectionOrder（非 null）", written !== "" && written.startsWith("["), written.slice(0, 60));
       if (written.startsWith("[")) {
         const arr = JSON.parse(written);
-        check("写入的序长度为 12（无板块丢失）", arr.length === 12, `len=${arr.length}`);
+        check("写入的序长度为 11（无板块丢失；预约板块已下线）", arr.length === 11, `len=${arr.length}`);
         check("hero 已下移到 index 1", arr[1] === "hero", `arr[1]=${arr[1]}`);
         check("写入是默认序的一个排列", arr.slice().sort().join() === HALL_DEFAULT_ORDER.slice().sort().join());
       }

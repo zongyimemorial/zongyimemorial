@@ -30,7 +30,7 @@ export type OfferResult = { ok: boolean; message: string; remaining?: number };
  * 扣一份库存，免费品在库存不足时先补当日配额再重试一次。
  *
  * 为什么消耗失败还要补货：用户可能绕过页面直连 action（BFCache、直接调用），
- * 没经过页面渲染时的补货。这里兜底一次，保证"每天有 3 份"的承诺成立。
+ * 没经过页面渲染时的补货。这里兜底一次，保证"每天有 1 份"的承诺成立。
  */
 async function consumeWithTopUp(userId: string, productId: string, isFree: boolean) {
   let consumed = await consumeOffering(userId, productId);
@@ -235,53 +235,6 @@ export async function clearAltar(hallId: string): Promise<{ ok: boolean; message
 
   revalidatePath(`/halls/${hallId}`);
   return { ok: true, message: res.count > 0 ? `已撤下 ${res.count} 件供品` : "供台已是空的" };
-}
-
-// 祭拜厅分时预约（清明/冬至等高峰期人流控制）
-export async function reserveSlot(
-  hallId: string,
-  data: { date: string; timeSlot: string; name: string; phone: string }
-): Promise<{ ok: boolean; message: string }> {
-  const user = await getCurrentUser();
-  if (!user) return { ok: false, message: "请先登录" };
-  if (!data.date) return { ok: false, message: "请选择日期" };
-  if (!data.name.trim() || !data.phone.trim())
-    return { ok: false, message: "请填写姓名与手机号" };
-  if (!/^1\d{10}$/.test(data.phone.trim()))
-    return { ok: false, message: "手机号格式不正确" };
-
-  const hall = await prisma.memorialHall.findUnique({ where: { id: hallId } });
-  if (!hall || hall.status !== "active") return { ok: false, message: "纪念馆不可用" };
-
-  const date = new Date(data.date + "T00:00:00+08:00");
-  if (Number.isNaN(date.getTime())) return { ok: false, message: "日期格式不正确" };
-  if (date.getTime() < new Date().setHours(0, 0, 0, 0))
-    return { ok: false, message: "不能预约过去的日期" };
-
-  // 同一时段最多 20 组，控制高峰人流
-  const count = await prisma.hallReservation.count({
-    where: { hallId, date, timeSlot: data.timeSlot, status: "confirmed" },
-  });
-  if (count >= 20) return { ok: false, message: "该时段已约满，请选择其他时段" };
-
-  // 同一用户同日同时段不重复预约
-  const dup = await prisma.hallReservation.findFirst({
-    where: { hallId, userId: user.id, date, timeSlot: data.timeSlot, status: "confirmed" },
-  });
-  if (dup) return { ok: false, message: "您已预约该时段" };
-
-  await prisma.hallReservation.create({
-    data: {
-      hallId,
-      userId: user.id!,
-      date,
-      timeSlot: data.timeSlot,
-      name: data.name.trim(),
-      phone: data.phone.trim(),
-    },
-  });
-
-  return { ok: true, message: `预约成功：${data.date} ${data.timeSlot}` };
 }
 
 type ReportKind = "living" | "fake" | "other";

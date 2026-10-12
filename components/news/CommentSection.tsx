@@ -39,14 +39,14 @@ export default function CommentSection({
         用户互动 <span className="ml-1 text-xs font-normal text-brand-400">评论先审后显，弘扬文明祭扫</span>
       </h2>
 
-      <div className="rounded-xl border border-gray-100 bg-white p-4">
+      <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-4">
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={3}
           maxLength={500}
           placeholder="分享你的看法，或投稿家风故事…（500字以内）"
-          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+          className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm"
         />
         <div className="mt-2 flex items-center justify-between">
           <span className="text-xs text-brand-400">文明上网，不发布封建迷信内容</span>
@@ -67,7 +67,7 @@ export default function CommentSection({
 
       <ul className="mt-5 space-y-3">
         {comments.map((c) => (
-          <li key={c.id} className="rounded-lg border border-gray-100 bg-white p-4 text-sm">
+          <li key={c.id} className="rounded-lg border border-brand-200 bg-brand-100/70 p-4 text-sm">
             <div className="text-xs text-brand-400">
               {c.user?.realName || c.user?.email?.split("@")[0] || "网友"}
               <span className="ml-2">
@@ -89,7 +89,7 @@ export default function CommentSection({
         </span>
         <button
           onClick={() => router.push("/news/contribute")}
-          className="ml-3 rounded-md border border-brand-300 px-3 py-1 text-xs text-brand-700 hover:bg-white"
+          className="ml-3 rounded-md border border-brand-300 px-3 py-1 text-xs text-brand-700 hover:bg-brand-100/70"
         >
           我要投稿
         </button>

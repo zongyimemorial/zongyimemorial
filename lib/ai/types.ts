@@ -15,7 +15,7 @@
 // ---------------------------------------------------------------- 通用
 
 /** 供应商类型 */
-export type ProviderKind = "mock" | "deepseek" | "volcano" | "cosyvoice";
+export type ProviderKind = "mock" | "deepseek" | "ark" | "volcano" | "cosyvoice";
 
 /** 对话消息（与 OpenAI 兼容格式一致） */
 export interface ChatMessage {
@@ -99,8 +99,10 @@ export interface TtsInput {
    * - 真实实现下为 providerVoiceId
    */
   voiceId?: string;
-  /** 语速倍率，1.0 为正常 */
+  /** 语速倍率，1.0 为正常；追思场景默认偏慢(0.92)以降低机械感 */
   speed?: number;
+  /** 情绪：neutral / happy / sad（火山大模型音色支持，其余值被静默忽略） */
+  emotion?: string;
 }
 
 export interface TtsResult {

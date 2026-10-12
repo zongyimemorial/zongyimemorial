@@ -10,7 +10,7 @@ import { prisma } from "@/lib/db";
  */
 
 /** 免费祭品每日配额（每件各自计数）。回到纪念馆/宗祠时懒补货到该值。 */
-export const FREE_DAILY_QUOTA = 3;
+export const FREE_DAILY_QUOTA = 1;
 
 /** 供台最多陈列几件（只摆最近的，防止被刷屏成一排小图标） */
 export const ALTAR_MAX_ITEMS = 12;

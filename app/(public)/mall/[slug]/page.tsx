@@ -9,6 +9,7 @@ import BuyButton from "@/components/shop/BuyButton";
 import PhysicalBuyButton from "@/components/shop/PhysicalBuyButton";
 import HallBuyButton from "@/components/shop/HallBuyButton";
 import BackLink from "@/components/site/BackLink";
+import LottieIcon from "@/components/shop/LottieIcon";
 import DecorSpacePreview, { SPACE_LABEL } from "@/components/decor/DecorSpacePreview";
 import { resolveDecorEntitlement } from "@/lib/decor-products";
 import { BUNDLES, DEFAULT_DECOR, findTemplate, KITS } from "@/lib/hall-decor";
@@ -149,13 +150,20 @@ export default async function ProductDetailPage({
       />
       <BackLink href="/mall">返回纪念商城</BackLink>
       {product.coverImage && (
-        <div className="relative mt-4 aspect-[16/9] w-full overflow-hidden rounded-xl shadow-sm">
-          <Image
-            src={product.coverImage}
+        <div className="relative mt-4 aspect-[16/9] w-full overflow-hidden rounded-xl bg-brand-50 shadow-sm">
+          <LottieIcon
+            cover={product.coverImage}
             alt={product.name}
-            fill
-            sizes="(min-width: 1280px) 768px, 100vw"
-            className="object-cover"
+            className="absolute inset-0 h-full w-full"
+            fallback={
+              <Image
+                src={product.coverImage}
+                alt={product.name}
+                fill
+                sizes="(min-width: 1280px) 768px, 100vw"
+                className="object-cover"
+              />
+            }
           />
         </div>
       )}

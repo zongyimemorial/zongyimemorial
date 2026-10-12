@@ -109,13 +109,13 @@ export default function CommunityComposer({
   };
 
   return (
-    <form onSubmit={onSubmit} className="rounded-xl border border-gray-200 bg-white p-4">
+    <form onSubmit={onSubmit} className="rounded-xl border border-brand-200 bg-brand-100/70 p-4">
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder="想说点什么？分享一段回忆、一张老照片、或一段视频…"
         maxLength={2000}
-        className="h-24 w-full resize-none rounded-lg border border-gray-200 p-3 text-sm outline-none focus:border-brand-400"
+        className="h-24 w-full resize-none rounded-lg border border-brand-200 p-3 text-sm outline-none focus:border-brand-400"
       />
 
       {media.length > 0 && (
@@ -155,7 +155,7 @@ export default function CommunityComposer({
           type="button"
           onClick={() => fileRef.current?.click()}
           disabled={uploading || media.length >= 9}
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-brand-600 hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-lg border border-brand-200 px-3 py-1.5 text-xs text-brand-600 hover:bg-gray-50 disabled:opacity-50"
         >
           📷 添加图片
         </button>
@@ -171,7 +171,7 @@ export default function CommunityComposer({
           type="button"
           onClick={() => videoFileRef.current?.click()}
           disabled={uploading || media.length >= 9}
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-brand-600 hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-lg border border-brand-200 px-3 py-1.5 text-xs text-brand-600 hover:bg-gray-50 disabled:opacity-50"
         >
           🎬 上传视频
         </button>
@@ -181,13 +181,13 @@ export default function CommunityComposer({
           value={videoUrl}
           onChange={(e) => setVideoUrl(e.target.value)}
           placeholder="或粘贴视频链接（B站/YouTube）"
-          className="flex-1 rounded-lg border border-gray-200 px-3 py-1.5 text-xs outline-none focus:border-brand-400"
+          className="flex-1 rounded-lg border border-brand-200 px-3 py-1.5 text-xs outline-none focus:border-brand-400"
         />
         <button
           type="button"
           onClick={onAddVideoUrl}
           disabled={media.length >= 9}
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs text-brand-600 hover:bg-gray-50 disabled:opacity-50"
+          className="rounded-lg border border-brand-200 px-3 py-1.5 text-xs text-brand-600 hover:bg-gray-50 disabled:opacity-50"
         >
           添加链接
         </button>

@@ -198,7 +198,20 @@ async function sourceLayer() {
 
   check("文章页 OG 补了 url", /url,\s*\n\s*siteName/.test(news.replace(/\s+/g, " ")) || /url[^:]*:/.test(news) && /openGraph[\s\S]{0,600}?\burl\b/.test(news));
 
-  check("纪念馆分享标题对私密馆脱敏（不含逝者名）", /hall\.isPublic\s*\?\s*`\$\{hall\.name\}\s*·\s*纪念\$\{hall\.deceasedName\}`\s*:\s*hall\.name/.test(hall));
+  /*
+    纪念馆分享标题对私密馆脱敏（不含逝者名）—— 隐私硬约束，不能弱化。
+    ⚠️ 早先这条正则写死了 `hall.isPublic ?`，但实现改用 `pub` 变量
+    （= effectivePublic(hall)，比裸 isPublic 更准：还叠了审核通道的公开规则）。
+    于是"实现其实更严谨了，断言却红了"。这里改判**语义**而非某个变量名：
+      ① 页面必须先算出 pub（= effectivePublic），
+      ② shareTitle 必须是"pub ? 含逝者名 : 只馆名"的三元。
+    两条都满足才算过；任一条丢了（比如把三元改成恒带逝者名）仍会红。
+  */
+  check(
+    "纪念馆分享标题对私密馆脱敏（不含逝者名）",
+    /const\s+pub\s*=\s*effectivePublic\(hall\)/.test(hall) &&
+      /const\s+shareTitle\s*=\s*pub\s*\?[^:]*deceasedName[^:]*:\s*hall\.name\s*;/.test(hall),
+  );
 
   check("中间件引入 verifyShareToken", /import\s*\{\s*verifyShareToken\s*\}\s*from\s*"@\/lib\/share"/.test(mw));
   // 白名单用正则字面量写在 shareablePathScope 里，故按"函数体含三类路径判定"来锁

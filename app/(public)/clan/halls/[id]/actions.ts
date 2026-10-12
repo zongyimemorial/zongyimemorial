@@ -84,7 +84,8 @@ export async function offerClanTribute(
   // ---- 消耗库存 ----
   // 重构前这里靠「30 秒冷却 + 免费每日 30 次上限」防刷，且收费品只是"扣分即祭"。
   // 现在统一为消耗制：先扣一份库存，再记账。（冷却与日上限随之删除 ——
-  // 每日 3 份的配额已比 30 次上限严格得多，两套机制并存只会让行为无法解释。）
+  // 每日配额已比 30 次上限严格得多，两套机制并存只会让行为无法解释。
+  // 配额数值见 lib/offerings.ts 的 FREE_DAILY_QUOTA，此处不复述，避免两处对不上。）
   if (product.isFree) await topUpFreeOfferings(user.id);
 
   const consumed = await consumeOffering(user.id, productId);

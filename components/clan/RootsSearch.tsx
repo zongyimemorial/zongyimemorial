@@ -33,7 +33,7 @@ export default function RootsSearch() {
 
   return (
     <div>
-      <div className="rounded-xl border border-gray-100 bg-white p-6">
+      <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-brand-700">姓氏 *</label>
@@ -41,7 +41,7 @@ export default function RootsSearch() {
               value={surname}
               onChange={(e) => setSurname(e.target.value)}
               placeholder="输入或点选姓氏"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none"
+              className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none"
             />
           </div>
           <div>
@@ -53,7 +53,7 @@ export default function RootsSearch() {
               onChange={(e) => setOrigin(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && search()}
               placeholder="如：泉州 / 洪洞大槐树 / 南雄珠玑巷"
-              className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none"
+              className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none"
             />
           </div>
         </div>
@@ -62,7 +62,7 @@ export default function RootsSearch() {
             <button
               key={s}
               onClick={() => setSurname(s)}
-              className={`h-8 w-8 rounded border text-xs ${surname === s ? "border-accent-400 bg-accent-50 text-accent-700" : "border-gray-100 text-brand-500 hover:border-accent-300"}`}
+              className={`h-8 w-8 rounded border text-xs ${surname === s ? "border-accent-400 bg-accent-50 text-accent-700" : "border-brand-200 text-brand-500 hover:border-accent-300"}`}
             >
               {s}
             </button>
@@ -85,7 +85,7 @@ export default function RootsSearch() {
               : `暂未找到「${surname}氏」相关族谱，欢迎宗亲上传补充`}
           </h2>
           {rows.map((r, i) => (
-            <div key={r.id} className="rounded-xl border border-gray-100 bg-white p-5">
+            <div key={r.id} className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
               <div className="flex items-center gap-3">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-100 text-xs font-semibold text-accent-700">
                   {i + 1}

@@ -29,6 +29,26 @@ const PROD = {
   memorial_service: `${A}/prod-service.jpg`,
 };
 
+/*
+ * 按 slug 的封面覆盖表：少数产品按 type 取默认图会"货不对板"——
+ * 比如 virtual-wreath / online-lamp / lamp-year 都是 tribute_item，
+ * 若直接用 PROD.tribute_item（prod-flower.jpg 鲜花图）就等于给"花环/点灯/长明灯"
+ * 配了鲜花图，明显与名称不符。这里逐 slug 指认正确的实物图（素材目录已存在）。
+ * 重跑本脚本时优先用此表，保证配图不被 type 默认值覆盖回退。
+ */
+const PROD_COVER_OVERRIDE = {
+  "virtual-wreath": `${A}/free-wreath.png`, // 虚拟挽联/花环 → 花环图
+  "online-lamp": `${A}/free-lantern.png`, // 在线点灯 → 灯笼（灯）
+  "lamp-year": `${A}/free-lantern.png`, // 电子长明灯 → 灯笼（灯）
+  // 纪念服务：此前 5 件都共用 prod-service.jpg 通用图，与各自名称不对应，逐 slug 指认品牌占位图
+  "bio-writing": `${A}/prod-svc-bio.svg`, // 生平传记代写
+  "e-obituary": `${A}/prod-svc-obituary.svg`, // 电子讣告
+  "memorial-video": `${A}/prod-svc-video.svg`, // 追思纪念视频
+  "online-memorial-meeting": `${A}/prod-svc-meeting.svg`, // 线上追思会
+  "qr-tombstone": `${A}/prod-svc-qr.svg`, // 扫码云碑
+  "whisper-video": `${A}/prod-video.svg`, // 午夜悄悄话·纪念短片
+};
+
 async function main() {
   const admin = await prisma.user.findUnique({ where: { email: "admin@test.com" } });
   if (!admin) throw new Error("请先运行 npm run seed 创建演示账号");
@@ -459,7 +479,7 @@ async function main() {
   for (const p of all) {
     const desc = productRich[p.slug];
     if (!desc) continue;
-    const cover = PROD[p.type] || `${A}/prod-service.svg`;
+    const cover = PROD_COVER_OVERRIDE[p.slug] || PROD[p.type] || `${A}/prod-service.svg`;
     await prisma.product.update({
       where: { slug: p.slug },
       data: { description: desc, coverImage: cover, gallery: [cover] },
@@ -467,6 +487,40 @@ async function main() {
     pn++;
   }
   console.log(`✅ 商品：丰富 ${pn} 件详情，并补充封面与画廊`);
+
+  // ===== 商品封面补齐（不依赖富文本）：装饰套件/空间模板/典藏礼包、云存储、纪念短片 =====
+  // 这些产品此前 coverImage 为空（页面灰底块）或共用通用图，与名称不对应。
+  // 用「宗忆堂」品牌风格占位图（深墨褐+香槟金，见 scripts/gen-placeholders.mjs）按分类补齐，
+  // 重跑本脚本也不回退（上面 PROD_COVER_OVERRIDE 已覆盖各纪念服务 slug）。
+  const DECOR_COVER = {
+    bundle: `${A}/prod-decor-bundle.svg`,
+    kit: `${A}/prod-decor-kit.svg`,
+    tpl: `${A}/prod-decor-tpl.svg`,
+  };
+  const coverForMissing = (p) => {
+    if (p.slug === "whisper-video") return `${A}/prod-video.svg`;
+    if (p.type === "storage") return `${A}/prod-storage.svg`;
+    if (p.type === "decor") {
+      if (p.slug.includes("bundle")) return DECOR_COVER.bundle;
+      if (p.slug.includes("kit")) return DECOR_COVER.kit;
+      return DECOR_COVER.tpl;
+    }
+    return null; // memorial_service 中已有专属 png 的（homepage-style/tombstone-style）跳过
+  };
+  const missing = await prisma.product.findMany({
+    where: { OR: [{ type: "decor" }, { type: "storage" }, { slug: "whisper-video" }] },
+  });
+  let mn = 0;
+  for (const p of missing) {
+    const cover = coverForMissing(p);
+    if (!cover) continue;
+    await prisma.product.update({
+      where: { slug: p.slug },
+      data: { coverImage: cover, gallery: [cover] },
+    });
+    mn++;
+  }
+  console.log(`✅ 商品封面补齐：${mn} 件（装饰套件/空间模板/典藏礼包、云存储、纪念短片）`);
 
   // 示例纪念馆 / 直播封面（同样必须 .jpg，见上方 COVER 注释）
   await prisma.memorialHall.updateMany({

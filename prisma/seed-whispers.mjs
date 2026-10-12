@@ -4,16 +4,18 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // 定价（单位：分）—— 与 lib/whisper.ts 的 PLAN_SPECS 保持一致
-// 技术路线：统一走云端 TTS，故 basic 档按云端成本定价 ¥59（¥39 在云端成本下亏损）
+// 技术路线：统一走云端 TTS，按满耗口径定价保证毛利 ≥30%
 const plans = [
   ["whisper-single", "午夜悄悄话 · 按次 10 分钟", "whisper_plan", 600, "custom", false,
     "单次购买 10 分钟追思对话时长，永久有效，适合偶尔想说说话的时刻"],
-  ["whisper-basic", "午夜悄悄话 · 思念版（月订）", "whisper_plan", 5900, "custom", false,
+  ["whisper-basic", "午夜悄悄话 · 思念版（月订）", "whisper_plan", 7900, "custom", false,
     "每月 300 分钟语音对话、1 个声音克隆、2 个数字形象、生平资料库 100 条"],
-  ["whisper-premium", "午夜悄悄话 · 长夜版（月订）", "whisper_plan", 9900, "custom", false,
-    "每月 900 分钟语音对话、3 个声音克隆、全部数字形象、每月 2 条纪念视频、资料库不限"],
-  ["whisper-clone", "午夜悄悄话 · 声音克隆资格", "whisper_plan", 1000, "custom", false,
-    "一次性解锁声音克隆资格，上传 5 秒以上样本即可复刻声线（需已完成家属授权）"],
+  ["whisper-premium", "午夜悄悄话 · 长夜版（月订）", "whisper_plan", 19900, "custom", false,
+    "每月 800 分钟语音对话、3 个声音克隆、无限记忆、资料库不限（纪念短片单条加购 ¥49/条）"],
+  ["whisper-clone", "午夜悄悄话 · 声音克隆资格申请", "whisper_plan", 1000, "custom", false,
+    "一次性工本费 ¥10：支付后解锁克隆入口，可上传 5 秒以上样本复刻声线（需已完成家属授权）。真实声线训练由订阅档 cloneLimit 承载，本项属转化漏斗而非独立盈利单品"],
+  ["whisper-video", "午夜悄悄话 · 纪念短片（单条）", "memorial_service", 4900, "custom", false,
+    "用他/她的声线与人格异步生成一支追思短片，按需下单、人工精修交付"],
 ];
 
 // 预设声线（免费档可用，无需克隆）
@@ -23,14 +25,7 @@ const presetVoices = [
   { name: "沉稳长者", provider: "mock", providerVoiceId: "preset-elder-steady", tier: "free" },
 ];
 
-// 预设形象（免费 + 收费）
-const presetAvatars = [
-  { name: "素雅剪影", style: "silhouette", preset: "sil-plain", tier: "free" },
-  { name: "清风侧影", style: "silhouette", preset: "sil-breeze", tier: "free" },
-  { name: "水墨半身", style: "portrait", preset: "por-ink", tier: "points", points: 800 },
-  { name: "暖光肖像", style: "portrait", preset: "por-warm", tier: "premium" },
-  { name: "全息立像", style: "fullbody", preset: "full-holo", tier: "premium" },
-];
+// 注：数字人形象（presetAvatars）已按合规取舍整体移除，产品为纯语音对话系统。
 
 async function main() {
   const cat = await prisma.category.findFirst();
@@ -52,11 +47,15 @@ async function main() {
   }
   console.log(`悄悄话商品 ${plans.length} 个`);
 
-  // ---- 2. 演示装置：找一个 active 纪念馆 ----
-  const hall = await prisma.memorialHall.findFirst({
-    where: { status: "active" },
-    orderBy: { createdAt: "desc" },
-  });
+  // ---- 2. 演示装置：固定指向演示馆（名含「示例」），否则取最早的 active 馆 ----
+  // 刻意不用 orderBy createdAt desc —— 验收脚本会临时建馆再删，
+  // 用"最新"会导致 seed 把演示 device 挂到别人的临时馆上，污染回归基线。
+  const hall =
+    (await prisma.memorialHall.findFirst({ where: { status: "active", name: { contains: "示例" } } })) ??
+    (await prisma.memorialHall.findFirst({
+      where: { status: "active", name: { not: { contains: "验收" } } },
+      orderBy: { createdAt: "asc" },
+    }));
   if (!hall) {
     console.log("无 active 纪念馆，跳过演示装置");
     return;
@@ -191,47 +190,20 @@ async function main() {
   }
   console.log(`声线：${await prisma.whisperVoice.count({ where: { profileId: profile.id } })} 条`);
 
-  // ---- 4. 形象 ----
-  const existingAvatars = await prisma.whisperAvatar.count({ where: { profileId: profile.id } });
-  if (existingAvatars === 0) {
-    for (const [i, a] of presetAvatars.entries()) {
-      await prisma.whisperAvatar.create({
-        data: {
-          profileId: profile.id,
-          name: a.name,
-          style: a.style,
-          preset: a.preset,
-          tier: a.tier,
-          points: a.points ?? null,
-          isSelected: i === 0,
-        },
-      });
-    }
-    // 默认选中第一个
-    const first = await prisma.whisperAvatar.findFirst({
-      where: { profileId: profile.id },
-      orderBy: { createdAt: "asc" },
+  // ---- 3.5 默认声线绑定 ----
+  // 注意：原实现把这段逻辑塞在"形象"块里（因为那时 avatarId 是依赖项）。
+  // 形象能力已移除，故此处独立成块，保证 voiceId 仍被正确赋值。
+  const defaultVoice = await prisma.whisperVoice.findFirst({
+    where: { profileId: profile.id, isDefault: true },
+  });
+  if (defaultVoice && !profile.voiceId) {
+    await prisma.whisperProfile.update({
+      where: { id: profile.id },
+      data: { voiceId: defaultVoice.id },
     });
-    if (first) {
-      await prisma.whisperProfile.update({
-        where: { id: profile.id },
-        data: { avatarId: first.id },
-      });
-      await prisma.whisperProfile.update({
-        where: { id: profile.id },
-        data: {
-          voiceId: (
-            await prisma.whisperVoice.findFirst({
-              where: { profileId: profile.id, isDefault: true },
-            })
-          )?.id,
-        },
-      });
-    }
   }
-  console.log(`形象：${await prisma.whisperAvatar.count({ where: { profileId: profile.id } })} 个`);
 
-  // ---- 5. 家属授权（合规演示数据）----
+  // ---- 4. 家属授权（合规演示数据）----
   await prisma.whisperConsent.upsert({
     where: { profileId: profile.id },
     update: {},
@@ -252,18 +224,18 @@ async function main() {
   if (owner) {
     await prisma.whisperQuota.upsert({
       where: { userId: owner.id },
-      update: { plan: "premium", monthlyMins: 900, extraMins: 30 },
+      update: { plan: "premium", monthlyMins: 800, extraMins: 30 },
       create: {
         userId: owner.id,
         plan: "premium",
-        monthlyMins: 900,
+        monthlyMins: 800,
         usedMins: 0,
         monthlyRounds: 9999,
         usedRounds: 0,
         extraMins: 30,
       },
     });
-    console.log(`配额：${owner.email} → premium（900 分钟 + 30 赠送）`);
+    console.log(`配额：${owner.email} → premium（800 分钟 + 30 赠送）`);
   }
 }
 

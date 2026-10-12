@@ -14,6 +14,16 @@
  */
 import pkg from "/root/.nvm/versions/node/v22.13.1/lib/node_modules/playwright/index.js";
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+
+/*
+  同 verify-clan-tribute-e2e：每日免费配额要从**真相源**读，不能写死 3。
+  产品把 FREE_DAILY_QUOTA 从 3 调到 1 后，这里的两条断言就以「实际 1」常年飘红，
+  看着像补货功能坏了，实际只是数字过期。
+*/
+const FREE_DAILY_QUOTA = Number(
+  (readFileSync("lib/offerings.ts", "utf8").match(/FREE_DAILY_QUOTA\s*=\s*(\d+)/) || [])[1] ?? 1,
+);
 
 const { chromium } = pkg;
 
@@ -269,7 +279,7 @@ async function main() {
   const incenseQty = sql(
     `select quantity from "OfferingHolding" where "userId"='${userId}' and "productId"='${incenseId}';`,
   );
-  check("进页后免费祭品回满 3 份", Number(incenseQty) === 3, `实际 ${incenseQty}`);
+  check(`进页后免费祭品回满 ${FREE_DAILY_QUOTA} 份`, Number(incenseQty) === FREE_DAILY_QUOTA, `实际 ${incenseQty}`);
   check(
     "免费祭品回满后可点（点亮）",
     (await page.evaluate(btnStateOf("上香"))) === "enabled",
@@ -280,7 +290,7 @@ async function main() {
   const incenseQty2 = sql(
     `select quantity from "OfferingHolding" where "userId"='${userId}' and "productId"='${incenseId}';`,
   );
-  check("重复进页不翻倍（补货幂等）", Number(incenseQty2) === 3, `实际 ${incenseQty2}`);
+  check("重复进页不翻倍（补货幂等）", Number(incenseQty2) === FREE_DAILY_QUOTA, `实际 ${incenseQty2}`);
 
   // =========================================================================
   console.log("\n=== 4. 宗祠面板与纪念馆口径一致 ===");
@@ -385,7 +395,19 @@ async function main() {
     check("纪念馆：遗像已渲染", !!niche);
     check("纪念馆：全页遗像唯一（不在名字卡里重复）", niche?.count === 1, `count=${niche?.count}`);
     check("纪念馆：遗像在首屏范围内（场景优先）", !!niche && niche.top < 1000 + niche.scrollY, `top=${Math.round(niche?.top ?? -1)}`);
-    check("纪念馆：走壁龛墙（页面出现「壁龛纪念堂」）", (await page.innerText("body")).includes("壁龛纪念堂"));
+    /*
+      「走壁龛路线」的正确判据。
+      早先这里断言页面正文含「壁龛纪念堂」——那句文案其实只出现在**装修指引页**
+      （app/(public)/guide/decor/page.tsx），纪念馆详情页从来不含它，属于断言写错页面。
+      现在改成结构判据：遗像必须挂在 3D 舞台的壁龛容器里
+      （[data-hall3d-stage] 内的 [data-portrait-niche]），这才是"安奉在正墙壁龛"的本体。
+    */
+    const inNiche = await page.evaluate(
+      () =>
+        !!document.querySelector('[data-hall3d-stage="1"] [data-portrait-niche="3d"]') &&
+        !!document.querySelector('[data-portrait-niche="3d"] img[alt*="遗像"]'),
+    );
+    check("纪念馆：遗像安奉于正墙壁龛（3D 舞台内）", inNiche);
   } else {
     console.log("  ⏭  测试馆无遗像，跳过纪念馆遗像断言");
   }
@@ -477,9 +499,9 @@ async function main() {
     const iPanel = text.indexOf("祭品 · 一键祭拜");
     const iPaid  = text.indexOf("敬献祭品");
     const iArchive = text.indexOf("故人数字档案");
-    const iReserve = text.indexOf("分时预约");
     const iBack = text.indexOf("返回纪念馆列表");
-    return { iPanel, iPaid, iArchive, iReserve, iBack };
+    const hasReserve = text.includes("分时预约") || text.includes("预约祭拜");
+    return { iPanel, iPaid, iArchive, iBack, hasReserve };
   })()`);
   check("纪念馆：祭拜面板在敬献祭品之前", order.iPanel > -1 && order.iPanel < order.iPaid, JSON.stringify(order));
   /*
@@ -492,8 +514,10 @@ async function main() {
     order.iArchive === -1 || order.iPanel < order.iArchive,
     order.iArchive === -1 ? "本馆无档案板块，跳过" : "",
   );
-  check("纪念馆：祭拜面板在预约之前", order.iPanel < order.iReserve);
-  check("纪念馆：返回链接在最后", order.iBack > order.iReserve);
+  // 「预约祭拜」已下线：网上祭拜随时可进行，无需分时预约。
+  check("纪念馆：预约祭拜已下线（页面不含分时预约/预约祭拜）", !order.hasReserve);
+  const iLastSection = Math.max(order.iPanel, order.iPaid, order.iArchive);
+  check("纪念馆：返回链接在最后", order.iBack > iLastSection);
 
   // =========================================================================
   // 清理：恢复备货，避免污染后续套件

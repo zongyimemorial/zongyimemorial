@@ -137,7 +137,7 @@ export default async function HallCommunityPage({
 
           {/* 帖子流 */}
           {typedPosts.length === 0 ? (
-            <div className="rounded-xl border border-gray-200 bg-white p-8 text-center text-sm text-gray-400">
+            <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-8 text-center text-sm text-gray-400">
               社区还没有帖子，来发布第一条吧
             </div>
           ) : (

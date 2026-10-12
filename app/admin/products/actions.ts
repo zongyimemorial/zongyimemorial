@@ -8,7 +8,7 @@ import type { ProductType } from "@prisma/client";
 
 export async function createProduct(formData: FormData) {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "editor")) redirect("/console");
+  if (!user || (user.role !== "admin" && user.role !== "editor" && user.role !== "super_admin")) redirect("/console");
 
   const name = String(formData.get("name") || "").trim();
   if (!name) throw new Error("名称必填");

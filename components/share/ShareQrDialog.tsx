@@ -71,7 +71,7 @@ export function ShareQrDialog({
       aria-label="扫码分享"
     >
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-      <div className="relative w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+      <div className="relative w-full max-w-sm rounded-2xl bg-brand-100/70 p-6 shadow-2xl">
         <button
           type="button"
           onClick={onClose}

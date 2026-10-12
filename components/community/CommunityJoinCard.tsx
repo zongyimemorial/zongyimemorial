@@ -32,7 +32,7 @@ export default function CommunityJoinCard({
   };
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
+    <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-8 text-center">
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-2xl">
         🔒
       </div>
@@ -46,7 +46,7 @@ export default function CommunityJoinCard({
           value={code}
           onChange={(e) => setCode(e.target.value)}
           placeholder="输入邀请码"
-          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
+          className="flex-1 rounded-lg border border-brand-200 px-3 py-2 text-sm outline-none focus:border-brand-400"
         />
         <button
           type="submit"

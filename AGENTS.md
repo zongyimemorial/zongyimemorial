@@ -889,6 +889,22 @@
   `zongyitang.lhr.rocks`，域名换成 `zongyimemorial.com` 后常年以
   `ERR_SSL_PROTOCOL_ERROR` 挂掉。已改为 `process.env.BASE_URL || "https://zongyimemorial.com"`。
 
+- **宗族活动发布（2026-10 新增，双入口 + 先审后显）**：`/clan/activities` 原为只读（仅展示+报名），
+  现支持两个发布入口，**都需人工审核后才在公页公开**：
+  - **平台后台**：`/admin/activities`（新建/编辑/删除；表单两个按钮「直接发布」→`approved`、「存为待审」→`pending`）。
+    注册在 `lib/permissions.ts` 的 `activities` 模块（admin 角色含；super_admin 自动含）。
+  - **祠主控制台**：`/console/clan-halls/[id]` 的「⑥ 宗族活动」板块（`components/console/ClanActivityForm.tsx` +
+    `createClanActivity` action）；**仅祠主**（走 `loadClanHall` 归属校验）且**需实名**；发布一律 `pending`。
+  - **审核**：`/admin/review` 的「宗族活动审核」段 + `reviewClanActivity`（回写 `ClanActivity.reviewStatus` + 审计日志）。
+  - **数据模型**：`ClanActivity` 增 `clanHallId?`（主办宗祠，null=平台级）、`createdByUserId?`、
+    `reviewStatus ModerationStatus @default(approved)`（**存量默认已过审**，保住现网）、`reviewedAt/reviewNote`。
+    `status`（upcoming/ongoing/finished）仍是**活动进程态**，与 `reviewStatus` **正交**。
+  - **⚠️ 公页必须叠加 `reviewStatus: "approved"`**（`/clan/activities` 两处查询、`/clan` 首页活动查询、
+    `signupActivity` 报名守卫）——漏了则 pending 活动泄漏。验收 `scripts/verify-clan-activities.mjs`（18 项，含反向验证）。
+  - **⚠️ RBAC 权限覆盖坑**：`admin`/`admin2@test.com` 的 `User.permissions` 是**非空显式列表**，
+    会覆盖 `ROLE_PERMISSIONS.admin` 默认值。**新增后台模块时，除改 `lib/permissions.ts` 与 `seed.mjs`，
+    还需给存量管理员账号补该 key**，否则其后台看不到/进不去新模块（本次已 `array_append` 补齐）。
+
 ## 已知环境陷阱
 
 - **往 psql 传含 JSON 字面量的 SQL，不要拼在 `-c` 里。**
@@ -979,12 +995,227 @@
    供台陈列（`OfferingOnAltar`）与祭品库存（`OfferingHolding`）都是**跨套件共享**的业务数据：
    - `verify-hall-niche` §5 点「献上音乐」后不撤供 → 每跑一次就多一件 `free-music`，
      攒够几次后把同套件 §4 的「glyph 不重复（同一份供品不叠画）」跑红。
-   - 免费品是**每日 3 份**的消耗制，同一天内重复跑会把 `free-music` 用到 0，
+   - 免费品是**每日 FREE_DAILY_QUOTA 份**（`lib/offerings.ts`，现为 1）的消耗制，同一天内重复跑会把 `free-music` 用到 0，
      按钮变 disabled → 环境音断言以 `src="" / paused=true` 失败。
      **看着像功能坏了，其实是测试数据耗尽**。
    规则：任何"点一下献祭"的套件，收尾都要 `update "OfferingOnAltar" set "clearedAt"=now()`
    并把用掉的免费品补回（`greatest(quantity, N)`）；断言前显式备货，别赌库存还剩多少。
    判据：**同一套件连跑三次都应全绿**。只跑一次就绿，可能只是恰好还有货。
+
+5. **宗祠与纪念馆的祭拜面板是同构的，改一边要想到另一边。**
+   `components/clan/ClanWorshipPanel.tsx` 与 `components/hall/WorshipPanel.tsx`
+   共用同一块「暗色祭拜舞台」：双烛台（`.candle-flame` ×2）+ 供台持久陈列 + 撤供 + 动效层。
+   宗祠侧多出积分供奉与祭文弹窗。断言见 `verify-clan-tribute-e2e.mjs` §8
+   （双烛台 / 供台条 / 角标文案）——少了它们，面板重构能悄悄把舞台删掉而不惊动任何测试。
+
+6. **"看起来能点、点了却只弹提示"是明确的反模式 —— 库存归零的按钮必须真的 disabled。**
+   宗祠面板的祭文曾是反例：它是收费礼器（`poemProduct` 单独传入，不在 `freeProducts` 里），
+   于是被排除在「我的其它供品」那一行之外，只剩一颗**完全不看库存**的文字按钮 ——
+   用尽后照样高亮可点，点下去只弹一句「该祭品已用尽」（用户报：「祭文已经用尽，但没有显示灰色」）。
+   规则：**同一个商品的每个入口都必须读同一份 `qty`**；多路径入口（文字按钮 + 卡片）
+   要么共用组件，要么共用同一个 `empty` 判据。验收见 `scripts/verify-poem-stock-gray.mjs`
+   （清 0 → 两个入口都 disabled 且灰；补货 → 都恢复可点）。
+   另外补货深链要**按商品存在性降级**：查不到商品就退 `/mall` 而不是拼 `/mall/<slug>`
+   （商品页对无效 slug 会 `notFound()`）。同一个脚本还断言了「改名/下架 → 退首页」。
+
+7. **「同一真相写两处」已由 `scripts/verify-single-source.mjs` 静态守卫。**
+   动效/音效表统一到 `lib/ritual-effects.ts`（三个面板共用）——
+   抽之前纪念馆与宗祠各有一份**逐字节相同**的 30 条映射，谁先改谁就对不上。
+   该守卫覆盖四类：
+     A 组件里不得再有 `EFFECT_KIND`/`SOUND`/`playTone` 本地副本
+       （公益馆的 `EFFECT_KIND` **豁免** —— 它的键是祭品 type 而非 slug，见共享模块注释）
+     B 验收脚本不得把配额写成字面量（必须从 `lib/offerings.ts` 读）
+     C 脚本引用的 slug 必须在 `lib/ritual.ts` 权威表内
+     D 共享模块已被 git 跟踪
+   ⚠️ 写这类检查器时**误报比漏报更糟**：第一版 B 项用 `=== \d+` 匹配，
+   把 HTTP 码 200、分页条数 3 全判成违规，8 个脚本集体飘红 —— 守卫一旦常亮红灯就没人看了。
+   另一个反向验证抓到的漏报：检测"是否引用了真相源"时**必须先剥离注释**，
+   否则注释里提到过常量名也会被当成引用（实测：把脚本退化成硬编码后守卫没报警）。
+
+8. **验收脚本改库一律用 `scripts/_db.mjs` 的 `withRestore()`，不要手写 try/finally。**
+   它先快照 → `finally` 里无条件还原 → **打印还原后的实际值自证**。
+   已用反向验证确认：回调中途抛异常，库仍回到原值。
+   这条规则来自真实事故：`verify-poem-stock-gray` 曾把商品主键改成 `free-poem-renamed`
+   后崩溃，slug 永久卡住，所有按 slug 硬查找的套件连锁失败。
+   注：`_db.mjs` 的还原对 **jsonb 列**要特殊处理（对象要 `JSON.stringify` 后 `::jsonb`，
+   不能 `String(obj)` —— 会写出 `[object Object]` 导致还原失败）。
+   注二：**自证那一步也不能用 `||` 拼 jsonb 列**。`select "a"||'|'||"b"` 在含 jsonb 时，
+   PostgreSQL 把它当 jsonb 连接（不是文本连接），`'|'` 被当 JSON 字面量解析 →
+   `invalid input syntax for type json`。还原本身成功了，却崩在打印上，
+   看起来像"还原坏了"，实则把整个 finally 打断。改用 `row_to_json(t)::text` 取整行。
+
+9. **断言只留 pass/fail 两态，会把"没条件测"变成"假失败"。**
+   用 `scripts/_check.mjs` 的 `makeChecks()`，它区分三态：
+   `check`（真断言）/ `skip`（前置不足，**未测**）/ `summary`（**分母排除 skip**）。
+   为什么重要：`verify-portrait-unify` 原先打印「通过 21/27」，
+   其中 6 条红是**断言口径过时**（在测一个已被移除的架构），
+   报错文案却写着「findTemplate 可能又写回 findTemplate 了」——
+   把人引向一个早已修好的历史 bug。修完是 27/27。
+
+10. **断言要用对"这一侧的标记"，别拿另一侧的选择器乱套。**
+   宗祠遗像的 DOM 标记是 `data-clan-portrait`，纪念馆侧才是 `data-portrait-niche`。
+   实测踩过：在宗祠页上查 `[data-portrait-niche]` 得到 0，误判成"遗像没渲染"，
+   实际遗像好端端在（`遗像=1`）。跨侧复用断言前，先确认标记归属。
+
+11. **架构演进后必须回头改断言，不要用 skip 掩盖。**
+   宗祠页从「独立付费 3D 板块」改为「ClanHall3DTour 四段漫游」后，
+   断言 `[data-decor-3d]` 必然为空。这种情况**不是**"没条件测"，
+   是断言在测不存在的东西 —— 应当按新架构重写（`[data-clan-tour]`），
+   而不是跳过。skip 只用于"环境确实缺少可测数据"。
+
+11b. **「组件被取代」往往一次污染一批套件 —— 别只修眼前那一条。**
+   2026-10 一次性清理了 6 个套件、20+ 条断言，根因只有两个：
+   · **`NicheWallScene`/`NicheWallHero` 被 `Hall3DStage` 取代**（纪念馆首屏）
+     → 波及 `verify-hall-niche`（12 红）、`verify-hall-niche-noportrait`（2 红）、
+       `verify-offering-panel`（1 红）、`verify-decor-3d`（遗像叠加）
+   · **宗祠页 `DecorSpacePreview` 被 `ClanHall3DTour` 取代**
+     → 波及 `verify-decor-public-v2`（8 红）、`verify-decor-scene-engine`（1 红）、
+       `verify-decor-skin`（1 红）
+   判别方法（按顺序问）：
+     ① **这个选择器/组件现在还存在于代码里吗？** `grep -rn` 一下。
+        只剩注释提到 = 已被取代，断言必过时。
+     ② **页面现在到底渲染什么？** 打开页面 dump 一次 DOM，看真实标记，
+        照它重写（本次新增了 `[data-hall3d-stage]`、`[data-portrait-niche="3d"]` 两个稳定钩子）。
+     ③ **原断言想守的那件事还成立吗？** 成立就换对象重写，不成立才谈删除。
+   同时警惕两种**假红**：
+     · **前提没搭起来**。`verify-decor-3d` 那条「换模板后遗像仍在」用的是
+       `user@test.com` 的馆 —— 那馆 `archive.portrait` 是 NULL，压根没遗像，
+       切模板后 `{portraitUrl && <PortraitNiche/>}` 整块不渲染。
+       看着像"换模板弄丢遗像"，其实是**测试自己没备货**。断言测什么就自己先备什么，
+       收尾用 `withRestore` 或对称的还原断言（"等于备份值"才算还原，"不等于实验值"不算）。
+     · **断言绑死了旧变量名**。`verify-share` 那条脱敏断言要求字面出现
+       `hall.isPublic ?`，实现却已改成 `pub = effectivePublic(hall)`（更准，叠了通道规则）。
+       实现更严谨了、断言反而红了 —— 改判**语义**（先有 `pub`，再有
+       `pub ? 含逝者名 : 只馆名` 的三元），别改判某个名字。
+
+12. **密码框一律用 `components/ui/PasswordInput.tsx`，不要再手写 `type="password"`。**
+    它带「显示/隐藏」眼睛按钮，全站 10 处（登录/注册/找回×2/内测口令门/讣告密码档/
+    控制台改密×3/讣告表单）共用；受控与非受控都支持（判据是 `value !== undefined`），
+    样式可用 `className` 覆盖（暗色主题的 PasswordGate 就是这么用的）。
+    验收：`scripts/verify-password-eye.mjs`。
+    两个实现陷阱（已在代码注释里标注、并有断言守住）：
+      · 眼睛按钮必须 `type="button"` —— 在 `<form>` 里省略就默认 submit，
+        点眼睛会提交表单、密码明文进 URL。断言方式是"点击后 URL 不变"。
+      · 翻转后再查输入框**必须用 name 选择器**。用 `input[type="password"]`
+        在切换成 text 之后就选不到了 —— 会超时，看起来像脚本坏了，其实是功能正常。
+
+12b. **点提交按钮必须限定在目标表单内，别用裸 `button[type="submit"]`。**   后台侧栏 `app/admin/layout.tsx` 有一个「退出登录」表单，它的
+   `<button type="submit">` 在 DOM 里**排在页面内容之前**。
+   于是验收脚本里写 `page.click('button[type="submit"]')` 点到的其实是**退出登录**。
+   症状极具误导性：提交后 303 跳首页、登录态丢失、**服务端 action 一行日志都不打**
+   ——看上去完全像"新建直播功能坏了"，实际是选择器点错按钮。
+   （2026-10 排查这条耗了很久，最后靠"加日志发现 action 根本没执行"定位。）
+
+   做法：给表单一个稳定钩子，测试按钩子收敛。
+     · 组件里 `<form data-live-form="1" action={serverAction}>`
+     · 脚本里 `page.locator('[data-live-form] button[type="submit"]').click()`
+   登录页同理，用 `form:has(input[name="identifier"]) button[type="submit"]`。
+   ⚠️ 替换时要**逐个确认命中点**：那次我用 `sed` 批量替换，把登录按钮也一起换掉了，
+   于是卡在"等一个不存在的 `[data-live-form]`"超时，又是一轮误判。
+
+   配套结论：**服务端 action 里加一行 `console.log` 是定位这类问题最快的办法** ——
+   "日志没打" 直接排除掉所有"action 内部逻辑有 bug"的猜测，把范围锁到调用链上。
+
+12c. **"一大片空白"先别当成布局/间距问题，多半是图片没出来。**
+   实测现场（2026-10）：`/mall/decor-tpl-plain` 顶部一大片空白，第一反应是
+   "margin 太肥"。实际是封面容器的图**没渲染**，`aspect-[16/9]` 的盒子空着。
+
+   三个层次的原因，**缺一不可地叠在一起**，只修任一个都看不到变化：
+     ① `next.config.mjs` 没开 `dangerouslyAllowSVG` —— Next 默认拒绝对 SVG 走图片
+        优化器，`next/image` 渲染 SVG 时优化器返回 **400**，图出不来。
+        本项目上传白名单只有 jpeg/png/webp（`lib/upload.ts` 的 ALLOWED_IMAGE_TYPES），
+        **用户传不了 SVG**，所以开这项是安全的；配套要带
+        `contentDispositionType:"attachment"` 与 CSP。
+     ② `scripts/gen-lottie-offerings.py` 的 `star()` 写错了 Lottie 的星形字段：
+        `r` 是**旋转角**，外径的键是 **`or`**（曾经把外径写进 `"r"`，`or` 从未产出）。
+     ③ `LottieIcon` 在"有 lottie 映射但动画画不出东西"时**没有兜底** ——
+        `fallback` 只在"没有映射"时才用，动画为空就一直空着。
+
+   排查手法（值得记住）：
+     · 量空白的那个盒子：`document.querySelector('[class*="aspect-"]')` 之后看它内部
+       **有没有 `<img>`、`<svg>`，以及 svg 里有没有可绘制图元**。
+     · 想看动画到底画了什么，直接 dump `svg.innerHTML` —— 空的 `<g clip-path=…></g>`
+       就是"lottie 认为没东西可画"的铁证。
+     · **数图元时必须排除 `<defs>`**：lottie-web 即使什么都没画也会在 `<defs>` 里留一个
+       clipPath 的 `<rect>`，把它算进去会让"空动画"永远检测不到
+       （这个坑我在写兜底逻辑时又踩了一次）。
+     · 拿"已知能渲染的文件"做对照比读规范快得多：换文件内容 → 若恢复，则差异在数据里；
+       逐字段 diff 到只剩数值差异时，就别再二分了，改上兜底。
+
+   最终修法：① 开 `dangerouslyAllowSVG`；② 修生成器并重生成 39 个 Lottie；
+   ③ `LottieIcon` 增加"渲染为空则回退底图"的自检。
+
+   ⚠️ **2026-10 补记：根因已彻底查清（此前那版"深层原因未定位"的记录作废）。**
+   ②只补了 `or`，`star / decor / firework / moon / music / service / cloud`
+   这 7 个文件**依旧渲染为空**。真正的原因是 `sr` 的 **`sy` 与 `ir` 不自洽**：
+     · `sy` 是**图形种类**：**1 = 星形**（用外径 `or` **加**内径 `ir`）；
+       **2 = 多边形**（**只用外径**）。
+     · 生成器把这份约定**传反了** —— 真星形传了 `sy=2`，却又带着 `ir`，
+       等于"声明我是多边形、却塞了内径"。
+   这种自相矛盾的 `sr`，lottie-web **不报错、不告警、不抛异常**，
+   只是让整层渲染管线**静默中止**。实测（源码插桩）：`createContent()` 正常跑完，
+   但 `checkTransparency → show() → renderFrame` 这条链**从头到尾一次都没发生**，
+   于是留下一个**空的 `<g>`** —— 页面上一片空白，JSON 里看不出任何毛病
+   （配色、透明度动画、图层结构全都在，所以"逐字段对齐到正常文件"也查不出来）。
+
+   定位手法（值得复用）：把 `node_modules/lottie-web/build/player/lottie.js`
+   读进内存 → 字符串替换插 `window.__log(...)` → `page.addScriptTag({ content })` 注入。
+   比读源码猜快一个量级，能直接把"哪一步没执行"照出来；最小复现矩阵（只放一个 `sr`，
+   枚举 `sy`/`ir`/`os`/`is`/`d` 组合）则用来把规则打干净。
+
+   现在的做法：
+     · 生成器**从 `inner` 推导 `sy`**（`inner>0` → 星形 `sy=1` 带 `ir`；
+       `inner=0` → 多边形 `sy=2` 不带 `ir`），调用方不再手传，杜绝传反；
+     · `build()` 里加自检：任何 `sr` 的 `sy`/`ir` 不配套就**直接报错退出**，
+       不让空白图流出去；
+     · `scripts/verify-lottie.mjs` 新增「全部 39 个 Lottie 均能画出图形」，并已登记进
+       `run-all-verify.sh`（此前它没在回归清单里，且 `playwright` 是裸引入、根本跑不起来 ——
+       所以这类 bug 一直没人拦）。
+   ⚠️ 只断言"DOM 里存在 svg"**抓不到这种空壳** —— 空壳也有 svg，必须数**真正画出 `d` 的 path**。
+   ⚠️ 必须**多帧采样**：有些元素第 0 帧本就透明（烟花射线 opacity 从 0 起），只看 0 帧会误判。
+   反向验证：把 `star.json` 改回 `sy=2` + `ir` → 断言精确变红且**只报这一个文件**，其余 4 条不受影响。
+
+7. **"验收脚本自清理"删错表 → 日上限被测试自己顶爆，出一片假红。**
+   实测现场（2026-10）：`verify-obituary` §3 与 `verify-service-fulfillment` §3 双双变红，
+   报「今日已兑换 53500 积分，超出每日上限（50000 积分）」—— 而该用户只有 2 万分，
+   看着像产品拦截写错了。真相是**测试把自己顶爆了**：
+   日兑换上限的唯一判据是 `lib/points.ts` 的 `dailyRedeemedPoints()`，它读的是
+   `"PointLog"`（`kind='redeem'`）当天流水；而两个套件的"清场"删的是
+   `"PointRedemption"` —— **那张表根本不参与上限判定**，等于没清。
+   同一天多跑几遍，5 万日名额就被测试自己攒下的历史流水耗光，兑换被服务端拦下。
+   → 修法：删当日 `kind='redeem'` 的 `"PointLog"`，且**时间窗口必须与产品同口径**
+   （用 Node 本地 0 点，别图省事用 psql 的 `current_date`：本库时区是 UTC，
+   与 Node 的 Asia/Shanghai 差 8 小时，夜跑会错清一整天的流水）。
+   判据：**改动"某个计数的判据"后，必须 grep 一遍所有"清场"语句删的是不是同一张表。**
+
+8. **`.catch(() => {})` + `check(!!x)` 是"把失败伪装成通过"的标准配方。**
+   实测现场（2026-10）：`verify-service-fulfillment` §2 偶发把导航失败记成**绿**，
+   还在库里留下 pending 垃圾单。原写法：
+   ```js
+   await page.waitForURL(/\/pay\/[A-Za-z0-9-]+$/, { timeout: 20000 }).catch(() => {});
+   const orderNo2 = page.url().split("/").pop();
+   check("下单跳转到支付页", !!orderNo2);
+   ```
+   导航超时后 `page.url()` 还停在 `/mall/cloud-worship`，`split("/").pop()` 取到的是
+   **slug 而不是订单号**，而 `!!orderNo2` 照样为真 → 失败被记成绿；
+   收尾又按这个假单号去删订单（什么也没删），库里累积垃圾单。
+   同源毛病还有两处：断言用的是"非空"这种弱判据；
+   以及"支付是否落地"用 `waitForTimeout(2000)` 固定等待（慢机器上必然偶发假红）。
+   → 修法：① 产品行为单独断言（失败即红，判据清晰）；
+   ② 订单号**从 DB 取**（权威来源，导航失败也拿得到真单号，收尾不漏删）；
+   ③ 固定 `waitForTimeout` 换成**轮询到条件成立或明确超时**。
+   一句话：**`.catch()` 只用来兜数据、不用来兜断言；断言里不要出现"非空即通过"。**
+
+10. **验收脚本里点登录按钮之前必须等 hydration。**
+   实测现场：URL 停在 `/login?from=&identifier=...&password=...`
+   —— 这一下点在了还没被 React 接管的按钮上，表单退化成原生 GET，密码明文挂地址栏。
+   dev 模式首屏 JS 还在编译时必现。用 `scripts/verify-clan-tribute-e2e.mjs` 里的
+   `loginAs()`：逐轮加长等待 + 轮询 URL + 检测到 `password=` 立即重试。
+
+11. **脚本里的配额/价格类常量要从真相源读，不要硬编码。**
+   `FREE_DAILY_QUOTA` 从 3 调到 1 之后，`verify-clan-tribute-e2e.mjs` 与
+   `verify-offering-panel.mjs` 里有 6 条断言以「实际 1」常年飘红，看着像补货坏了。
+   现在两个脚本都从 `lib/offerings.ts` 正则取值。同族常量同理。
 
 5. **断言别挑"要数据才渲染"的板块。**
    例如「故人数字档案」只在馆主填了时间线/相册时才存在。

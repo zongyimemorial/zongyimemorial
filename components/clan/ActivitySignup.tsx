@@ -54,9 +54,9 @@ export default function ActivitySignup({
             if (res.ok) setOpen(false);
           }}
         >
-          <input name="name" required placeholder="姓名 *" className="rounded-md border border-gray-200 px-3 py-1.5 text-sm" />
-          <input name="phone" required placeholder="联系电话 *" className="rounded-md border border-gray-200 px-3 py-1.5 text-sm" />
-          <input name="note" placeholder="同行人数/备注" className="rounded-md border border-gray-200 px-3 py-1.5 text-sm" />
+          <input name="name" required placeholder="姓名 *" className="rounded-md border border-brand-200 px-3 py-1.5 text-sm" />
+          <input name="phone" required placeholder="联系电话 *" className="rounded-md border border-brand-200 px-3 py-1.5 text-sm" />
+          <input name="note" placeholder="同行人数/备注" className="rounded-md border border-brand-200 px-3 py-1.5 text-sm" />
           <div className="flex items-center gap-3 sm:col-span-3">
             <button disabled={busy} className="rounded-md bg-brand-800 px-4 py-1.5 text-xs text-white disabled:opacity-50">
               {busy ? "提交中…" : "确认报名"}

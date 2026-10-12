@@ -135,6 +135,7 @@ export async function signupActivity(formData: FormData) {
 
   const activity = await prisma.clanActivity.findUnique({ where: { id: activityId } });
   if (!activity) return { ok: false, message: "活动不存在" };
+  if (activity.reviewStatus !== "approved") return { ok: false, message: "活动尚未开放报名" };
   if (activity.status === "finished") return { ok: false, message: "活动已结束" };
   if (activity.signupCount >= activity.capacity) return { ok: false, message: "报名名额已满" };
 

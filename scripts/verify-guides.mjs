@@ -84,6 +84,25 @@ console.log("\n── ③ 空间装修指引 /guide/decor ──");
   }
 }
 
+console.log("\n── ③b 云直播操作指引 /live/guide ──");
+{
+  const res = await page.goto(BASE + "/live/guide", { waitUntil: "domcontentloaded" });
+  check("云直播指引 可访问", res.status() === 200, `HTTP ${res.status()}`);
+  const html = await page.content();
+  for (const t of ["云直播大厅", "如何观看", "发起直播", "回放档案"]) {
+    const idx = html.indexOf(t);
+    check(`云直播指引 含「${t}」`, idx >= 0, idx >= 0 ? `@${idx}` : "未找到");
+  }
+  check("云直播指引 链到大厅", html.includes('href="/live"'));
+}
+
+console.log("\n── ③c 云直播大厅入口链接 ──");
+{
+  await page.goto(BASE + "/live", { waitUntil: "domcontentloaded" });
+  const html = await page.content();
+  check("云直播大厅 链到操作指引", html.includes('href="/live/guide"'));
+}
+
 // ── 登录（流程条那块必须登录才看得到）─────────────────────────────
 await page.goto(BASE + "/login", { waitUntil: "domcontentloaded" });
 await page.fill('input[name="identifier"]', "user@test.com");

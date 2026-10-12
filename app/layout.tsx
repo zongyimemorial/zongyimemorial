@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Script from "next/script";
 import NavResilience from "@/components/site/NavResilience";
+import AnalyticsTracker from "@/components/site/AnalyticsTracker";
 import "./globals.css";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -57,6 +59,9 @@ export default function RootLayout({
     <html lang="zh-CN">
       <body>
         <NavResilience />
+        <Suspense fallback={null}>
+          <AnalyticsTracker />
+        </Suspense>
         {children}
         {umamiSrc && umamiId ? (
           <Script

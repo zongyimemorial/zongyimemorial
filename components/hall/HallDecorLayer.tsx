@@ -457,6 +457,15 @@ export default function HallDecorLayer(props: {
    * 见 lib/decor-skin.ts 的 `withDark()` 注释。
    */
   skin?: SkinTokens;
+  /**
+   * 关闭页面级 fixed「檐下挂饰」层（灯笼/幔帐/牌匾等悬浮饰物）。
+   *
+   * 存在的理由：默认厅堂已升级为 3D 舞台（Hall3DStage），舞台内部自绘
+   * 灯笼/匾额/光晕等陈设 —— 页面级 fixed 挂饰会与舞台内的立体挂饰**重复叠挂**
+   * （2026-10 实测：白灯笼 + 条案悬浮在 3D 厅堂上）。3D 舞台接管挂饰后，
+   * 调用方传 true 关掉这层；其余页面形态（付费 3D 场景/旧版式）不受影响。
+   */
+  suppressFixedOrnaments?: boolean;
 }) {
   const { decor, className = "", children, style } = props;
   const wall = decorItem("wall", decor);
@@ -513,8 +522,10 @@ export default function HallDecorLayer(props: {
       )}
 
       {/* 挂饰层：灯笼/幔帐/立柱用 fixed/sticky，滚动时仍可见。
-          多挂饰（≥2 件）在同一容器里并排；**单件保持原标记结构**（零回归） */}
+          多挂饰（≥2 件）在同一容器里并排；**单件保持原标记结构**（零回归）。
+          3D 舞台接管挂饰时（suppressFixedOrnaments）整层关闭，避免重复叠挂 */}
       {(() => {
+        if (props.suppressFixedOrnaments) return null;
         const specs = ornItems
           .map((it) => it.style.ornament)
           .filter((s): s is OrnamentSpec => !!s);

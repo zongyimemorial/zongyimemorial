@@ -17,7 +17,7 @@ import {
 import { saveGenealogyChart, unlockChartType } from "@/app/(public)/clan/genealogy/[id]/actions";
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 
 type Msg = { ok: boolean; text: string } | null;
 
@@ -153,7 +153,7 @@ export default function GenealogyDesigner({
       {/* ---------------- 左：设计面板 ---------------- */}
       <div className="space-y-5">
         {/* 步骤 1：选版式 */}
-        <section className="rounded-xl border border-gray-100 bg-white p-5">
+        <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
           <div className="flex items-center gap-2">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-800 text-[11px] text-white">
               1
@@ -180,8 +180,8 @@ export default function GenealogyDesigner({
                     (active
                       ? "border-accent-500 ring-2 ring-accent-200"
                       : locked
-                        ? "border-gray-200 opacity-80 hover:border-amber-300"
-                        : "border-gray-200 hover:border-accent-300")
+                        ? "border-brand-200 opacity-80 hover:border-amber-300"
+                        : "border-brand-200 hover:border-accent-300")
                   }
                 >
                   <div className="flex items-center justify-between">
@@ -215,7 +215,7 @@ export default function GenealogyDesigner({
                 type="button"
                 onClick={() => onUnlock(type)}
                 disabled={busy}
-                className="mt-2 w-full rounded-md border border-amber-300 bg-white px-3 py-2 text-xs text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                className="mt-2 w-full rounded-md border border-amber-300 bg-brand-100/70 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50 disabled:opacity-50"
               >
                 开通高级订阅解锁精美版式 →
               </button>
@@ -224,7 +224,7 @@ export default function GenealogyDesigner({
         </section>
 
         {/* 步骤 2：录入世系 */}
-        <section className="rounded-xl border border-gray-100 bg-white p-5">
+        <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-800 text-[11px] text-white">
@@ -238,7 +238,7 @@ export default function GenealogyDesigner({
                 onClick={() => setMode("lines")}
                 className={
                   "rounded px-2 py-1 " +
-                  (mode === "lines" ? "bg-brand-800 text-white" : "border border-gray-200 text-brand-600")
+                  (mode === "lines" ? "bg-brand-800 text-white" : "border border-brand-200 text-brand-600")
                 }
               >
                 行文本
@@ -248,7 +248,7 @@ export default function GenealogyDesigner({
                 onClick={() => setMode("rows")}
                 className={
                   "rounded px-2 py-1 " +
-                  (mode === "rows" ? "bg-brand-800 text-white" : "border border-gray-200 text-brand-600")
+                  (mode === "rows" ? "bg-brand-800 text-white" : "border border-brand-200 text-brand-600")
                 }
               >
                 逐条编辑
@@ -276,25 +276,25 @@ export default function GenealogyDesigner({
                     min={1}
                     value={m.gen}
                     onChange={(e) => updateRow(i, { gen: Number(e.target.value) || 0 })}
-                    className="rounded border border-gray-200 px-1.5 py-1 text-xs"
+                    className="rounded border border-brand-200 px-1.5 py-1 text-xs"
                   />
                   <input
                     value={m.name}
                     onChange={(e) => updateRow(i, { name: e.target.value })}
                     placeholder="姓名"
-                    className="rounded border border-gray-200 px-1.5 py-1 text-xs"
+                    className="rounded border border-brand-200 px-1.5 py-1 text-xs"
                   />
                   <input
                     value={m.relation ?? ""}
                     onChange={(e) => updateRow(i, { relation: e.target.value })}
                     placeholder="关系（长子/女）"
-                    className="rounded border border-gray-200 px-1.5 py-1 text-xs"
+                    className="rounded border border-brand-200 px-1.5 py-1 text-xs"
                   />
                   <input
                     value={m.note ?? ""}
                     onChange={(e) => updateRow(i, { note: e.target.value })}
                     placeholder="备注（适某地某姓/止/殇）"
-                    className="rounded border border-gray-200 px-1.5 py-1 text-xs"
+                    className="rounded border border-brand-200 px-1.5 py-1 text-xs"
                   />
                   <button
                     type="button"
@@ -308,7 +308,7 @@ export default function GenealogyDesigner({
               <button
                 type="button"
                 onClick={addRow}
-                className="w-full rounded border border-dashed border-gray-300 py-1.5 text-xs text-brand-500 hover:border-accent-300"
+                className="w-full rounded border border-dashed border-brand-300 py-1.5 text-xs text-brand-500 hover:border-accent-300"
               >
                 + 添加成员
               </button>
@@ -335,7 +335,7 @@ export default function GenealogyDesigner({
         </section>
 
         {/* 步骤 3：图面设置 */}
-        <section className="rounded-xl border border-gray-100 bg-white p-5">
+        <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
           <div className="flex items-center gap-2">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-800 text-[11px] text-white">
               3
@@ -387,7 +387,7 @@ export default function GenealogyDesigner({
         </section>
 
         {/* 步骤 4：保存与导出 */}
-        <section className="rounded-xl border border-gray-100 bg-white p-5">
+        <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
           <div className="flex items-center gap-2">
             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-brand-800 text-[11px] text-white">
               4
@@ -406,7 +406,7 @@ export default function GenealogyDesigner({
             <button
               type="button"
               onClick={() => window.print()}
-              className="rounded-md border border-gray-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50"
+              className="rounded-md border border-brand-300 px-5 py-2 text-sm text-brand-700 hover:bg-gray-50"
             >
               打印 / 导出 PDF
             </button>
@@ -435,7 +435,7 @@ export default function GenealogyDesigner({
             {meta.name} · {stats.generations} 世 {stats.total} 人
           </span>
         </div>
-        <div className="max-h-[80vh] overflow-auto rounded-lg border border-gray-100 bg-gray-50 p-2">
+        <div className="max-h-[80vh] overflow-auto rounded-lg border border-brand-200 bg-gray-50 p-2">
           <GenealogyChart members={members} config={config} />
         </div>
       </div>

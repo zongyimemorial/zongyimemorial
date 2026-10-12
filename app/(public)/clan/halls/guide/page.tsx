@@ -75,14 +75,36 @@ export default function ClanHallGuidePage() {
         / <span className="text-brand-600">宗祠设立指引</span>
       </nav>
 
-      <h1 className="text-3xl font-semibold text-brand-900">宗祠设立指引</h1>
-      <p className="mt-3 leading-7 text-gray-700">
-        宗祠是宗族的精神所系。数字宗祠让分散各地的宗亲能共同祭祖、核对谱系、
-        追溯源流 —— 不必等到清明返乡，也能在祠堂里上一炷香。
-        <strong>设立宗祠免费</strong>，装修按需升级。
-      </p>
+      {/* Hero —— 对齐纪念馆指引的突出头部 */}
+      <header className="overflow-hidden rounded-2xl bg-brand-900">
+        <div className="relative p-7 sm:p-9">
+          {/* 祠堂正殿剪影装饰 */}
+          <svg
+            className="pointer-events-none absolute right-0 top-0 h-44 w-44 translate-x-1/4 -translate-y-1/4 text-brand-50/10"
+            viewBox="0 0 200 120"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M18 56 Q100 6 182 56" />
+            <path d="M18 56 L6 66 M182 56 L194 66" />
+            <path d="M40 60 V112 M100 60 V112 M160 60 V112" />
+            <path d="M28 60 H172" />
+          </svg>
+          <h1 className="relative text-3xl font-semibold text-white sm:text-4xl">
+            宗祠设立指引
+          </h1>
+          <p className="relative mt-3 max-w-xl leading-7 text-brand-100">
+            宗祠是宗族的精神所系。数字宗祠让分散各地的宗亲能共同祭祖、核对谱系、
+            追溯源流 —— 不必等到清明返乡，也能在祠堂里上一炷香。
+            <strong className="text-white">设立宗祠免费</strong>，装修按需升级。
+          </p>
+        </div>
+      </header>
 
-      <nav className="mt-6 rounded-lg border border-gray-100 bg-brand-50/50 p-5">
+      <nav className="mt-8 rounded-xl border border-brand-200 bg-brand-50 p-5">
         <div className="text-xs font-medium text-brand-700">目录</div>
         <ul className="mt-2 grid gap-1.5 text-[13px] sm:grid-cols-2">
           {TOC.map((x) => (
@@ -95,7 +117,7 @@ export default function ClanHallGuidePage() {
         </ul>
       </nav>
 
-      <section id="why" className="mt-10">
+      <section id="why" className="mt-10 scroll-mt-20">
         <h2 className="text-2xl font-semibold text-brand-900">一、为什么要建数字宗祠</h2>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-sm leading-7 text-gray-700">
           <li>
@@ -113,7 +135,7 @@ export default function ClanHallGuidePage() {
         </ul>
       </section>
 
-      <section id="prepare" className="mt-10">
+      <section id="prepare" className="mt-10 scroll-mt-20">
         <h2 className="text-2xl font-semibold text-brand-900">二、设立前需要准备什么</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
@@ -122,7 +144,7 @@ export default function ClanHallGuidePage() {
             ["字辈诗 / 派语", "每行一句，也可整段粘贴。这是宗祠页的核心内容之一。"],
             ["始祖与始迁地", "如始祖李广、祖籍甘肃陇西。可留空，但填了更便于宗亲认领。"],
           ].map(([t, d]) => (
-            <div key={t} className="rounded-lg border border-gray-100 bg-white p-4">
+            <div key={t} className="rounded-lg border border-brand-200 bg-brand-100/70 p-4">
               <div className="text-sm font-medium text-brand-900">{t}</div>
               <p className="mt-1.5 text-[13px] leading-6 text-gray-600">{d}</p>
             </div>
@@ -130,11 +152,11 @@ export default function ClanHallGuidePage() {
         </div>
       </section>
 
-      <section id="steps" className="mt-10">
+      <section id="steps" className="mt-10 scroll-mt-20">
         <h2 className="text-2xl font-semibold text-brand-900">三、分步设立流程</h2>
         <div className="mt-5 space-y-4">
           {steps.map((s) => (
-            <div key={s.n} className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+            <div key={s.n} className="rounded-lg border border-brand-200 bg-brand-100/70 p-5 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent-600 text-sm font-bold text-white">
                   {s.n}
@@ -150,7 +172,7 @@ export default function ClanHallGuidePage() {
         </div>
       </section>
 
-      <section id="source" className="mt-10">
+      <section id="source" className="mt-10 scroll-mt-20">
         <h2 className="text-2xl font-semibold text-brand-900">四、源流与字辈怎么填</h2>
         <div className="mt-3 space-y-3 text-sm leading-7 text-gray-700">
           <p>
@@ -173,18 +195,18 @@ export default function ClanHallGuidePage() {
         </div>
       </section>
 
-      <section id="include" className="mt-10">
+      <section id="include" className="mt-10 scroll-mt-20">
         <h2 className="text-2xl font-semibold text-brand-900">五、宗祠能包含什么</h2>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {includes.map((t) => (
-            <div key={t} className="rounded-lg border border-gray-100 bg-white p-4 text-sm text-brand-700 shadow-sm">
+            <div key={t} className="rounded-lg border border-brand-200 bg-brand-100/70 p-4 text-sm text-brand-700 shadow-sm">
               {t}
             </div>
           ))}
         </div>
       </section>
 
-      <section id="decor" className="mt-10">
+      <section id="decor" className="mt-10 scroll-mt-20">
         <h2 className="text-2xl font-semibold text-brand-900">六、宗祠装修要点</h2>
         <div className="mt-3 space-y-3 text-sm leading-7 text-gray-700">
           <p>
@@ -211,7 +233,7 @@ export default function ClanHallGuidePage() {
         </div>
       </section>
 
-      <section id="privacy" className="mt-10">
+      <section id="privacy" className="mt-10 scroll-mt-20">
         <h2 className="text-2xl font-semibold text-brand-900">七、实名、审核与隐私</h2>
         <div className="mt-3 space-y-3 text-sm leading-7 text-gray-700">
           <p>
@@ -230,7 +252,7 @@ export default function ClanHallGuidePage() {
         </div>
       </section>
 
-      <section id="faq" className="mt-10">
+      <section id="faq" className="mt-10 scroll-mt-20">
         <h2 className="text-2xl font-semibold text-brand-900">八、常见问题</h2>
         <div className="mt-4 space-y-4">
           {[
@@ -259,15 +281,21 @@ export default function ClanHallGuidePage() {
               a: "不会。对外只显示脱敏称呼，完整实名仅平台管理台在必要时可见。",
             },
           ].map((f) => (
-            <div key={f.q} className="rounded-lg border border-gray-100 bg-white p-4">
-              <div className="text-[13px] font-medium text-brand-900">Q：{f.q}</div>
-              <p className="mt-1.5 text-[13px] leading-6 text-gray-600">A：{f.a}</p>
-            </div>
+            <details
+              key={f.q}
+              className="group rounded-xl border border-brand-200 bg-brand-100/70 p-5 shadow-sm [&_summary]:cursor-pointer"
+            >
+              <summary className="flex items-center justify-between font-semibold text-brand-900">
+                <span>{f.q}</span>
+                <span className="ml-4 text-accent-600 transition group-open:rotate-45">+</span>
+              </summary>
+              <p className="mt-3 leading-7 text-brand-700">{f.a}</p>
+            </details>
           ))}
         </div>
       </section>
 
-      <div className="mt-10 flex flex-wrap gap-3 border-t border-gray-100 pt-6">
+      <div className="mt-10 flex flex-wrap gap-3 border-t border-brand-200 pt-6">
         <Link
           href="/clan/halls/new"
           className="rounded-lg bg-accent-600 px-5 py-2.5 text-sm text-white hover:bg-accent-700"
@@ -276,13 +304,13 @@ export default function ClanHallGuidePage() {
         </Link>
         <Link
           href="/guide/decor"
-          className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm text-brand-700 hover:bg-gray-50"
+          className="rounded-lg border border-brand-300 px-5 py-2.5 text-sm text-brand-700 hover:bg-gray-50"
         >
           空间装修指引
         </Link>
         <Link
           href="/halls/guide"
-          className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm text-brand-700 hover:bg-gray-50"
+          className="rounded-lg border border-brand-300 px-5 py-2.5 text-sm text-brand-700 hover:bg-gray-50"
         >
           纪念馆创建指引
         </Link>

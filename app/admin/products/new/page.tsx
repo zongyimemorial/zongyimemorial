@@ -27,10 +27,10 @@ const typeLabel: Record<ProductType, string> = {
 
 export default async function NewProductPage() {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "editor")) redirect("/console");
+  if (!user || (user.role !== "admin" && user.role !== "editor" && user.role !== "super_admin")) redirect("/console");
   const categories = await prisma.category.findMany({ orderBy: { sort: "asc" } });
 
-  const field = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm";
+  const field = "w-full rounded-md border border-brand-300 px-3 py-2 text-sm";
 
   return (
     <div className="max-w-xl">

@@ -73,13 +73,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email ?? undefined,
           name: user.realName ?? user.email ?? user.phone ?? undefined,
           role: user.role,
-          idVerified: user.idVerified
+          idVerified: user.idVerified,
+          // 按用户存储的细粒度后台模块权限；空数组=回退角色默认（见 lib/permissions.ts）
+          permissions: user.permissions ?? []
         } as {
           id: string;
           email?: string;
           name?: string;
           role: UserRole;
           idVerified: boolean;
+          permissions: string[];
         };
       }
     })
@@ -89,6 +92,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.role = (user as { role?: UserRole }).role;
         token.idVerified = (user as { idVerified?: boolean }).idVerified ?? false;
+        token.permissions = (user as { permissions?: string[] }).permissions ?? [];
       }
       return token;
     },
@@ -97,16 +101,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (session.user as { id?: string }).id = token.sub;
         (session.user as { role?: UserRole }).role = token.role as UserRole;
         (session.user as { idVerified?: boolean }).idVerified = (token.idVerified as boolean) ?? false;
+        (session.user as { permissions?: string[] }).permissions = (token.permissions as string[]) ?? [];
       }
       return session;
     }
   }
 });
 
-/** 服务端获取当前会话用户（含 role） */
-export async function getCurrentUser() {
+/** 服务端获取当前会话用户（含 role、permissions 等） */
+export async function getCurrentUser(): Promise<SessionUser | null> {
   const session = await auth();
-  return session?.user ?? null;
+  return (session?.user ?? null) as SessionUser | null;
 }
 
 export type SessionUser = {
@@ -115,4 +120,6 @@ export type SessionUser = {
   name?: string | null;
   role?: UserRole;
   idVerified?: boolean;
+  // 按用户存储的细粒度后台模块权限；空数组=回退角色默认
+  permissions?: string[];
 };

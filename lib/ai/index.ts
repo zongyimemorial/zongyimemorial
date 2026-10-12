@@ -5,7 +5,9 @@
  *      **绝不因为缺密钥而让整条链路不可用**——这是内测与演示的底线。
  *
  * 环境变量：
- *   DEEPSEEK_API_KEY        LLM（已有）
+ *   ARK_API_KEY             LLM（火山方舟 / 豆包，优先于 DeepSeek）
+ *   ARK_MODEL               方舟模型 id，默认 doubao-seed-character-260628
+ *   DEEPSEEK_API_KEY        LLM（回退）
  *   VOLCANO_APP_ID          ASR + TTS
  *   VOLCANO_ACCESS_TOKEN
  *   VOLCANO_CLUSTER         默认 volcano_tts
@@ -14,6 +16,7 @@
 
 import { MockAsr, MockLlm, MockTts } from "./mock";
 import { DeepSeekLlm } from "./deepseek";
+import { ArkLlm, arkConfigAvailable } from "./ark";
 import { getVolcanoConfig, VolcanoAsr, VolcanoTts } from "./volcano";
 import type { AsrProvider, LlmProvider, TtsProvider } from "./types";
 
@@ -35,8 +38,12 @@ export function getAsr(): AsrProvider {
 
 export function getLlm(): LlmProvider {
   if (llmSingleton) return llmSingleton;
-  const key = process.env.DEEPSEEK_API_KEY;
-  llmSingleton = key ? new DeepSeekLlm(key) : new MockLlm();
+  if (process.env.ARK_API_KEY) {
+    llmSingleton = new ArkLlm(process.env.ARK_API_KEY);
+  } else {
+    const key = process.env.DEEPSEEK_API_KEY;
+    llmSingleton = key ? new DeepSeekLlm(key) : new MockLlm();
+  }
   return llmSingleton;
 }
 

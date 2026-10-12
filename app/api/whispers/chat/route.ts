@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { loadProfile, gateProfile, talk, recentHistory } from "@/lib/whisper-service";
 import { MAX_MESSAGE_CHARS } from "@/lib/whisper";
+import { moodSpec } from "@/lib/whisper-mood";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 /**
  * 追思对话接口（文字 / 语音同一入口）。
  *
- * POST JSON: { profileId, text, wantVoice, sessionId? }
+ * POST JSON: { profileId, text, wantVoice, sessionId?, mood?, moodNote? }
  * 返回 { ok, reply, audioUrl, aiLabel, crisis, immersionNote, quota }
  *
  * 合规要点：
@@ -27,6 +28,8 @@ export async function POST(req: Request) {
     text?: string;
     wantVoice?: boolean;
     sessionId?: string;
+    mood?: string;
+    moodNote?: string;
   };
   try {
     body = await req.json();
@@ -67,6 +70,9 @@ export async function POST(req: Request) {
       wantVoice,
       sessionId: body.sessionId,
       history,
+      // 情感标记须为白名单值，非法值一律丢弃（不报错，避免打断对话）
+      mood: body.mood && moodSpec(body.mood) ? body.mood : null,
+      moodNote: body.moodNote ? String(body.moodNote).slice(0, 100) : null,
     });
 
     if (!result.ok) {

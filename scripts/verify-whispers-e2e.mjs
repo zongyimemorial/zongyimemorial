@@ -23,13 +23,33 @@ function sql(q) {
   ).trim();
 }
 
-const hallId = sql(
-  `SELECT p."hallId" FROM "WhisperProfile" p JOIN "User" u ON u.id=p."ownerUserId" WHERE u.email='user@test.com' LIMIT 1;`,
+/*
+  ⚠️ 取样本必须**确定性**，且断言跟着样本走。
+
+  实测踩过（2026-10）：user@test.com 名下有 **3 个** 悄悄话装置
+  （示例·李老先生 / 张老先生 / 烟测逝者），而这里原本写的是
+  `... WHERE u.email='user@test.com' LIMIT 1` —— **没有 ORDER BY**。
+  PostgreSQL 返回哪一行是不确定的，断言却写死 `chatText.includes("示例·李老先生")`，
+  于是本套件时绿时红（换一台机器/换一次 vacuum 结果就可能变），
+  表现为"莫名其妙偶发失败"，极难排查。
+
+  现在：① 只挑**已开启**的装置（对话页要求 active，否则门禁拦下）；
+       ② `ORDER BY p.id` 固定取第一个，结果可复现；
+       ③ 连 personaName/hallId 一起取出，断言用**取到的那个名字**，
+          不再硬编码（样本换了断言自动跟随）。
+*/
+const profileRow = sql(
+  `SELECT p.id||'|'||p."hallId"||'|'||p."personaName" FROM "WhisperProfile" p ` +
+    `JOIN "User" u ON u.id=p."ownerUserId" ` +
+    `WHERE u.email='user@test.com' AND p.status='active' AND p.enabled=true ` +
+    `ORDER BY p.id LIMIT 1;`,
 );
-const profileId = sql(
-  `SELECT p.id FROM "WhisperProfile" p JOIN "User" u ON u.id=p."ownerUserId" WHERE u.email='user@test.com' LIMIT 1;`,
-);
-console.log(`hallId=${hallId}  profileId=${profileId}`);
+const [profileId, hallId, personaName] = profileRow.split("|");
+if (!profileId) {
+  console.error("找不到 user@test.com 名下已开启的悄悄话装置，无法继续验收");
+  process.exit(1);
+}
+console.log(`hallId=${hallId}  profileId=${profileId}  personaName=${personaName}`);
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({
@@ -53,10 +73,19 @@ await page.waitForTimeout(1200);
 if (await page.locator('input[name="identifier"]').count()) {
   await page.fill('input[name="identifier"]', "user@test.com");
   await page.fill('input[name="password"]', "user123456");
-  await Promise.all([
-    page.waitForURL((u) => !u.pathname.includes("/login"), { timeout: 40000 }),
-    page.click('button[type="submit"]'),
-  ]);
+  // 登录超时是 dev 编译抖动，不重试会误判（既有脚本同款处理）
+  for (let i = 1; i <= 2; i++) {
+    try {
+      await Promise.all([
+        page.waitForURL((u) => !u.pathname.includes("/login"), { timeout: 40000 }),
+        page.click('button[type="submit"]'),
+      ]);
+      break;
+    } catch {
+      if (i === 2) throw new Error("登录超时（环境抖动）");
+      await page.waitForTimeout(2500);
+    }
+  }
   await page.waitForTimeout(2500);
 }
 check("登录成功", !page.url().includes("/login"), page.url());
@@ -70,15 +99,15 @@ check("板块页标题", boardText.includes("午夜悄悄话"));
 check("板块页·工作原理", boardText.includes("它是怎么运作的"));
 check("板块页·收费标准", boardText.includes("收费标准"));
 check("板块页·三档套餐", boardText.includes("体验版") && boardText.includes("思念版") && boardText.includes("长夜版"));
-check("板块页·思念版 ¥39", boardText.includes("39"));
-check("板块页·长夜版 ¥99", boardText.includes("99"));
+check("板块页·思念版 ¥79", boardText.includes("79"));
+check("板块页·长夜版 ¥199（视频已拆出单卖）", boardText.includes("199"));
 check("板块页·按次购买 ¥6/10分钟", boardText.includes("按次购买"));
 check("板块页·积分兑换", boardText.includes("积分兑换"));
 check("板块页·AI 告知条", boardText.includes("这里回应你的不是真人"));
 check("板块页·危机热线 12356", boardText.includes("12356"));
 check("板块页·边界承诺", boardText.includes("我们的边界"));
 check("板块页·不会自称真人", boardText.includes("不会自称是真人"));
-check("板块页·技术说明", boardText.includes("静态形象") || boardText.includes("不做实时口型驱动"));
+check("板块页·纯语音技术说明", boardText.includes("只有声音") || boardText.includes("不做数字人形象"));
 check("板块页·我设立的装置", boardText.includes("我设立的装置"));
 
 // ============================ 2. 对话页 /whispers/[hallId] ============================
@@ -87,7 +116,7 @@ await page.waitForTimeout(2000);
 check("对话页 HTTP 200", r2?.status() === 200, String(r2?.status()));
 const chatText = await page.locator("body").innerText();
 check("对话页·AI 告知条", chatText.includes("这里回应你的不是真人"));
-check("对话页·装置名称", chatText.includes("示例·李老先生"));
+check("对话页·装置名称", chatText.includes(personaName), `期望含「${personaName}」`);
 check("对话页·返回首页", (await page.locator('a:has-text("← 返回首页")').count()) > 0);
 check("对话页·面包屑", chatText.includes("午夜悄悄话"));
 check("对话页·语音回复开关", chatText.includes("语音回复"));
@@ -213,7 +242,19 @@ if (ttsRes.body?.audioUrl) {
   check("语音·音频可访问", aRes.status === 206 || aRes.status === 200, `HTTP ${aRes.status}`);
   check("语音·Range 请求返回 206", aRes.status === 206, String(aRes.status));
   check("语音·Content-Range 头正确", /^bytes 0-99\//.test(aRes.contentRange ?? ""), aRes.contentRange ?? "");
-  check("语音·WAV 文件头有效", aRes.magic === "RIFF", aRes.magic);
+  /*
+    ⚠️ 音频容器格式断言：**别写死 WAV**。
+    本套件早先断言 magic === "RIFF"（WAV 头），但引擎实际返回 **MP3**
+    （lib/ai/volcano.ts 的 TTS 请求里 encoding: "mp3"；引擎标签也写着 volcano/tts:*）。
+    于是"音频一切正常、只是格式不是 WAV"却常年标红 —— 断言过时，不是产物坏了。
+    现在按**真实容器**判：WAV 认 RIFF，MP3 认帧同步（0xFF 且高 3 位为 111，即 0xFFEx）。
+    两者都算合法；只要不是空/损坏就通过。
+  */
+  const magicOk =
+    aRes.magic.startsWith("RIFF") ||
+    // MP3 帧同步：首字节 0xFF，次字节高 3 位为 1（常见 0xFB/0xF3/0xFA/0xF2…）
+    (aRes.magic.charCodeAt(0) === 0xff && (aRes.magic.charCodeAt(1) & 0xe0) === 0xe0);
+  check("语音·音频容器头有效（RIFF 或 MP3 帧同步）", magicOk, aRes.magic);
 }
 
 // ============================ 7. ASR 降级接口 ============================
@@ -285,7 +326,46 @@ const navOk = (await back.locator('nav a:has-text("午夜悄悄话")').count()) 
 check("导航栏含「午夜悄悄话」", navOk);
 await back.close();
 
-// ============================ 10. 控制台无错误 ============================
+// ============================ 10. 情感标记 + 对话回顾页（C1/C2） ============================
+{
+  await page.goto(`${BASE}/whispers/${hallId}`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(2000);
+  const chatBody = await page.locator("body").innerText();
+
+  check("对话页·心情选择出现", chatBody.includes("心里是什么感觉"));
+  check("对话页·六档心情齐全", ["平静", "想念", "难过", "自责", "有喜事", "说不上来"].every((m) => chatBody.includes(m)));
+  check("对话页·可跳过", chatBody.includes("跳过"));
+
+  const moodBtn = page.locator('button:has-text("想念")').first();
+  if ((await moodBtn.count()) > 0) {
+    await moodBtn.click();
+    await page.waitForTimeout(600);
+    const after = await page.locator("body").innerText();
+    check("对话页·选后回显心情", after.includes("此刻心情"));
+    check("对话页·可改选", after.includes("改一下"));
+  } else {
+    check("对话页·心情按钮可点", false, "未找到「想念」按钮");
+  }
+
+  // 回顾页
+  const rh = await page.goto(`${BASE}/whispers/${hallId}/history`, { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(2000);
+  check("回顾页 HTTP 200", rh?.status() === 200, String(rh?.status()));
+  const hBody = await page.locator("body").innerText();
+  check("回顾页·标题", hBody.includes("说过的话"));
+  check("回顾页·仅本人可见声明", hBody.includes("只有你自己能看到"));
+  check("回顾页·AI 告知条", hBody.includes("这里回应你的不是真人"));
+  // 有历史会话则渲染列表（心情标签为"未记录"，因旧数据早于 C2 上线）；
+  // 无历史则渲染空态。两者都算正常。
+  check(
+    "回顾页·列表或空态正常渲染",
+    hBody.includes("未记录") || hBody.includes("还没有对话记录"),
+  );
+  check("回顾页·返回入口", (await page.locator('a:has-text("午夜悄悄话")').count()) > 0);
+  check("回顾页·留存与删除权说明", hBody.includes("6 个月") && hBody.includes("删除整个装置"));
+}
+
+// ============================ 11. 控制台无错误 ============================
 // 注：第 5 节「门禁」会故意触发一次 403，属预期行为，需排除
 const realErrors = errors.filter(
   (e) => !/favicon|Download the React DevTools/i.test(e) && !/403 \(Forbidden\)/.test(e),

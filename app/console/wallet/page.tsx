@@ -59,12 +59,12 @@ export default async function WalletPage() {
           <div className="mt-1 text-2xl font-bold text-amber-600">{dbUser?.points ?? 0}</div>
           <div className="mt-0.5 text-xs text-brand-400">12 个月有效 · 去兑换</div>
         </Link>
-        <div className="rounded-lg border border-gray-100 bg-white p-4">
+        <div className="rounded-lg border border-brand-200 bg-brand-100/70 p-4">
           <div className="text-xs text-brand-500">累计充值</div>
           <div className="mt-1 text-2xl font-semibold text-brand-900">{summary.totalTopup}</div>
           <div className="mt-0.5 text-xs text-brand-400">元</div>
         </div>
-        <div className="rounded-lg border border-gray-100 bg-white p-4">
+        <div className="rounded-lg border border-brand-200 bg-brand-100/70 p-4">
           <div className="text-xs text-brand-500">累计赠送</div>
           <div className="mt-1 text-2xl font-semibold text-brand-900">{summary.totalBonus}</div>
           <div className="mt-0.5 text-xs text-brand-400">福币</div>
@@ -80,11 +80,11 @@ export default async function WalletPage() {
       <div className="mt-8">
         <h2 className="mb-3 text-base font-semibold text-brand-900">福币流水</h2>
         {logs.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-sm text-brand-500">
+          <div className="rounded-lg border border-dashed border-brand-300 bg-brand-100/70 p-8 text-center text-sm text-brand-500">
             还没有福币记录，充值后这里会显示明细。
           </div>
         ) : (
-          <ul className="divide-y divide-gray-100 rounded-lg border border-gray-100 bg-white" data-fortune-logs>
+          <ul className="divide-y divide-gray-100 rounded-lg border border-brand-200 bg-brand-100/70" data-fortune-logs>
             {logs.map((l) => (
               <li key={l.id} className="flex items-center justify-between px-4 py-3 text-sm">
                 <div>

@@ -39,7 +39,7 @@ export function CommunityPostCard({
   }).format(new Date(post.createdAt));
 
   return (
-    <article className="rounded-xl border border-gray-200 bg-white p-4">
+    <article className="rounded-xl border border-brand-200 bg-brand-100/70 p-4">
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <span className="font-medium text-brand-700">{post.displayName}</span>
         <span>·</span>
@@ -53,7 +53,7 @@ export function CommunityPostCard({
       <CommunityMediaGrid items={post.mediaUrls ?? []} />
 
       {post.replies && post.replies.length > 0 && (
-        <div className="mt-3 space-y-2 border-l-2 border-gray-100 pl-3">
+        <div className="mt-3 space-y-2 border-l-2 border-brand-200 pl-3">
           {post.replies.map((r) => {
             const rTime = new Intl.DateTimeFormat("zh-CN", {
               month: "numeric",

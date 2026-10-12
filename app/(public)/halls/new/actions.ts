@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { issueGrant } from "@/lib/decor-grant";
 import { currentOrigin } from "@/lib/origin";
+import { track, acqChannelFromCookie } from "@/lib/analytics";
 import {
   CHANNEL_META,
   SUPPLEMENT_DAYS,
@@ -135,6 +136,14 @@ export async function createMemorialHall(formData: FormData) {
         : {}),
     },
     select: { id: true },
+  });
+
+  // 分析埋点：建馆转化（渠道归因读首访 acq_channel cookie）
+  await track({
+    type: "create_hall",
+    userId: user.id,
+    channel: await acqChannelFromCookie(),
+    path: "/halls/new",
   });
 
   /*

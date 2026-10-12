@@ -34,10 +34,19 @@ export const MATERIAL_TYPES = {
   old_photo: { label: "老照片", channel: "appeal" },
   tomb_photo: { label: "墓址照片", channel: "appeal" },
   family_record: { label: "家族记载", channel: "appeal" },
-  // —— 宗祠基础材料（标准通道，遗体/祠堂特有）——
+  // —— 宗祠基础材料（标准通道）——
   clan_relation: { label: "宗族关系证明", channel: "standard" },
   genealogy_record: { label: "族谱记载", channel: "standard" },
   clan_history_photo: { label: "祠堂历史照片/证明", channel: "standard" },
+  // —— 宗祠替代核验材料（替代通道：无法提供法定/族谱级佐证时的替代路径）——
+  clan_committee_letter: { label: "宗亲会/村委会证明信", channel: "alternative" },
+  clan_witness: { label: "宗亲联名见证/邻里证明", channel: "alternative" },
+  clan_video_verify: { label: "视频核验/口述历史", channel: "alternative" },
+  // —— 宗祠特殊申述材料（申述通道：年代久远/拿不出法定佐证，先建后补传）——
+  clan_obituary: { label: "历史祭祖文告/讣告", channel: "appeal" },
+  clan_old_photo: { label: "老祠堂照片/旧影像", channel: "appeal" },
+  clan_history_doc: { label: "地方志/文史记载", channel: "appeal" },
+  clan_family_record: { label: "家族口述史料/记载", channel: "appeal" },
 } as const;
 
 export type MaterialType = keyof typeof MATERIAL_TYPES;
@@ -221,3 +230,97 @@ export function validateSubmission(
 /** 实名门槛提示文案（建馆前置硬条件，由调用方用 user.idVerified 核查） */
 export const REALNAME_REQUIRED_NOTE =
   "建馆需完成实名认证（依据《网络祭祀要求》MZ/T 173—2025，须核验经办人身份与逝者关系）。";
+
+// ===========================================================================
+// 宗祠三通道元信息（与 CHANNEL_META 同构，但材料类型指向 clan_* 命名空间）
+//
+// 设计取舍：宗祠材料类型用 `clan_*` 命名空间化，避免与纪念馆同名类型语义混淆；
+// 另起一份 CLAN_CHANNEL_META 而非复用 CHANNEL_META —— 两套通道的「材料清单」
+// 与「文案」各自独立演进，互不污染，也保证纪念馆侧零回归。
+// ===========================================================================
+export const CLAN_CHANNEL_META = {
+  standard: {
+    key: "standard" as ReviewChannel,
+    label: "标准通道（宗祠资质证明）",
+    desc: "持有宗族关系证明 / 族谱记载 / 祠堂历史照片或证明之一即可提交。",
+    slaText: "系统自动初核 + 人工抽查，通常 1-3 个工作日",
+    materialTypes: ["clan_relation", "genealogy_record", "clan_history_photo"],
+    requireMin: 1,
+    requirePromise: false,
+  },
+  alternative: {
+    key: "alternative" as ReviewChannel,
+    label: "替代通道（宗亲/邻里替代核验）",
+    desc: "无上述资质证明时，凭宗亲会/村委会证明信、宗亲联名见证/邻里证明、视频核验/口述历史之一核验。",
+    slaText: "纯人工审核，约 3 个工作日",
+    materialTypes: ["clan_committee_letter", "clan_witness", "clan_video_verify"],
+    requireMin: 1,
+    requirePromise: false,
+  },
+  appeal: {
+    key: "appeal" as ReviewChannel,
+    label: "特殊申述通道（年代久远/缺法定佐证）",
+    desc: "宗族关系说明 + 真实性承诺书 + 辅助材料（历史祭祖文告/讣告、老祠堂照片/旧影像、地方志/文史记载、家族口述史料）。建馆后 60 天内补传正式材料即可转公开。",
+    slaText: "高级复核，5-7 个工作日；仅创建者可见，60 天补传期内可转公开",
+    materialTypes: ["clan_obituary", "clan_old_photo", "clan_history_doc", "clan_family_record"],
+    requireMin: 1,
+    requirePromise: true,
+  },
+} as const;
+
+export type ClanChannelKey = keyof typeof CLAN_CHANNEL_META;
+
+/** 某宗祠通道下已提交的有效材料数（value 或 url 至少一个非空） */
+export function countClanMaterialsInChannel(
+  proofs: ProofsPayload | null,
+  channel: ClanChannelKey,
+): number {
+  if (!proofs?.materials?.length) return 0;
+  const types = CLAN_CHANNEL_META[channel].materialTypes as readonly string[];
+  return proofs.materials.filter(
+    (m) => types.includes(m.type) && (m.value?.trim() || m.url?.trim()),
+  ).length;
+}
+
+/**
+ * 宗祠建馆提交校验（合规底线 + 通道材料规则）。返回 { ok, error }。
+ * - 任一通道至少 1 项对应材料
+ * - appeal 还需 relationProof（宗族关系说明）+ promiseLetter（已签署真实性承诺书）
+ */
+export function validateClanSubmission(
+  channel: ClanChannelKey,
+  proofs: ProofsPayload | null,
+): { ok: boolean; error?: string } {
+  if (!CLAN_CHANNEL_META[channel]) return { ok: false, error: "无效的审核通道" };
+  const meta = CLAN_CHANNEL_META[channel];
+  const n = countClanMaterialsInChannel(proofs, channel);
+  if (n < meta.requireMin) {
+    return {
+      ok: false,
+      error: `请至少提供一项${meta.label}所需的证明材料`,
+    };
+  }
+  if (meta.requirePromise) {
+    if (!proofs?.relationProof?.trim()) {
+      return { ok: false, error: "特殊申述通道需提供宗族关系说明或证明" };
+    }
+    if (!proofs?.promiseLetter?.trim()) {
+      return { ok: false, error: "特殊申述通道需上传已签署的真实性承诺书" };
+    }
+  }
+  return { ok: true };
+}
+
+/**
+ * 通道元信息统一取用：kind="clan" 取 CLAN_CHANNEL_META，其余取 CHANNEL_META
+ * （纪念馆/通用）。后台审核卡片与控制台横幅都走它，避免「通道标签写死 standard」的口径分叉。
+ */
+export function channelMetaFor(
+  kind: "clan" | "hall" | string,
+  channel: string,
+) {
+  if (kind === "clan") {
+    return CLAN_CHANNEL_META[channel as ClanChannelKey] ?? CLAN_CHANNEL_META.standard;
+  }
+  return CHANNEL_META[channel as ChannelKey] ?? CHANNEL_META.standard;
+}

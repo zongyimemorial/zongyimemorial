@@ -12,6 +12,8 @@ import {
   IconNews,
   IconOffering,
 } from "@/components/site/FeatureIcons";
+import Reveal from "@/components/site/Reveal";
+import LivingScene from "@/components/site/LivingScene";
 
 export default async function HomePage() {
   const [articles, products, lives] = await Promise.all([
@@ -31,22 +33,30 @@ export default async function HomePage() {
   ]);
 
   const festival = nextFestival();
+  // 热门服务按价格从低到高展示（选品不变：最新 4 个付费商品，仅调整展示顺序）
+  const hotServices = [...products].sort((a, b) => a.price - b.price);
 
   return (
     <>
-      {/* Hero */}
+      {/* Hero —— 与「午夜悄悄话」同一套星夜墨金语言：
+          深墨底 + 香槟金点睛（eyebrow/主按钮）+ 星点呼应夜空封面。 */}
       <section className="relative overflow-hidden bg-brand-800 text-white">
-        <Image
-          src="/assets/hero.jpg"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover opacity-90"
+        {/* 真实动态场景：AI 实景（夜空烛光庭院）+ 动态视频 + 浮光粒子/薄雾层 */}
+        <LivingScene
+          image="/assets/scene-hero.jpg"
+          video="/assets/scene-hero.mp4"
+          particles={12}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-brand-900/40 to-brand-900/70" />
+        {/* 星夜流光：缓慢游移的暖金光晕，呼应「午夜悄悄话」的夜空 */}
+        <div aria-hidden className="aurora pointer-events-none absolute inset-0" />
+        {/* 星点：呼应悄悄话「夜空封面」的四角星子，加入呼吸闪烁 */}
+        <span aria-hidden className="star-twinkle absolute left-[10%] top-[24%] h-1 w-1 rounded-full bg-accent-200/70" style={{ animationDelay: "0s" }} />
+        <span aria-hidden className="star-twinkle absolute right-[16%] top-[32%] h-1.5 w-1.5 rounded-full bg-accent-100/60" style={{ animationDelay: "0.6s" }} />
+        <span aria-hidden className="star-twinkle absolute left-[20%] bottom-[28%] h-1 w-1 rounded-full bg-accent-200/50" style={{ animationDelay: "1.2s" }} />
+        <span aria-hidden className="star-twinkle absolute right-[9%] bottom-[36%] h-0.5 w-0.5 rounded-full bg-accent-100/70" style={{ animationDelay: "1.8s" }} />
         <div className="container-page relative py-24 text-center md:py-32">
-          <p className="mb-4 text-sm tracking-[0.3em] text-amber-200">
+          <p className="mb-4 text-sm tracking-[0.3em] text-accent-300">
             数字纪念 · 生命文化传承
           </p>
           <h1 className="mx-auto max-w-3xl text-3xl font-bold leading-tight md:text-5xl">
@@ -59,7 +69,7 @@ export default async function HomePage() {
           <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/mall"
-              className="rounded-md bg-accent-500 px-6 py-3 text-sm font-medium text-white hover:bg-accent-600"
+              className="rounded-md bg-gradient-to-r from-accent-300 to-accent-200 px-6 py-3 text-sm font-medium text-brand-900 shadow-sm ring-1 ring-accent-400/60 transition hover:shadow-md"
             >
               浏览虚拟祭品
             </Link>
@@ -99,8 +109,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 数据条 */}
-      <section className="border-b border-gray-100 bg-white">
+      {/* 数据条（暖米色带：与信任条、馆页卡片同一套墨金暖色语言） */}
+      <section className="border-b border-brand-200/70 bg-brand-100/60">
         <div className="container-page grid grid-cols-2 gap-6 py-8 text-center md:grid-cols-4">
           <Stat num="16+" label="篇生命文化资讯" />
           <Stat num="80" label="项数字纪念服务" />
@@ -111,9 +121,9 @@ export default async function HomePage() {
 
       {/* 临近节日横幅（P0 节日框架：给思念一个「快到了」的提醒入口） */}
       {festival && (
-        <section className="border-b border-gray-100 bg-white">
+        <section className="border-b border-brand-200/70 bg-brand-100/60">
           <div className="container-page flex flex-wrap items-center justify-center gap-x-4 gap-y-2 py-4 text-center">
-            <span className="rounded-full bg-brand-800 px-3 py-1 text-xs font-medium text-amber-200">
+            <span className="rounded-full bg-brand-800 px-3 py-1 text-xs font-medium text-accent-200">
               即将到来
             </span>
             <Link
@@ -143,7 +153,7 @@ export default async function HomePage() {
           <FeatureCard
             className="lg:col-span-2"
             tone="memorial"
-            toneColor="#4d7168"
+            toneColor="#3f4625"
             icon={<IconMemorial />}
             title="数字纪念馆"
             desc="为逝者建立可永久访问的纪念空间，家人朋友可远程追思留言。"
@@ -152,7 +162,7 @@ export default async function HomePage() {
           <FeatureCard
             className="lg:col-span-2"
             tone="clan"
-            toneColor="#a0473a"
+            toneColor="#5e352a"
             icon={<IconClan />}
             title="宗亲文化"
             desc="设立宗祠、续修族谱、记载字辈派语，让宗族谱系在数字空间延续。"
@@ -161,7 +171,7 @@ export default async function HomePage() {
           <FeatureCard
             className="lg:col-span-2"
             tone="live"
-            toneColor="#a55710"
+            toneColor="#6b4517"
             icon={<IconLive />}
             title="云直播"
             desc="公祭仪式、生态安葬、宗祠落成、祭祖大典等重大活动的直播与回放。"
@@ -170,7 +180,7 @@ export default async function HomePage() {
           <FeatureCard
             className="lg:col-span-3"
             tone="news"
-            toneColor="#445872"
+            toneColor="#423d33"
             icon={<IconNews />}
             title="新闻资讯"
             desc="殡葬政策解读、传统节日文化、行业动态，理性、克制、有温度的内容。"
@@ -179,7 +189,7 @@ export default async function HomePage() {
           <FeatureCard
             className="lg:col-span-3"
             tone="offering"
-            toneColor="#856432"
+            toneColor="#5f4a10"
             icon={<IconOffering />}
             title="虚拟祭品"
             desc="免费上香献花到专属纪念馆模板，文明祭扫与传统模式自主切换。"
@@ -195,12 +205,12 @@ export default async function HomePage() {
           sub="重大事件直播 · 宗亲宗族活动直播 · 直播回放与数字档案"
         />
         <div className="grid gap-6 md:grid-cols-3">
-          {lives.map((l) => (
-            <Link
-              key={l.id}
-              href={`/live/${l.id}`}
-              className="group relative overflow-hidden rounded-xl border border-gray-100 bg-brand-900 shadow-sm transition hover:shadow-md"
-            >
+          {lives.map((l, i) => (
+            <Reveal key={l.id} delay={i * 80}>
+              <Link
+                href={`/live/${l.id}`}
+                className="shine block group relative overflow-hidden rounded-xl border border-brand-700 bg-brand-900 shadow-sm transition hover:shadow-md"
+              >
               <div className="relative aspect-video w-full overflow-hidden">
                 {l.coverImage ? (
                   <Image
@@ -224,17 +234,18 @@ export default async function HomePage() {
                 </span>
               </div>
               <div className="p-4">
-                {l.category && <div className="text-xs text-amber-300">{l.category}</div>}
+                {l.category && <div className="text-xs text-accent-300">{l.category}</div>}
                 <h3 className="mt-1 line-clamp-1 text-base font-semibold text-white">
                   {l.title}
                 </h3>
               </div>
-            </Link>
+              </Link>
+            </Reveal>
           ))}
           {lives.length === 0 && (
             <Link
               href="/live"
-              className="col-span-full flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-white p-10 text-center transition hover:border-brand-300"
+              className="col-span-full flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-brand-300 bg-brand-100/70 p-10 text-center transition hover:border-accent-300"
             >
               <span className="text-base font-semibold text-brand-900">进入云直播大厅</span>
               <span className="text-sm text-brand-500">
@@ -251,16 +262,16 @@ export default async function HomePage() {
       </section>
 
       {/* 精选资讯 */}
-      <section className="bg-white py-16">
+      <section className="bg-brand-50 py-16">
         <div className="container-page">
           <SectionTitle title="最新资讯" sub="编辑精选 · 经人工审核后发布" />
           <div className="grid gap-6 md:grid-cols-3">
-            {articles.map((a) => (
-              <Link
-                key={a.id}
-                href={`/news/${a.slug}`}
-                className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
-              >
+            {articles.map((a, i) => (
+              <Reveal key={a.id} delay={i * 80}>
+                <Link
+                  href={`/news/${a.slug}`}
+                  className="shine block group overflow-hidden rounded-xl border border-brand-200/80 bg-brand-100/70 shadow-sm transition hover:shadow-md"
+                >
                 <div className="relative aspect-[16/9] w-full overflow-hidden bg-brand-100">
                   {a.coverImage ? (
                     <Image
@@ -289,7 +300,8 @@ export default async function HomePage() {
                     </p>
                   )}
                 </div>
-              </Link>
+                </Link>
+              </Reveal>
             ))}
           </div>
           <div className="mt-8 text-center">
@@ -307,12 +319,12 @@ export default async function HomePage() {
       <section className="container-page py-16">
         <SectionTitle title="热门数字纪念服务" sub="即买即开通，心意随时可达" />
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((p) => (
-            <Link
-              key={p.id}
-              href={`/mall/${p.slug}`}
-              className="group overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition hover:shadow-md"
-            >
+          {hotServices.map((p, i) => (
+            <Reveal key={p.id} delay={i * 70}>
+              <Link
+                href={`/mall/${p.slug}`}
+                className="shine block group overflow-hidden rounded-xl border border-brand-200/80 bg-brand-100/70 shadow-sm transition hover:shadow-md"
+              >
               <div className="relative aspect-[4/3] w-full overflow-hidden bg-brand-100">
                 {p.coverImage ? (
                   <Image
@@ -334,13 +346,14 @@ export default async function HomePage() {
                   <Price fub={fubFromFen(p.price)} />
                 </div>
               </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+                </Link>
+              </Reveal>
+            ))}
+          </div>
+        </section>
 
-      {/* 使用流程 */}
-      <section className="bg-white py-16">
+        {/* 使用流程 */}
+      <section className="bg-brand-50 py-16">
         <div className="container-page">
           <SectionTitle title="三步，为思念安一个家" sub="" />
           <Image
@@ -413,7 +426,7 @@ export default async function HomePage() {
       </section>
 
       {/* FAQ 引导 */}
-      <section className="bg-white py-16">
+      <section className="bg-brand-50 py-16">
         <div className="container-page grid items-center gap-8 md:grid-cols-[1fr_auto]">
           <div>
             <h2 className="text-2xl font-semibold text-brand-900">
@@ -449,7 +462,7 @@ export default async function HomePage() {
           <div className="mt-7 flex flex-wrap justify-center gap-4">
             <Link
               href="/register"
-              className="rounded-md bg-accent-500 px-6 py-3 text-sm font-medium text-white hover:bg-accent-600"
+              className="rounded-md bg-gradient-to-r from-accent-300 to-accent-200 px-6 py-3 text-sm font-medium text-brand-900 shadow-sm ring-1 ring-accent-400/60 transition hover:shadow-md"
             >
               免费注册
             </Link>
@@ -468,8 +481,8 @@ export default async function HomePage() {
 
 function TrustBadge({ icon, title, desc }: { icon: string; title: string; desc: string }) {
   return (
-    <div className="rounded-xl border border-brand-100 bg-white px-4 py-4">
-      <div className="text-xl">{icon}</div>
+    <div className="rounded-xl border border-brand-200/80 bg-brand-100/70 px-4 py-4">
+      <div className="text-xl text-accent-600">{icon}</div>
       <div className="mt-1.5 text-sm font-semibold text-brand-900">{title}</div>
       <div className="mt-1 text-xs leading-5 text-brand-500">{desc}</div>
     </div>
@@ -510,12 +523,16 @@ function SectionTitle({ title, sub }: { title: string; sub?: string }) {
  * 只靠 `toneColor` 一个专属主色区分板块 —— 这样五张放在一起是
  * "一套体系里的五个分支"，而不是五张各画各的卡。
  *
+ * 五色**全部收进墨金暖色家族并按「宗忆堂」LOGO（底色 #403010 深墨褐 + 香槟金印）
+ * 加深一档**：深橄榄褐 / 深绛红褐 / 深古铜 / 玄墨褐 / 深金褐——
+ * 明度整体压进 LOGO 底色的深色域，卡片顶条、图标、标题与 LOGO 同族同重。
+ *
  * ⚠️ 主色走**内联 CSS 变量**而不是 5 套 Tailwind class：
  * `feature-tone-memorial` 这类动态拼出来的类名 Tailwind 静态提取不到，
  * 构建后是空样式（本仓库踩过，见 AGENTS.md「色阶双角色」一节）。
  *
- * 五个 toneColor 的 L\* 收在 36.8–45.4（跨度 8.6），故色相拉开但明度齐平，
- * 有区分又不刺眼。这些小字用主色着色，压卡片底色（#f2ede4）时最低 4.54:1，
+ * 五个 toneColor 的 L\* 收在 26.0–32.8（跨度 6.8），色相拉开但明度齐平，
+ * 有区分又不刺眼。这些小字用主色着色，压卡片底色（#f2ede4）时最低 6.2:1，
  * 满足 AA —— **调色时别只看"压白底"，卡片底是暖白而非纯白，要求更严**。
  */
 function FeatureCard({
@@ -548,7 +565,7 @@ function FeatureCard({
           "--tone-soft": `color-mix(in srgb, ${toneColor} 10%, #ffffff)`,
         } as React.CSSProperties
       }
-      className={`group relative block overflow-hidden rounded-xl border border-brand-200 bg-gradient-to-b from-white to-brand-50 p-6 transition hover:-translate-y-0.5 hover:border-accent-400 hover:shadow-md ${className}`}
+      className={`shine group relative block overflow-hidden rounded-xl border border-brand-200 bg-gradient-to-b from-brand-50 to-brand-100/70 p-6 transition hover:-translate-y-0.5 hover:border-accent-400 hover:shadow-md ${className}`}
     >
       {/* 顶部 2px 实色条：该卡专属主色的"认色标记"。
           用实色而非渐变 —— 渐变到两端透明会让五张卡的第一眼观感趋同，
@@ -584,7 +601,7 @@ function FeatureCard({
 
 function Step({ n, t, d }: { n: string; t: string; d: string }) {
   return (
-    <div className="rounded-lg border border-gray-100 bg-white p-5">
+    <div className="rounded-lg border border-brand-200/80 bg-brand-100/70 p-5">
       <div className="mb-2 text-sm font-bold text-accent-600">第 {n} 步</div>
       <div className="font-semibold text-brand-900">{t}</div>
       <p className="mt-1 text-sm text-brand-500">{d}</p>
@@ -594,7 +611,7 @@ function Step({ n, t, d }: { n: string; t: string; d: string }) {
 
 function StoryCard({ quote, scene }: { quote: string; scene: string }) {
   return (
-    <figure className="rounded-xl border border-gray-100 bg-white p-6">
+    <figure className="rounded-xl border border-brand-200/80 bg-brand-100/70 p-6">
       <blockquote className="text-sm leading-7 text-brand-600">“{quote}”</blockquote>
       <figcaption className="mt-4 text-xs font-medium text-brand-400">
         —— {scene}

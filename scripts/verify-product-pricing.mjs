@@ -116,8 +116,9 @@ console.log("\n=== 2. 老商品价格未被动过 ===");
 
 // [slug, 期望 price(分), 期望 pointsPrice]
 const UNTOUCHED = [
-  ["whisper-basic", 5900, null], // 与 lib/whisper.ts PLAN_SPECS 双写同步
-  ["whisper-premium", 9900, null],
+  ["whisper-basic", 7900, null], // 与 lib/whisper.ts PLAN_SPECS 双写同步（2026-10 调价保毛利 ≥30%）
+  ["whisper-premium", 19900, null], // 本轮 ¥249→¥199（视频拆出单卖）
+  ["whisper-video", 4900, null], // 本轮新增：纪念短片单条加购（memorial_service）
   ["whisper-single", 600, null],
   ["whisper-clone", 1000, null],
   ["paper-car", 1000, 1000],
@@ -242,10 +243,22 @@ check("库存唯一键 (userId, productId) 存在", Number(uniqueIdx) === 1, `�
 const negativeQty = psql(`SELECT count(*) FROM "OfferingHolding" WHERE quantity < 0;`);
 check("库存无负数（条件写生效）", Number(negativeQty) === 0, `实际 ${negativeQty}`);
 
-// 每日配额常量与文案口径一致
+/*
+  每日配额：**交叉验证常量与用户可见文案的口径**，而不是把数字写死在这里。
+  本意是"两处别对不上"，不是"必须是某个数"——早先写死 3，后来产品把配额调成 1 份
+  并同步改了面板文案（WorshipPanel「自动补足每日 1 份」），这条断言却还盯着 3，
+  于是变成一条永远红、且无法通过改产品来修的假红灯。
+  现在：只要常量与文案一致即通过；两者不一致才红（那才是真的口径打架）。
+*/
 const offeringsSrc = execSync("cat lib/offerings.ts", { encoding: "utf8" });
 const quota = Number((offeringsSrc.match(/FREE_DAILY_QUOTA\s*=\s*(\d+)/) || [])[1] || 0);
-check("免费每日配额为 3", quota === 3, `实际 ${quota}`);
+const worshipSrc = execSync("cat components/hall/WorshipPanel.tsx", { encoding: "utf8" });
+const quotaInCopy = Number((worshipSrc.match(/自动补足每日\s*(\d+)\s*份/) || [])[1] || 0);
+check(
+  "免费每日配额：常量与面板文案口径一致",
+  quota > 0 && quota === quotaInCopy,
+  `常量=${quota} 文案=${quotaInCopy}`,
+);
 
 const altarMax = Number((offeringsSrc.match(/ALTAR_MAX_ITEMS\s*=\s*(\d+)/) || [])[1] || 0);
 check("供台陈列上限为 12", altarMax === 12, `实际 ${altarMax}`);

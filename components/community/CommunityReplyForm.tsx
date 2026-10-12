@@ -52,7 +52,7 @@ export default function CommunityReplyForm({
         onChange={(e) => setContent(e.target.value)}
         placeholder="写下你的回复…"
         maxLength={1000}
-        className="h-16 w-full resize-none rounded-lg border border-gray-200 p-2 text-sm outline-none focus:border-brand-400"
+        className="h-16 w-full resize-none rounded-lg border border-brand-200 p-2 text-sm outline-none focus:border-brand-400"
       />
       <div className="mt-1 flex items-center gap-2">
         <button

@@ -25,7 +25,7 @@ export default async function PreviewGatePage({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-brand-100 bg-white p-8 shadow-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-brand-100 bg-brand-100/70 p-8 shadow-sm">
         <div className="text-center">
           <p className="text-xs font-medium uppercase tracking-widest text-brand-400">
             INTERNAL TEST

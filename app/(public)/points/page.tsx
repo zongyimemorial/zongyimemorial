@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { INITIAL_POINTS, POINTS_PER_YUAN, REDEEM_DAILY_LIMIT, POINTS_VALID_MONTHS } from "@/lib/points";
+import { INITIAL_POINTS, POINTS_PER_YUAN, REDEEM_DAILY_LIMIT, POINTS_VALID_MONTHS, INVITE_REGISTER_POINTS } from "@/lib/points";
 import { fubFromFen } from "@/lib/fortune";
 import PointsRedeemButton from "@/components/shop/PointsRedeemButton";
 import type { ProductType } from "@prisma/client";
@@ -14,7 +14,7 @@ const earnRules = [
   { name: "虚拟祭品消费", point: `消费¥1 = ${POINTS_PER_YUAN}积分`, note: "主要积分来源，模拟支付后按实付金额累计" },
   { name: "纪念馆创建", point: "+50", note: "一次性奖励，鼓励用户建馆" },
   { name: "每日登录祭拜", point: "+5 / 天", note: "提升日活，每天首次进入控制台发放" },
-  { name: "邀请好友注册", point: "+20 / 人", note: "社交裂变（公网阶段上线）" },
+  { name: "邀请好友注册", point: `+${INVITE_REGISTER_POINTS} / 人`, note: "社交裂变（公网阶段上线）" },
   { name: "完善逝者档案", point: "+30", note: "丰富平台内容（公网阶段上线）" },
   { name: "发布追思留言", point: "+2 / 条", note: "每日上限 10 条（公网阶段上线）" },
 ];
@@ -85,7 +85,7 @@ export default async function PointsPage() {
 
       <div className="grid gap-6 md:grid-cols-2">
         {/* 获取规则 */}
-        <section className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+        <section className="rounded-lg border border-brand-200 bg-brand-100/70 p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-brand-800">积分获取规则</h2>
           <ul className="space-y-3 text-sm">
             {earnRules.map((r) => (
@@ -103,7 +103,7 @@ export default async function PointsPage() {
         </section>
 
         {/* 兑换规则 */}
-        <section className="rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+        <section className="rounded-lg border border-brand-200 bg-brand-100/70 p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold text-brand-800">积分兑换规则</h2>
           <ul className="list-disc space-y-2 pl-5 text-sm text-gray-700">
             {redeemRules.map((r, i) => (
@@ -125,7 +125,7 @@ export default async function PointsPage() {
         <h2 className="mb-4 text-lg font-semibold text-brand-800">可用积分兑换的纪念服务</h2>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {redeemable.map((p) => (
-            <div key={p.id} className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+            <div key={p.id} className="rounded-lg border border-brand-200 bg-brand-100/70 p-5 shadow-sm">
               <div className="mb-2 text-xs text-brand-500">{typeLabel[p.type]}</div>
               <h3 className="text-lg font-semibold text-brand-900">{p.name}</h3>
               {p.description && (
@@ -147,7 +147,7 @@ export default async function PointsPage() {
             </div>
           ))}
           {redeemable.length === 0 && (
-            <div className="rounded-lg border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-brand-500">
+            <div className="rounded-lg border border-dashed border-brand-300 bg-brand-100/70 p-10 text-center text-sm text-brand-500">
               暂无可兑换商品
             </div>
           )}
@@ -157,7 +157,7 @@ export default async function PointsPage() {
       {/* 积分流水 */}
       <section className="mt-10">
         <h2 className="mb-4 text-lg font-semibold text-brand-800">我的积分明细</h2>
-        <div className="overflow-x-auto rounded-lg border border-gray-100 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-brand-200 bg-brand-100/70">
           <table className="w-full text-sm">
             <thead className="bg-brand-50 text-left text-brand-700">
               <tr>

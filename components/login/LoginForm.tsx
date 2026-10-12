@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { loginAction, smsLoginAction, type AuthState } from "@/app/login/actions";
+import PasswordInput from "@/components/ui/PasswordInput";
 
 type Provider = { id: string; name: string; icon: string; configured: boolean };
 
@@ -14,10 +14,12 @@ export default function LoginForm({
   from?: string;
 }) {
   const [tab, setTab] = useState<"password" | "sms">("password");
-  const [state, formAction, pending] = useActionState<AuthState, FormData>(loginAction, {});
-  const [smsState, smsFormAction, smsPending] = useActionState<AuthState, FormData>(smsLoginAction, {});
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
   const [smsSent, setSmsSent] = useState(false);
   const [smsBtn, setSmsBtn] = useState("发送验证码");
+  // 内测 mock：发送接口会回显验证码，存这里展示给用户（正式上线接口不返回 code，自动不显示）
+  const [smsCodePreview, setSmsCodePreview] = useState<string | null>(null);
 
   const onSendSms = async (phone: string) => {
     if (!/^1\d{10}$/.test(phone)) {
@@ -34,6 +36,7 @@ export default function LoginForm({
       const j = await r.json();
       if (j.ok) {
         setSmsSent(true);
+        setSmsCodePreview(j.code || null);
         let count = 60;
         setSmsBtn(`${count}s 后重发`);
         const timer = setInterval(() => {
@@ -55,12 +58,48 @@ export default function LoginForm({
     }
   };
 
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    const fd = new FormData(e.currentTarget);
+    const payload = {
+      from: from || "",
+      identifier: String(fd.get("identifier") || ""),
+      password: String(fd.get("password") || ""),
+      phone: String(fd.get("phone") || ""),
+      code: String(fd.get("code") || ""),
+    };
+    setPending(true);
+    try {
+      const r = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const j = (await r.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        redirect?: string;
+      };
+      if (j.ok) {
+        // 直接整页跳转，避免 RSC 重定向在部分移动浏览器缓存下卡住
+        window.location.href = j.redirect || "/console";
+        return;
+      }
+      setError(j.error || "登录失败，请重试");
+    } catch {
+      setError("网络异常，请重试");
+    } finally {
+      setPending(false);
+    }
+  };
+
   const configuredProviders = providers.filter((p) => p.configured);
   const unconfiguredProviders = providers.filter((p) => !p.configured);
 
   return (
     <div className="container-page flex min-h-[70vh] items-center justify-center py-12">
-      <div className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="w-full max-w-md rounded-xl border border-brand-200 bg-brand-100/70 p-8 shadow-sm">
         {/* Logo */}
         <div className="mb-5 flex items-center justify-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -72,7 +111,7 @@ export default function LoginForm({
         </div>
 
         {/* Tab 切换 */}
-        <div className="mb-5 flex border-b border-gray-200">
+        <div className="mb-5 flex border-b border-brand-200">
           <button
             type="button"
             onClick={() => setTab("password")}
@@ -93,9 +132,13 @@ export default function LoginForm({
           </button>
         </div>
 
+        {error && (
+          <p className="mb-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        )}
+
         {/* 密码登录 */}
         {tab === "password" && (
-          <form action={formAction} className="space-y-4">
+          <form onSubmit={submit} className="space-y-4">
             <input type="hidden" name="from" value={from || ""} />
             <div>
               <label className="mb-1 block text-sm text-brand-700">账号</label>
@@ -104,22 +147,22 @@ export default function LoginForm({
                 type="text"
                 autoComplete="username"
                 placeholder="邮箱或手机号"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
               />
             </div>
             <div>
               <label className="mb-1 block text-sm text-brand-700">密码</label>
-              <input
+              <PasswordInput
                 name="password"
-                type="password"
                 autoComplete="current-password"
                 placeholder="请输入密码"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
               />
             </div>
-            {state?.error && (
-              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{state.error}</p>
-            )}
+            <div className="text-right">
+              <Link href="/forgot-password" className="text-xs text-brand-500 hover:underline">
+                忘记密码？
+              </Link>
+            </div>
             <button
               type="submit"
               disabled={pending}
@@ -132,7 +175,7 @@ export default function LoginForm({
 
         {/* 手机验证码登录 */}
         {tab === "sms" && (
-          <form action={smsFormAction} className="space-y-4">
+          <form onSubmit={submit} className="space-y-4">
             <input type="hidden" name="from" value={from || ""} />
             <div>
               <label className="mb-1 block text-sm text-brand-700">手机号</label>
@@ -140,7 +183,7 @@ export default function LoginForm({
                 name="phone"
                 type="tel"
                 placeholder="请输入手机号"
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                className="w-full rounded-md border border-brand-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
               />
             </div>
             <div>
@@ -151,7 +194,7 @@ export default function LoginForm({
                   type="text"
                   maxLength={6}
                   placeholder="6 位验证码"
-                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+                  className="flex-1 rounded-md border border-brand-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
                 />
                 <button
                   type="button"
@@ -165,19 +208,22 @@ export default function LoginForm({
                   {smsBtn}
                 </button>
               </div>
-              {smsSent && smsState?.code && (
-                <p className="mt-1 text-xs text-brand-400">内测验证码：{smsState.code}</p>
+              {smsSent && smsCodePreview && (
+                <p className="mt-1 rounded-md bg-brand-50 px-2 py-1 text-xs text-brand-700">
+                  内测验证码（mock）：<span className="font-semibold tracking-wider">{smsCodePreview}</span>
+                  ，请填入上方输入框
+                </p>
+              )}
+              {smsSent && !smsCodePreview && (
+                <p className="mt-1 text-xs text-brand-400">验证码已发送，请查收短信</p>
               )}
             </div>
-            {smsState?.error && (
-              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{smsState.error}</p>
-            )}
             <button
               type="submit"
-              disabled={smsPending}
+              disabled={pending}
               className="w-full rounded-md bg-brand-700 py-2.5 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-60"
             >
-              {smsPending ? "登录中…" : "登录"}
+              {pending ? "登录中…" : "登录"}
             </button>
           </form>
         )}
@@ -189,14 +235,14 @@ export default function LoginForm({
 
         {/* 第三方登录 */}
         {(configuredProviders.length > 0 || unconfiguredProviders.length > 0) && (
-          <div className="mt-6 border-t border-gray-100 pt-4">
+          <div className="mt-6 border-t border-brand-200 pt-4">
             <p className="mb-3 text-center text-xs text-gray-400">第三方账号登录</p>
             <div className="flex flex-wrap justify-center gap-3">
               {configuredProviders.map((p) => (
                 <a
                   key={p.id}
                   href={`/api/auth/signin/${p.id}`}
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 text-xl hover:border-brand-300 hover:bg-brand-50"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-brand-200 text-xl hover:border-brand-300 hover:bg-brand-50"
                   title={`用${p.name}登录`}
                 >
                   {p.icon}
@@ -205,7 +251,7 @@ export default function LoginForm({
               {unconfiguredProviders.map((p) => (
                 <span
                   key={p.id}
-                  className="flex h-11 w-11 items-center justify-center rounded-full border border-gray-100 text-xl opacity-40"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-brand-200 text-xl opacity-40"
                   title={`${p.name}即将开通`}
                 >
                   {p.icon}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { uploadGenealogy } from "@/app/(public)/clan/actions";
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 
 export default function GenealogyUploadForm({
   isLoggedIn,
@@ -19,7 +19,7 @@ export default function GenealogyUploadForm({
 
   if (!isLoggedIn) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-white p-6 text-center text-sm text-brand-400">
+      <div className="rounded-xl border border-dashed border-brand-200 bg-brand-100/70 p-6 text-center text-sm text-brand-400">
         <Link href="/login" className="text-accent-600 hover:underline">登录</Link>
         后即可上传族谱，参与共建姓氏文化记忆库
       </div>
@@ -27,7 +27,7 @@ export default function GenealogyUploadForm({
   }
   if (!idVerified) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-200 bg-white p-6 text-center text-sm text-brand-400">
+      <div className="rounded-xl border border-dashed border-brand-200 bg-brand-100/70 p-6 text-center text-sm text-brand-400">
         上传族谱需先完成<Link href="/console/realname" className="text-accent-600 hover:underline">实名认证</Link>
       </div>
     );
@@ -35,7 +35,7 @@ export default function GenealogyUploadForm({
 
   return (
     <form
-      className="rounded-xl border border-gray-100 bg-white p-6"
+      className="rounded-xl border border-brand-200 bg-brand-100/70 p-6"
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);

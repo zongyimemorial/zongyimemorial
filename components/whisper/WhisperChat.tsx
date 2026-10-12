@@ -2,6 +2,71 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import AiBadge from "@/components/whisper/AiBadge";
+import { MOODS, moodLabel } from "@/lib/whisper-mood";
+
+/**
+ * 浏览器端录音转码：把 MediaRecorder 产出的 webm/mp4/ogg 解码后，
+ * 重采样为 16kHz 单声道，再编码为标准 WAV（16bit PCM）。
+ * WAV 是火山 ASR 完全支持且识别最稳的格式，且无需任何外部依赖。
+ */
+async function blobToWav(blob: Blob, targetRate = 16000): Promise<Blob> {
+  const arrayBuffer = await blob.arrayBuffer();
+  const Ctx: typeof AudioContext =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+  if (!Ctx) throw new Error("当前浏览器不支持音频解码");
+  const ctx = new Ctx();
+  try {
+    const decoded = await ctx.decodeAudioData(arrayBuffer);
+    const frames = Math.max(1, Math.ceil(decoded.duration * targetRate));
+    const offline = new OfflineAudioContext(1, frames, targetRate);
+    const src = offline.createBufferSource();
+    src.buffer = decoded;
+    src.connect(offline.destination);
+    src.start();
+    const rendered = await offline.startRendering();
+    return encodeWav(rendered, targetRate);
+  } finally {
+    void ctx.close();
+  }
+}
+
+function encodeWav(buffer: AudioBuffer, sampleRate: number): Blob {
+  const numCh = buffer.numberOfChannels;
+  const numFrames = buffer.length;
+  const bytesPerSample = 2;
+  const blockAlign = numCh * bytesPerSample;
+  const dataSize = numFrames * blockAlign;
+  const ab = new ArrayBuffer(44 + dataSize);
+  const view = new DataView(ab);
+  const writeStr = (off: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true); // fmt chunk size
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, numCh, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * blockAlign, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, 16, true); // bits per sample
+  writeStr(36, "data");
+  view.setUint32(40, dataSize, true);
+  let offset = 44;
+  for (let ch = 0; ch < numCh; ch++) {
+    const channel = buffer.getChannelData(ch);
+    for (let i = 0; i < numFrames; i++) {
+      let s = Math.max(-1, Math.min(1, channel[i]));
+      s = s < 0 ? s * 0x8000 : s * 0x7fff;
+      view.setInt16(offset, s, true);
+      offset += 2;
+    }
+  }
+  return new Blob([ab], { type: "audio/wav" });
+}
 
 export type ChatMsg = {
   id: string;
@@ -17,8 +82,6 @@ export type WhisperChatProps = {
   profileId: string;
   personaName: string;
   personTitle: string;
-  avatarUrl: string | null;
-  mode: string;
   greeting: string;
   /** 是否支持语音（按套餐判断） */
   voiceEnabled: boolean;
@@ -46,8 +109,6 @@ export default function WhisperChat({
   profileId,
   personaName,
   personTitle,
-  avatarUrl,
-  mode,
   greeting,
   voiceEnabled,
   remainingMins,
@@ -64,11 +125,18 @@ export default function WhisperChat({
   const [sessionId, setSessionId] = useState(initialSessionId);
   const [softWarned, setSoftWarned] = useState(false);
   const [speechOk, setSpeechOk] = useState(false);
+  // 情感状态标记（C2）：进对话前先选一个心情，可跳过
+  const [mood, setMood] = useState<string | null>(null);
+  const [moodNote, setMoodNote] = useState("");
+  const [moodAsked, setMoodAsked] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const startedAt = useRef<number>(Date.now());
+  // 服务端 ASR 通道的录音实例 + 自动停止计时器
+  const mediaRecRef = useRef<MediaRecorder | null>(null);
+  const recTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // —— 首屏问候 ——
   useEffect(() => {
@@ -165,6 +233,8 @@ export default function WhisperChat({
             text,
             wantVoice: voiceReply,
             sessionId,
+            mood: mood ?? undefined,
+            moodNote: moodNote || undefined,
           }),
         });
         const data = (await res.json()) as {
@@ -227,8 +297,51 @@ export default function WhisperChat({
     }
   }
 
-  /** 无 Web Speech API 时：录音上传到服务端 ASR */
-  async function recordFallback() {
+  /** 转码 WAV 后上传服务端 ASR */
+  async function uploadRecording(blob: Blob) {
+    setBusy(true);
+    setErr("正在识别你说的话…");
+    try {
+      // 优先转成 16k 单声道 WAV（火山识别最稳）；转码失败则回退原始格式
+      let fileBlob = blob;
+      let fileName = "rec.webm";
+      try {
+        fileBlob = await blobToWav(blob, 16000);
+        fileName = "rec.wav";
+      } catch {
+        fileBlob = blob;
+        fileName = blob.type.includes("mp4") ? "rec.m4a" : "rec.webm";
+      }
+      const fd = new FormData();
+      fd.set("profileId", profileId);
+      fd.set("audio", fileBlob, fileName);
+      const res = await fetch("/api/whispers/asr", { method: "POST", body: fd });
+      const d = (await res.json()) as { ok: boolean; text?: string; message?: string };
+      if (d.ok && d.text) {
+        setErr(null);
+        await send(d.text);
+      } else {
+        setErr(d.message || "没有听清，请再说一遍");
+      }
+    } catch {
+      setErr("语音识别失败，请改用文字输入。");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** 停止当前录音（手动或超时触发，最终都走 onstop 上传） */
+  function stopRecording() {
+    if (recTimerRef.current) {
+      clearTimeout(recTimerRef.current);
+      recTimerRef.current = null;
+    }
+    const mr = mediaRecRef.current;
+    if (mr && mr.state !== "inactive") mr.stop();
+  }
+
+  /** 无 Web Speech API 时：本地录音 → 转码 WAV → 上传服务端 ASR */
+  async function startRecording() {
     if (!navigator.mediaDevices?.getUserMedia) {
       setErr("当前浏览器不支持录音，请改用文字输入。");
       return;
@@ -237,39 +350,36 @@ export default function WhisperChat({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const chunks: BlobPart[] = [];
       const mr = new MediaRecorder(stream);
-      mr.ondataavailable = (e) => chunks.push(e.data);
+      mediaRecRef.current = mr;
+      mr.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
       mr.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        mediaRecRef.current = null;
+        setRecording(false);
+        setErr(null);
         const blob = new Blob(chunks, { type: mr.mimeType || "audio/webm" });
-        const fd = new FormData();
-        fd.set("profileId", profileId);
-        fd.set("audio", blob, "rec.webm");
-        setBusy(true);
-        try {
-          const res = await fetch("/api/whispers/asr", { method: "POST", body: fd });
-          const d = (await res.json()) as { ok: boolean; text?: string; message?: string };
-          if (d.ok && d.text) await send(d.text);
-          else setErr(d.message || "没有听清，请再说一遍");
-        } catch {
-          setErr("语音识别失败，请改用文字输入。");
-        } finally {
-          setBusy(false);
-        }
+        await uploadRecording(blob);
       };
       mr.start();
       setRecording(true);
-      setTimeout(
-        () => {
-          mr.stop();
-          setRecording(false);
-        },
-        recording ? 8000 : 8000,
-      );
-      setErr("正在录音，8 秒后自动结束并识别…");
+      setErr("正在录音，点按钮结束（最长 60 秒）…");
+      // 安全上限：到点自动停止
+      recTimerRef.current = setTimeout(() => {
+        recTimerRef.current = null;
+        if (mr.state !== "inactive") mr.stop();
+      }, 60000);
     } catch {
       setErr("无法访问麦克风，请检查浏览器权限。");
       setRecording(false);
     }
+  }
+
+  /** 服务端 ASR 通道：录音中则停止，否则开始 */
+  function toggleRecordFallback() {
+    if (recording && mediaRecRef.current) stopRecording();
+    else void startRecording();
   }
 
   const usedPct =
@@ -278,21 +388,12 @@ export default function WhisperChat({
       : 100;
 
   return (
-    <div className="flex h-[calc(100vh-13rem)] min-h-[520px] flex-col overflow-hidden rounded-xl border border-gray-100 bg-white">
+    <div className="flex h-[calc(100vh-13rem)] min-h-[520px] flex-col overflow-hidden rounded-xl border border-brand-200 bg-brand-100/70">
       {/* —— 头部：装置身份 —— */}
-      <div className="flex items-center gap-3 border-b border-gray-100 bg-brand-50/40 px-5 py-3">
-        {mode === "avatar" && avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={avatarUrl}
-            alt={personaName}
-            className="h-11 w-11 shrink-0 rounded-full object-cover ring-2 ring-white"
-          />
-        ) : (
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-800 text-sm text-white">
-            {personaName.slice(0, 1)}
-          </div>
-        )}
+      <div className="flex items-center gap-3 border-b border-brand-200 bg-brand-50/40 px-5 py-3">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-800 text-sm text-white">
+          {personaName.slice(0, 1)}
+        </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-brand-900">
             {personaName}
@@ -309,7 +410,7 @@ export default function WhisperChat({
             checked={voiceReply && voiceEnabled}
             disabled={!voiceEnabled}
             onChange={(e) => setVoiceReply(e.target.checked)}
-            className="h-3.5 w-3.5 rounded border-gray-300 text-accent-600"
+            className="h-3.5 w-3.5 rounded border-brand-300 text-accent-600"
           />
           语音回复
         </label>
@@ -321,6 +422,59 @@ export default function WhisperChat({
             className={"h-full transition-all " + (usedPct > 80 ? "bg-amber-400" : "bg-accent-400")}
             style={{ width: `${usedPct}%` }}
           />
+        </div>
+      )}
+
+      {/* —— 情感状态标记（C2）：进对话前先选一个心情 —— */}
+      {!moodAsked && (
+        <div className="border-b border-brand-100 bg-accent-50/40 px-5 py-4">
+          <p className="text-xs font-medium text-brand-800">
+            今天来的时候，心里是什么感觉？
+            <span className="ml-1 font-normal text-brand-400">（选一个，TA 会照着你此刻的心情开口）</span>
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {MOODS.map((m) => (
+              <button
+                key={m.key}
+                type="button"
+                onClick={() => {
+                  setMood(m.key);
+                  setMoodAsked(true);
+                }}
+                className={
+                  "rounded-full border px-3.5 py-1.5 text-xs transition " +
+                  (mood === m.key
+                    ? "border-accent-500 bg-accent-600 text-white"
+                    : "border-brand-300 bg-brand-100/70 text-brand-700 hover:border-accent-400")
+                }
+              >
+                {m.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setMoodAsked(true)}
+              className="rounded-full px-3 py-1.5 text-xs text-brand-400 underline hover:text-brand-600"
+            >
+              跳过
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 已选心情：轻量回显，可改 */}
+      {moodAsked && (
+        <div className="flex items-center gap-2 border-b border-brand-200 bg-brand-100/70 px-5 py-2 text-xs text-brand-400">
+          <span>
+            此刻心情：<b className="text-brand-700">{moodLabel(mood)}</b>
+          </span>
+          <button
+            type="button"
+            onClick={() => setMoodAsked(false)}
+            className="text-accent-600 underline hover:no-underline"
+          >
+            改一下
+          </button>
         </div>
       )}
 
@@ -373,7 +527,7 @@ export default function WhisperChat({
       )}
 
       {/* —— 输入区 —— */}
-      <div className="border-t border-gray-100 px-4 py-3">
+      <div className="border-t border-brand-200 px-4 py-3">
         <div className="flex items-end gap-2">
           <textarea
             value={input}
@@ -387,12 +541,12 @@ export default function WhisperChat({
             rows={2}
             maxLength={1000}
             placeholder={recording ? "正在听你说…" : "想对他说点什么？（回车发送，Shift+回车换行）"}
-            className="flex-1 resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none"
+            className="flex-1 resize-none rounded-lg border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none"
           />
           <div className="flex shrink-0 flex-col gap-2">
             <button
               type="button"
-              onClick={() => (speechOk ? toggleRecord() : recordFallback())}
+              onClick={() => (speechOk ? toggleRecord() : toggleRecordFallback())}
               disabled={busy}
               title={speechOk ? "语音输入" : "录音后由服务端识别"}
               aria-label={recording ? "停止录音" : "开始语音输入"}
@@ -402,7 +556,7 @@ export default function WhisperChat({
               }
             >
               {recording ? (
-                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-white" />
+                <span className="inline-block h-2.5 w-2.5 rounded-sm bg-brand-100/70" />
               ) : (
                 <svg viewBox="0 0 24 24" fill="none" className="h-3.5 w-3.5" aria-hidden>
                   <path

@@ -35,7 +35,7 @@ export default async function LiveDetailPage({
           }
         >
           {live.status === "live" && (
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand-100/70" />
           )}
           {statusLabel[live.status]}
         </span>
@@ -67,7 +67,7 @@ export default async function LiveDetailPage({
         )}
       </div>
 
-      <section className="mt-8 rounded-lg border border-gray-100 bg-white p-5 text-sm text-gray-600">
+      <section className="mt-8 rounded-lg border border-brand-200 bg-brand-100/70 p-5 text-sm text-gray-600">
         <h2 className="mb-2 text-base font-semibold text-brand-900">数字档案</h2>
         <ul className="space-y-1 text-brand-500">
           <li>· 本场直播纳入平台数字档案，回放长期保存、随时回看。</li>

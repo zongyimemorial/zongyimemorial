@@ -65,7 +65,7 @@ export default async function AdminPointsPage({
           <select
             name="kind"
             defaultValue={kind ?? ""}
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-md border border-brand-300 px-3 py-2 text-sm"
           >
             <option value="">全部</option>
             <option value="earn">发放</option>
@@ -80,7 +80,7 @@ export default async function AdminPointsPage({
             name="q"
             defaultValue={q ?? ""}
             placeholder="邮箱、手机号或原因"
-            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="rounded-md border border-brand-300 px-3 py-2 text-sm"
           />
         </div>
         <button className="rounded-md bg-brand-700 px-4 py-2 text-sm text-white hover:bg-brand-800">
@@ -91,7 +91,7 @@ export default async function AdminPointsPage({
         </Link>
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-brand-200 bg-brand-100/70">
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 text-xs text-brand-500">
             <tr>
@@ -166,7 +166,7 @@ function Stat({
           ? "text-gray-500"
           : "text-brand-900";
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
+    <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-4">
       <div className="text-xs text-brand-500">{label}</div>
       <div className={"mt-1 text-xl font-semibold " + color}>{value}</div>
     </div>

@@ -13,6 +13,17 @@
 // 运行前置：服务已在 3000 端口以生产构建运行；Docker 容器 memorial-pg 存活。
 import pkg from "/root/.nvm/versions/node/v22.13.1/lib/node_modules/playwright/index.js";
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+
+/*
+  每日免费配额**必须从 lib/offerings.ts 读取**，不能硬编码。
+  早期这里写死 3，后来产品把 FREE_DAILY_QUOTA 调成 1（面板文案也同步为「每日领 1 份」），
+  脚本却还按 3 断言 —— 于是「进祠自动补配额」等 4 条以 quantity=1 失败。
+  这类失败最误导人：看起来像配额功能坏了，实际是断言过期。从真相源取值即永不过期。
+*/
+const FREE_DAILY_QUOTA = Number(
+  (readFileSync("lib/offerings.ts", "utf8").match(/FREE_DAILY_QUOTA\s*=\s*(\d+)/) || [])[1] ?? 1,
+);
 const { chromium } = pkg;
 
 const BASE = "http://localhost:3000";
@@ -52,7 +63,15 @@ function ensureStock(slug, n = 3) {
 const results = [];
 const consoleErrors = [];
 const check = (name, ok, extra = "") => {
-  results.push({ name, ok: !!ok, extra: String(extra).slice(0, 160).replace(/\n/g, " ") });
+  const line = { name, ok: !!ok, extra: String(extra).slice(0, 160).replace(/\n/g, " ") };
+  results.push(line);
+  /*
+    每条断言**立即打印**，不再只在结尾汇总。
+    汇总式的坏处：中途一旦抛异常（例如某个 locator 超时），整份结果随之丢失，
+    屏幕上只剩一句 TimeoutError —— 看不到前面 20 条断言是绿是红，
+    于是每次排查都得重新加 console.log。即时打印让崩溃现场自带上下文。
+  */
+  console.log(`${line.ok ? "✅" : "❌"} ${line.name}${line.extra ? `  — ${line.extra}` : ""}`);
 };
 
 // ---------------------------------------------------------------- 准备数据
@@ -67,9 +86,20 @@ sql(`update "User" set "realName" = null, phone = null, points = 2000 where emai
 sql(`delete from "OfferingHolding" h using "User" u where h."userId"=u.id and u.email='user@test.com';`);
 sql(`delete from "OfferingOnAltar" a using "User" u where a."userId"=u.id and u.email='user@test.com';`);
 
+/*
+  取祠必须**确定**且**归属 admin**：
+  这些宗祠多是同一次 seed 建出来的，`createdAt` 到秒完全相同 ——
+  `order by "createdAt" limit 1` 会在它们之间随机挑一个（实测两次跑出两个不同 id）。
+  一旦挑到 user@test.com 所有的那座，第 11 段「用 admin 登录进馆主管理台」
+  就会因为 admin 不是馆主被挡回 /login，6 条断言全红 ——
+  看起来像权限回归，其实是选馆随机。改为按 id 排序 + 限定 admin 所有，双保险。
+*/
 const hallId =
   HALL_ID ||
-  sql(`select id from "ClanHall" where status='active' order by "createdAt" limit 1;`);
+  sql(
+    `select h.id from "ClanHall" h join "User" u on u.id = h."ownerUserId" ` +
+      `where h.status='active' and u.email='admin@test.com' order by h.id limit 1;`,
+  );
 if (!hallId) {
   console.error("找不到 active 状态的宗祠，无法继续");
   process.exit(1);
@@ -103,14 +133,39 @@ page.on("console", (m) => {
 });
 page.on("pageerror", (e) => consoleErrors.push("pageerror: " + e.message));
 
-// ---------------------------------------------------------------- 1. 登录
-await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
-if ((await page.locator('input[name="identifier"]').count()) > 0) {
-  await page.fill('input[name="identifier"]', "user@test.com");
-  await page.fill('input[name="password"]', "user123456");
-  await page.click('button[type="submit"]');
-  await page.waitForTimeout(3200);
+
+/*
+  登录必须**可重试**：dev 模式下登录这一发要过 Server Action + 建会话 + 中间件判定，
+  偶发地会在按钮尚未 hydrate 时被点下（点了没反应）或超时 ——
+  表现是「URL 停在 /login，后续全被挡回登录页」，看起来像权限/会话回归。
+  重试 + 轮询 URL（不赌固定等待），失败则明确退出而不是带着假红跑完。
+*/
+async function loginAs(pg, email, password) {
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    await pg.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
+    if ((await pg.locator('input[name="identifier"]').count()) === 0) return true; // 已登录态
+    /*
+      点提交之前必须**等 hydration**。
+      实测抓到的失败现场：URL 停在 `/login?from=&identifier=admin%40test.com&password=...`
+      —— 说明这一下点在了还没被 React 接管的按钮上，表单退化成原生 GET 提交，
+      密码还明文挂在了地址栏里。dev 模式下首屏 JS 还在编译/下载时必然发生。
+      逐轮加长等待，并在检测到这种「带 password= 的自提交」时立刻重来（不空等 12s）。
+    */
+    await pg.waitForTimeout(1200 + attempt * 800);
+    await pg.fill('input[name="identifier"]', email);
+    await pg.fill('input[name="password"]', password);
+    await pg.click('button[type="submit"]');
+    for (let t = 0; t < 24; t++) {
+      if (!pg.url().includes("/login")) return true;
+      if (pg.url().includes("password=")) break; // 退化成原生 GET，直接重试
+      await pg.waitForTimeout(500);
+    }
+  }
+  return false;
 }
+
+// ---------------------------------------------------------------- 1. 登录
+const userLoggedIn = await loginAs(page, "user@test.com", "user123456");
 check("普通用户登录成功", !/\/login/.test(page.url()), page.url());
 
 // ---------------------------------------------------------------- 2. 前台页面结构
@@ -257,19 +312,19 @@ await page.goto(`${BASE}/clan/halls/${hallId}`, { waitUntil: "domcontentloaded" 
 await page.waitForTimeout(1500);
 
 const incenseQty = qtyOf("free-incense");
-check("进祠自动补当日免费配额（上香 = 3 份）", incenseQty === 3, `quantity=${incenseQty}`);
+check(`进祠自动补当日免费配额（上香 = ${FREE_DAILY_QUOTA} 份）`, incenseQty === FREE_DAILY_QUOTA, `quantity=${incenseQty}`);
 
 // 再访问一次：同日不应重复补货（幂等）
 await page.reload({ waitUntil: "domcontentloaded" });
 await page.waitForTimeout(1200);
-check("同日重复进入不叠加库存", qtyOf("free-incense") === 3, `quantity=${qtyOf("free-incense")}`);
+check("同日重复进入不叠加库存", qtyOf("free-incense") === FREE_DAILY_QUOTA, `quantity=${qtyOf("free-incense")}`);
 
-// 连点 4 次「献花」（该 slug 此前未被消耗过，起始 3 份）
+// 连点「配额 + 1」次「献花」（该 slug 此前未被消耗过，起始 = FREE_DAILY_QUOTA 份）
 const flowerSlug = "free-flower";
 sql(`delete from "ClanTribute" where "clanHallId"='${hallId}';`); // 便于数条数
 const flowerStart = qtyOf(flowerSlug);
 let clicks = 0;
-for (let i = 0; i < 4; i++) {
+for (let i = 0; i < FREE_DAILY_QUOTA + 1; i++) {
   const btn = page.locator('button[title^="献上献花"]');
   if ((await btn.count()) === 0) break;
   const b = btn.first();
@@ -292,11 +347,11 @@ for (let i = 0; i < 4; i++) {
 const flowerEnd = qtyOf(flowerSlug);
 const flowerRows = sqlCount(`select count(*) from "ClanTribute" where "clanHallId"='${hallId}';`);
 check(
-  "库存按次扣减（3 份 → 0 份）",
-  flowerStart === 3 && flowerEnd === 0,
+  `库存按次扣减（${FREE_DAILY_QUOTA} 份 → 0 份）`,
+  flowerStart === FREE_DAILY_QUOTA && flowerEnd === 0,
   `${flowerStart} → ${flowerEnd}（点击 ${clicks} 次）`,
 );
-check("用尽后不再写入祭祀记录（只成交 3 次）", flowerRows === 3, `ClanTribute 行数=${flowerRows}`);
+check(`用尽后不再写入祭祀记录（只成交 ${FREE_DAILY_QUOTA} 次）`, flowerRows === FREE_DAILY_QUOTA, `ClanTribute 行数=${flowerRows}`);
 
 // 用尽后按钮仍在 DOM 但不可点（灰显而非消失 —— 布局稳定）
 const flowerBtnAfter = page.locator('button[title^="献上献花"]');
@@ -374,6 +429,18 @@ check(
 
 const altarGlyphs = await page.locator("[data-altar-slug]").count();
 check("页面渲染出供台图标", altarGlyphs > 0, `[data-altar-slug] 出现 ${altarGlyphs} 次`);
+
+/*
+  祭拜舞台（与纪念馆 WorshipPanel 同构的那块暗色舞台）必须真的在：
+  宗祠这边曾经只有一条扁平的供品条，后来补齐了烛台 + 供台陈列 + 撤供。
+  这三条断言盯的是"舞台还在不在"，而不是"数据对不对" ——
+  少了它们，任何一次面板重构都能悄悄把舞台删掉而不惊动任何测试。
+*/
+const stageCandles = await page.locator(".candle-flame").count();
+check("祭拜舞台渲染出双烛台", stageCandles === 2, `.candle-flame 数量=${stageCandles}`);
+const stageText = await page.locator("body").innerText();
+check("舞台含供台陈列条与撤供入口", /供台\s·\s\d+\s件/.test(stageText) && /撤供/.test(stageText), (stageText.match(/供台[^\n]*/) || [""])[0].slice(0, 40));
+check("舞台角标为宗祠语义文案", /敬奉先祖/.test(stageText), "敬奉先祖 · 香火延续");
 
 // 记录撤供前的总行数，用来证明"撤供是软删除、行没丢"
 const altarTotalBefore = sqlCount(
@@ -561,12 +628,12 @@ const adminPage = await ctx.newPage();
 adminPage.on("console", (m) => {
   if (m.type() === "error") consoleErrors.push("[console] " + m.text());
 });
-await adminPage.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
-if ((await adminPage.locator('input[name="identifier"]').count()) > 0) {
-  await adminPage.fill('input[name="identifier"]', "admin@test.com");
-  await adminPage.fill('input[name="password"]', "admin123456");
-  await adminPage.click('button[type="submit"]');
-  await adminPage.waitForTimeout(3200);
+const adminLoggedIn = await loginAs(adminPage, "admin@test.com", "admin123456");
+check("馆主（admin）登录成功", adminLoggedIn, adminPage.url());
+if (!adminLoggedIn) {
+  console.error("admin 登录失败，管理台段无法继续");
+  await browser.close();
+  process.exit(1);
 }
 await adminPage.goto(`${BASE}/console/clan-halls/${hallId}`, { waitUntil: "domcontentloaded" });
 await adminPage.waitForTimeout(1400);

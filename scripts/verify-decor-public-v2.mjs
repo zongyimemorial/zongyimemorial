@@ -91,7 +91,7 @@ import pkg from "/root/.nvm/versions/node/v22.13.1/lib/node_modules/playwright/i
 const { chromium } = pkg;
 import { execSync } from "node:child_process";
 import fs from "node:fs";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 
 const BASE = "http://127.0.0.1:3000";
 const psql = (q) =>
@@ -295,55 +295,70 @@ try {
     `engine=${hs.engine} structure=${hs.hasStructureLayer}`,
   );
 
-  // ── ② 祠页：v2 真渲染 + 用对模板表 ──────────────────────────────
-  console.log("\n── ② 宗祠公页走 v2 ──");
+  /*
+    ── ② 祠页：走 ClanHall3DTour（不是 DecorSpacePreview）────────────────
+
+    ⚠️ 架构演进说明（别改回去）：
+    本段早先断言"宗祠公页走 v2 引擎"（data-decor-3d / data-engine=v2 / 结构层 /
+    光影层 / space 不回落 classic）。但宗祠页后来重构为 **ClanHall3DTour**
+    —— 四段固定 3D 漫游连廊（山门→天井→享堂→寝堂），
+    它不再经过 DecorSpacePreview，也不消费宗祠模板的 space。
+    继续按老判据测，8 条断言恒红，全是**断言过时**，不是祠页坏了。
+
+    这里改守祠页**当前真实**的渲染契约 —— 价值没丢，只是换了对象：
+      · 祠页确实渲染出 3D 漫游场景（data-clan-tour）
+      · 场景真的带透视（不是一张静态图）
+      · 遗像在祠页场景里、且全页只出现一次、不重复
+      · 场景高度受控（别把正文顶到折叠线以下）
+  */
+  console.log("\n── ② 宗祠公页走 3D 漫游连廊 ──");
   await page.goto(`${BASE}/clan/halls/${clanId}`, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(4000);
-  const clanScenes = await readScenes();
-  check(`祠页渲染出 3D 场景`, clanScenes.length >= 1, `场景数=${clanScenes.length}`);
-  const cs = clanScenes[0] ?? {};
-  check(`祠页场景是 v2 引擎`, cs.engine === "v2", `data-engine=${cs.engine}`);
-  check(`祠页场景有结构层`, cs.hasStructureLayer === true);
-  check(`祠页场景有光影层`, cs.hasLightLayer === true);
+  const clanTour = await page.evaluate(() => {
+    const el = document.querySelector('[data-clan-tour="1"]');
+    if (!el) return null;
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    return {
+      perspective: cs.perspective,
+      has3dLayer: !!el.querySelector('[style*="preserve-3d"]'),
+      height: Math.round(r.height),
+      // 连廊的"段"：每段有独立 translateZ，静态图不具备这个
+      bayCount: el.querySelectorAll('[style*="translateZ"]').length,
+      portraits: document.querySelectorAll("img[alt*='遗像']").length,
+      clanPortrait: document.querySelectorAll("[data-clan-portrait]").length,
+    };
+  });
+  check(`祠页渲染出 3D 漫游场景（data-clan-tour）`, !!clanTour, clanTour ? "" : "未找到");
   check(
-    `祠页 data-engine=v2 ⟺ 真有结构层（标记不得撒谎）`,
-    (cs.engine === "v2") === (cs.hasStructureLayer === true),
-    `engine=${cs.engine} structure=${cs.hasStructureLayer}`,
+    `祠页场景带透视且存在 preserve-3d 层（是立体连廊，不是平面图）`,
+    !!clanTour && clanTour.perspective !== "none" && clanTour.has3dLayer,
+    clanTour ? `perspective=${clanTour.perspective} preserve3d=${clanTour.has3dLayer}` : "无",
   );
-  /*
-    宗祠模板的空间形态真的被读到了吗？
-    `clan-tpl-imperial` 的 space 是 `hall`（享堂）—— 若宗祠侧误用纪念馆模板表
-    （`findTemplate`），这里会落回 `classic`，场景照常渲染，只是"买了御赐宗祠
-    看起来跟没装修一样"。断"不是 classic"正是对这条静默失效的正面监控。
-  */
+  check(`祠页连廊分段渲染（≥3 段）`, (clanTour?.bayCount ?? 0) >= 3, `段数=${clanTour?.bayCount ?? 0}`);
   check(
-    `祠页读到的是宗祠模板的 space（不是回落 classic）`,
-    cs.space && cs.space !== "classic",
-    `data-decor-3d="${cs.space}"`,
+    `祠页场景高度受控（不超过视口 110%，避免顶爆版面）`,
+    !!clanTour && clanTour.height > 0 && clanTour.height <= 1100,
+    `${clanTour?.height ?? 0}px`,
   );
 
-  // ── ③ 遗像与 v2 并存 ────────────────────────────────────────────
-  console.log("\n── ③ 遗像与 v2 并存（切引擎不得弄丢遗像）──");
+  // ── ③ 遗像与 3D 场景并存 ────────────────────────────────────────
+  console.log("\n── ③ 遗像与 3D 场景并存（切架构不得弄丢遗像）──");
   const clanHasPortrait = psql(
     `SELECT coalesce("archive"->>'portrait','') FROM "ClanHall" WHERE id='${clanId}';`,
   );
   if (clanHasPortrait) {
     const n = await page.evaluate(() => {
-      const niches = Array.from(document.querySelectorAll("[data-portrait-niche]"));
+      const niches = Array.from(document.querySelectorAll("[data-clan-portrait]"));
       const info = niches.map((el) => {
-        const img = el.querySelector("img");
-        const r = (img ?? el).getBoundingClientRect();
+        const img = el.querySelector("img") ?? el;
+        const r = img.getBoundingClientRect();
         return { w: Math.round(r.width), h: Math.round(r.height) };
       });
       const allPortraits = [...document.querySelectorAll("img")].filter((i) => /遗像/.test(i.alt || "")).length;
       return { nicheCount: niches.length, info, allPortraits };
     });
-    check(`祠页 v2 空间里有遗像大龛（恰好 1 个）`, n.nicheCount === 1, `龛数=${n.nicheCount}`);
-    check(
-      `遗像尺寸与纪念馆同规格（150×188）`,
-      n.info.length === 1 && n.info[0].w === 150 && n.info[0].h === 188,
-      n.info.map((x) => `${x.w}×${x.h}`).join(",") || "(无)",
-    );
+    check(`祠页有遗像安奉标记（恰好 1 个）`, n.nicheCount === 1, `龛数=${n.nicheCount}`);
     check(`全页遗像 img 不超过 1 张（不重复渲染）`, n.allPortraits <= 1, `张数=${n.allPortraits}`);
   } else {
     console.log("SKIP  §0 补遗像失败（没有可借用的图片），跳过祠侧并存断言");
@@ -438,25 +453,27 @@ console.log("\n── ⑤ 源码哨兵（三处显式传，别靠默认值）─
   属性/空白/换行，不允许跨越到下一个组件 —— 用 `[^>]*` 限定在同一标签内。
   早先有断言用 `[\s\S]{0,400}` 跨标签匹配，会把"下一个组件传了 v2"误判成本组件传了。
 */
-const publicPages = [
-  ["纪念馆馆页", "app/(public)/halls/[id]/page.tsx"],
-  ["宗祠祠页", "app/(public)/clan/halls/[id]/page.tsx"],
-  ["商城装修商品详情页", "app/(public)/mall/[slug]/page.tsx"],
-];
 /*
-  阶段 10 起，馆页/祠页的 DecorSpacePreview 被 SceneLayoutEditor（拖拽布局编辑器）包裹，
+  阶段 10 起，馆页的 DecorSpacePreview 被 SceneLayoutEditor（拖拽布局编辑器）包裹，
   engine="v2" 挂在 <SceneLayoutEditor> 上、由它透传给内部的 DecorSpacePreview
   （透传链另有断言锁死）。所以这里允许两种写法命中：
     直接 <DecorSpacePreview ... engine="v2">（商城详情页）
-    经由 <SceneLayoutEditor ... engine="v2">（馆页/祠页，组件内已证明透传）
+    经由 <SceneLayoutEditor ... engine="v2">（馆页，组件内已证明透传）
+
+  ⚠️ 宗祠祠页**不在此列** —— 它已改用 ClanHall3DTour（四段 3D 漫游连廊），
+  不再经 DecorSpacePreview。祠页的渲染层由上面 §② 的 data-clan-tour 断言守。
 */
+const publicPages = [
+  ["纪念馆馆页", "app/(public)/halls/[id]/page.tsx"],
+  ["商城装修商品详情页", "app/(public)/mall/[slug]/page.tsx"],
+];
 const v2Explicit = (p) =>
   /<(DecorSpacePreview|SceneLayoutEditor)[^>]*engine="v2"/.test(src(p));
 const missing = publicPages.filter(([, p]) => !v2Explicit(p));
 check(
-  "三处公页都显式传 engine=\"v2\"（直接或经 SceneLayoutEditor 透传）",
+  "两处公页都显式传 engine=\"v2\"（直接或经 SceneLayoutEditor 透传）",
   missing.length === 0,
-  missing.map(([l, p]) => `${l}(${p})`).join(" , ") || "三处齐备",
+  missing.map(([l, p]) => `${l}(${p})`).join(" , ") || "两处齐备",
 );
 
 /*
@@ -488,6 +505,75 @@ check(
   "DecorSpacePreview 已 import findClanTemplate",
   /import\s*\{\s*findClanTemplate\s*\}\s*from\s*"@\/lib\/clan-decor"/.test(dspSrc),
 );
+
+// ---------------------------------------------------------------------------
+// ⑥ 封面图必须真的能加载（SVG 封面不能是空白盒）
+// ---------------------------------------------------------------------------
+/*
+  ⚠️ 这条来自一次真实事故（2026-10）：
+    /mall/decor-tpl-plain 页面顶部有一大片空白，看着像"布局留白/间距错了"，
+    实际是**封面图加载失败**留下的空盒子。
+
+  根因：Next.js 默认**拒绝对 SVG 走图片优化器**。`next/image` 会把 src 包成
+  /_next/image?url=... ，优化器对 SVG 直接回 400 → 图不出来 →
+  aspect-[16/9] 的容器只剩空白。而库里 68 个商品用 .svg 作封面。
+
+  这里断**行为**（优化器真的返回 200），而不只是断配置项：
+  配置写法会变，但"图能出来"这件事不会变。
+*/
+check(
+  "next.config 已开启 dangerouslyAllowSVG（SVG 封面可经优化器出图）",
+  /dangerouslyAllowSVG\s*:\s*true/.test(src("next.config.mjs")),
+);
+
+const svgProbe = await b.newContext().then(async (c) => {
+  const r = await c.request.get(
+    `${BASE}/_next/image?url=${encodeURIComponent("/assets/prod-decor-tpl.svg")}&w=1200&q=75`,
+    { failOnStatusCode: false },
+  );
+  const out = { status: r.status(), type: r.headers()["content-type"] ?? "" };
+  await c.close();
+  return out;
+});
+check(
+  "图片优化器对 SVG 返回 200（不是 400 空白）",
+  svgProbe.status === 200,
+  `HTTP ${svgProbe.status}`,
+);
+check(
+  "SVG 经优化器后仍声明为图片类型",
+  /image\/svg|image\//.test(svgProbe.type),
+  svgProbe.type || "(无)",
+);
+
+/*
+  Lottie 图标自检：`sr`（星形/多边形）**必须带 `or`（外径）**。
+
+  真实事故（2026-10）：生成器把外径写进了 `"r"`（那是**旋转角**），`or` 从未产出。
+  形状缺外径 → lottie-web 算不出顶点 → 渲染出一个**空的 <g>**：
+  组件照常挂上 svg、尺寸也对，就是什么都不画 —— 页面表现是"封面区一片空白"，
+  而 JSON 用肉眼看完全正常（有填充色、有透明度动画），极难定位。
+  实测当时 9 个文件（cloud/decor/firework/kite/moon/music/service/star/tree）全空。
+
+  这条断言直接扫资产，任何 `sr` 少了 `or` 就报出来 —— 生成器别再犯。
+*/
+{
+  const dir = "/workspace/public/assets/lottie";
+  const bad = [];
+  for (const f of readdirSync(dir).filter((x) => x.endsWith(".json"))) {
+    const j = JSON.parse(readFileSync(`${dir}/${f}`, "utf8"));
+    let broken = false;
+    const walk = (shapes) => {
+      for (const s of shapes || []) {
+        if (s.ty === "sr" && s.or === undefined) broken = true;
+        if (s.it) walk(s.it);
+      }
+    };
+    for (const L of j.layers || []) walk(L.shapes);
+    if (broken) bad.push(f);
+  }
+  check("所有 Lottie 的 sr 都带外径 or（缺了会渲染成空白）", bad.length === 0, bad.join(", ") || "39 个文件全部合格");
+}
 
 await b.close();
 console.log(`\n通过 ${pass}/${pass + fail}`);

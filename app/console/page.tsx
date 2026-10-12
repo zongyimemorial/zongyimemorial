@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatYuan } from "@/lib/utils";
-import { ensureDailyLoginPoints, ensureInviteCode, expirePointsForUser } from "@/lib/points";
+import { ensureDailyLoginPoints, ensureInviteCode, expirePointsForUser, INVITE_REGISTER_POINTS } from "@/lib/points";
 import { topUpFreeOfferings } from "@/lib/offerings";
 import { iconOf } from "@/lib/ritual";
 import { syncUpcomingReminders, unreadCount, listNotifications } from "@/lib/notify";
@@ -117,7 +117,7 @@ export default async function ConsolePage() {
       where: { userId: user.id! },
       orderBy: { createdAt: "desc" },
       take: 20,
-      select: { id: true, productName: true, status: true, intake: true, contact: true, createdAt: true },
+      select: { id: true, productName: true, status: true, intake: true, contact: true, adminNote: true, createdAt: true },
     }),
   ]);
 
@@ -189,7 +189,7 @@ export default async function ConsolePage() {
   const nextFestivalOccurrence: FestivalOccurrence | null = upcomingFestivals(today, 1)[0] ?? null;
 
   const kindBadge: Record<CalendarEvent["kind"], { text: string; cls: string }> = {
-    memorial: { text: "忌日", cls: "bg-brand-800 text-amber-100" },
+    memorial: { text: "忌日", cls: "bg-brand-800 text-accent-100" },
     birthday: { text: "生日", cls: "bg-emerald-100 text-emerald-700" },
     festival: { text: "节日", cls: "bg-amber-100 text-amber-700" },
   };
@@ -214,6 +214,7 @@ export default async function ConsolePage() {
 
   const NAV = [
     { href: "/console/wallet", label: "我的钱包" },
+    { href: "/console/account", label: "账号设置" },
     { href: "#calendar", label: "追思日历" },
     { href: "#orders", label: "我的订单" },
     { href: "#halls", label: "我的纪念馆" },
@@ -238,14 +239,14 @@ export default async function ConsolePage() {
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <a
             href="/"
-            className="rounded-md border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+            className="rounded-md border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
           >
             返回首页
           </a>
-          {(user.role === "admin" || user.role === "editor") && (
+          {(user.role === "admin" || user.role === "editor" || user.role === "super_admin") && (
             <a
               href="/admin"
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+              className="rounded-md border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
             >
               进入管理后台
             </a>
@@ -253,7 +254,7 @@ export default async function ConsolePage() {
           <form action={signOutAction}>
             <button
               type="submit"
-              className="rounded-md border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+              className="rounded-md border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
             >
               退出登录
             </button>
@@ -307,7 +308,7 @@ export default async function ConsolePage() {
           <a
             key={s.label}
             href={s.href}
-            className="rounded-lg border border-gray-100 bg-white p-4 transition hover:border-accent-400"
+            className="rounded-lg border border-brand-200 bg-brand-100/70 p-4 transition hover:border-accent-400"
           >
             <div className="text-xs text-brand-400">{s.label}</div>
             <div className="mt-1 text-2xl font-semibold text-brand-900">
@@ -333,7 +334,7 @@ export default async function ConsolePage() {
               className={
                 isWallet
                   ? "rounded-full border border-accent-400 bg-accent-50 px-3 py-1 font-semibold text-accent-700 hover:bg-accent-100"
-                  : "rounded-full border border-gray-200 px-3 py-1 text-brand-600 hover:border-accent-400 hover:text-accent-600"
+                  : "rounded-full border border-brand-200 px-3 py-1 text-brand-600 hover:border-accent-400 hover:text-accent-600"
               }
             >
               {n.label}
@@ -347,16 +348,16 @@ export default async function ConsolePage() {
         <div className="rounded-lg border border-amber-100 bg-amber-50/60 p-4">
           <p className="text-sm text-brand-700">
             把专属邀请码或链接分享给亲友，好友注册后
-            <span className="font-semibold text-accent-600"> 你 +20 积分</span>。
+            <span className="font-semibold text-accent-600"> 你 +{INVITE_REGISTER_POINTS} 积分</span>。
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <div className="rounded-md border border-amber-200 bg-white px-4 py-2 text-sm">
+            <div className="rounded-md border border-amber-200 bg-brand-100/70 px-4 py-2 text-sm">
               <span className="text-brand-400">我的邀请码：</span>
               <span className="font-mono text-base font-bold tracking-widest text-brand-900">
                 {inviteCode}
               </span>
             </div>
-            <div className="flex-1 truncate rounded-md border border-gray-200 bg-white px-3 py-2 text-xs text-brand-500">
+            <div className="flex-1 truncate rounded-md border border-brand-200 bg-brand-100/70 px-3 py-2 text-xs text-brand-500">
               注册链接：/register?invite={inviteCode}
             </div>
           </div>
@@ -408,7 +409,7 @@ export default async function ConsolePage() {
                 <li key={`${ev.kind}-${ev.label}-${i}`}>
                   <Link
                     href={ev.href}
-                    className="flex items-center gap-3 rounded-md bg-white px-3 py-2 text-sm transition hover:border-accent-300"
+                    className="flex items-center gap-3 rounded-md bg-brand-100/70 px-3 py-2 text-sm transition hover:border-accent-300"
                   >
                     <span
                       className={
@@ -441,7 +442,7 @@ export default async function ConsolePage() {
                 key={n.id}
                 className={
                   "flex items-start gap-3 rounded-lg border p-3 " +
-                  (n.readAt ? "border-gray-100 bg-white" : "border-accent-200 bg-accent-50/40")
+                  (n.readAt ? "border-brand-200 bg-brand-100/70" : "border-accent-200 bg-accent-50/40")
                 }
               >
                 <span className="text-base" aria-hidden="true">
@@ -475,7 +476,7 @@ export default async function ConsolePage() {
           {orders.map((o) => (
             <div
               key={o.id}
-              className="flex items-center justify-between rounded-lg border border-gray-100 bg-white p-4"
+              className="flex items-center justify-between rounded-lg border border-brand-200 bg-brand-100/70 p-4"
             >
               <div>
                 <div className="text-sm font-medium text-brand-900">
@@ -529,7 +530,7 @@ export default async function ConsolePage() {
             <Link
               key={w.id}
               href={`/console/whispers/${w.id}`}
-              className="block rounded-lg border border-gray-100 bg-white p-4 hover:border-accent-400"
+              className="block rounded-lg border border-brand-200 bg-brand-100/70 p-4 hover:border-accent-400"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-sm font-medium text-brand-900">{w.personaName}</div>
@@ -585,7 +586,7 @@ export default async function ConsolePage() {
             <Link
               key={o.id}
               href={`/console/obituaries/${o.id}`}
-              className="block rounded-lg border border-gray-100 bg-white p-4 hover:border-accent-400"
+              className="block rounded-lg border border-brand-200 bg-brand-100/70 p-4 hover:border-accent-400"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="text-sm font-medium text-brand-900">{o.deceasedName}</div>
@@ -639,7 +640,7 @@ export default async function ConsolePage() {
         </div>
         <p className="mb-3 text-xs text-brand-400">
           云祭扫、传记代写、追思视频、扫码云碑等人工服务，购买/兑换后会在此生成受理单。
-          请提交需求与资料，工作人员将与你联系并交付。
+          请提交需求与资料，工作人员将与你联系；受理进展与交付说明会实时显示在此处。
         </p>
         <div className="space-y-3">
           {services.map((s) => {
@@ -647,7 +648,7 @@ export default async function ConsolePage() {
             return (
               <div
                 key={s.id}
-                className="rounded-lg border border-gray-100 bg-white p-4"
+                className="rounded-lg border border-brand-200 bg-brand-100/70 p-4"
                 data-service-id={s.id}
                 data-service-status={s.status}
               >
@@ -668,6 +669,27 @@ export default async function ConsolePage() {
                     {SERVICE_STATUS_LABEL[s.status] ?? s.status}
                   </span>
                 </div>
+                {s.adminNote && (
+                  <div
+                    className={
+                      "mt-2 rounded-md px-3 py-2 text-xs " +
+                      (s.status === "done"
+                        ? "bg-emerald-50 text-emerald-700"
+                        : s.status === "rejected"
+                          ? "bg-red-50 text-red-600"
+                          : "bg-blue-50 text-blue-700")
+                    }
+                  >
+                    <span className="font-medium">
+                      {s.status === "done"
+                        ? "交付说明："
+                        : s.status === "rejected"
+                          ? "驳回说明："
+                          : "处理进展："}
+                    </span>
+                    {s.adminNote}
+                  </div>
+                )}
                 {s.intake && (
                   <div className="mt-2 text-xs text-brand-500">
                     <span className="font-medium text-brand-700">已提交需求：</span>
@@ -682,13 +704,13 @@ export default async function ConsolePage() {
                       defaultValue={s.intake ?? ""}
                       rows={3}
                       placeholder="请描述你的需求（如逝者信息、视频风格、云碑内容等）"
-                      className="w-full rounded-md border border-gray-300 p-2 text-sm"
+                      className="w-full rounded-md border border-brand-300 p-2 text-sm"
                     />
                     <input
                       name="contact"
                       defaultValue={s.contact ?? ""}
                       placeholder="可选联系电话"
-                      className="w-full rounded-md border border-gray-300 p-2 text-sm"
+                      className="w-full rounded-md border border-brand-300 p-2 text-sm"
                     />
                     <button
                       type="submit"
@@ -715,7 +737,7 @@ export default async function ConsolePage() {
           {halls.map((h) => (
             <div
               key={h.id}
-              className="block rounded-lg border border-gray-100 bg-white p-4 hover:border-brand-500"
+              className="block rounded-lg border border-brand-200 bg-brand-100/70 p-4 hover:border-brand-500"
             >
               {h.status === "pending" ? (
                 <div>
@@ -784,7 +806,7 @@ export default async function ConsolePage() {
           {clanHalls.map((c) => (
             <div
               key={c.id}
-              className="rounded-lg border border-gray-100 bg-white p-4 hover:border-brand-500"
+              className="rounded-lg border border-brand-200 bg-brand-100/70 p-4 hover:border-brand-500"
             >
               {c.status === "pending" ? (
                 <div>
@@ -846,7 +868,7 @@ export default async function ConsolePage() {
         <h2 className="mb-3 text-lg font-semibold text-brand-900">我的供品</h2>
         {holdings.length === 0 ? (
           <p className="text-sm text-brand-400">
-            暂无可用供品。免费礼器（上香 / 献花 / 点烛等）每日自动补 3 份，进入纪念馆或宗祠即可使用；
+            暂无可用供品。免费礼器（上香 / 献花 / 点烛等）每日自动领 1 份，进入纪念馆或宗祠即可使用；
             更多精美供品可在
             <Link href="/mall" className="mx-1 text-accent-600 hover:underline">
               商城
@@ -866,7 +888,7 @@ export default async function ConsolePage() {
               {holdings.map((h) => (
                 <div
                   key={h.id}
-                  className="flex items-center gap-3 rounded-lg border border-gray-100 bg-white p-3"
+                  className="flex items-center gap-3 rounded-lg border border-brand-200 bg-brand-100/70 p-3"
                 >
                   <span className="text-xl" aria-hidden="true">
                     {iconOf(h.product.slug)}

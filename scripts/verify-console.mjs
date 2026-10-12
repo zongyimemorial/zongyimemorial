@@ -14,6 +14,17 @@
 // 运行前置：服务已在 3000 端口以生产构建运行；Docker 容器 memorial-pg 存活。
 import pkg from "/root/.nvm/versions/node/v22.13.1/lib/node_modules/playwright/index.js";
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+
+/*
+  每日免费配额从**真相源**读，不写死。
+  这里原先是 `=== 3`，而 FREE_DAILY_QUOTA 早已调成 1 —— 两条断言常年飘红，
+  看着像"控制台补货坏了"，其实只是数字过期（与 verify-clan-tribute-e2e 同族坑）。
+  由 scripts/verify-single-source.mjs 的 B1 项守卫，防止再次写成字面量。
+*/
+const FREE_DAILY_QUOTA = Number(
+  (readFileSync("lib/offerings.ts", "utf8").match(/FREE_DAILY_QUOTA\s*=\s*(\d+)/) || [])[1] ?? 1,
+);
 const { chromium } = pkg;
 
 const BASE = "http://localhost:3000";
@@ -231,7 +242,7 @@ await page.waitForTimeout(1800);
 const incenseQty = sqlCount(
   `select coalesce((select h."quantity" from "OfferingHolding" h join "User" u on u.id=h."userId" join "Product" p on p.id=h."productId" where u.email='${userEmail}' and p.slug='free-incense' limit 1), -1);`,
 );
-check("进入控制台自动补当日免费配额（上香 3 份）", incenseQty === 3, `quantity=${incenseQty}`);
+check(`进入控制台自动补当日免费配额（上香 ${FREE_DAILY_QUOTA} 份）`, incenseQty === FREE_DAILY_QUOTA, `quantity=${incenseQty}`);
 
 // 幂等：再进一次不叠加
 await page.goto(`${BASE}/console?cb=${Date.now()}`, { waitUntil: "domcontentloaded" });
@@ -239,7 +250,7 @@ await page.waitForTimeout(1600);
 const incenseQty2 = sqlCount(
   `select coalesce((select h."quantity" from "OfferingHolding" h join "User" u on u.id=h."userId" join "Product" p on p.id=h."productId" where u.email='${userEmail}' and p.slug='free-incense' limit 1), -1);`,
 );
-check("同日重复进入控制台不叠加库存", incenseQty2 === 3, `quantity=${incenseQty2}`);
+check("同日重复进入控制台不叠加库存", incenseQty2 === FREE_DAILY_QUOTA, `quantity=${incenseQty2}`);
 
 // ---------------------------------------------------------------- 8. 跨账号：admin 名下 3 座宗祠
 const adminClan = sqlCount(

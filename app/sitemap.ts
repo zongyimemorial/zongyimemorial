@@ -32,6 +32,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/clan/community",
     "/clan/activities",
     "/live",
+    "/live/guide",
     "/mall",
     "/points",
     "/points/guide",

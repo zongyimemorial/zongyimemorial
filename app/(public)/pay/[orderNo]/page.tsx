@@ -24,7 +24,7 @@ export default async function PayPage({
   return (
     <div className="container-page max-w-md py-12">
       <h1 className="mb-6 text-2xl font-semibold text-brand-900">订单支付</h1>
-      <div className="rounded-lg border border-gray-100 bg-white p-6">
+      <div className="rounded-lg border border-brand-200 bg-brand-100/70 p-6">
         <div className="mb-4 text-sm text-brand-500">订单号：{order.orderNo}</div>
         <ul className="space-y-2 text-sm">
           {order.items.map((it) => (
@@ -36,7 +36,7 @@ export default async function PayPage({
             </li>
           ))}
         </ul>
-        <div className="mt-4 flex justify-between border-t border-gray-100 pt-3 text-base font-semibold text-brand-900">
+        <div className="mt-4 flex justify-between border-t border-brand-200 pt-3 text-base font-semibold text-brand-900">
           <span>应付</span>
           <span>¥{formatYuan(order.payAmount)}</span>
         </div>

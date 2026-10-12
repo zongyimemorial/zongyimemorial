@@ -69,7 +69,7 @@ export default async function ObituariesPage() {
       </div>
 
       {list.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-300 p-10 text-center text-brand-400">
+        <div className="rounded-lg border border-dashed border-brand-300 p-10 text-center text-brand-400">
           <p className="mb-1">还没有发布过电子讣告。</p>
           <p className="text-sm">
             购买或用积分兑换「电子讣告发布」后，即可在这里填写并生成可分享的缅怀页。
@@ -80,7 +80,7 @@ export default async function ObituariesPage() {
           {list.map((o) => (
             <li
               key={o.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-gray-200 p-4"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-brand-200 p-4"
             >
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
@@ -108,13 +108,13 @@ export default async function ObituariesPage() {
               <div className="flex items-center gap-2 text-sm">
                 <Link
                   href={`/obituary/${o.id}`}
-                  className="rounded-md border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+                  className="rounded-md border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
                 >
                   查看
                 </Link>
                 <Link
                   href={`/console/obituaries/${o.id}`}
-                  className="rounded-md border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+                  className="rounded-md border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
                 >
                   管理
                 </Link>

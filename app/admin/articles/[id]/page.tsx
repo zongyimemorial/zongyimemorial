@@ -10,7 +10,7 @@ export default async function EditArticlePage({
   params: Promise<{ id: string }>;
 }) {
   const user = await getCurrentUser();
-  if (!user || (user.role !== "admin" && user.role !== "editor")) redirect("/console");
+  if (!user || (user.role !== "admin" && user.role !== "editor" && user.role !== "super_admin")) redirect("/console");
 
   const { id } = await params;
   const article = await prisma.article.findUnique({ where: { id } });

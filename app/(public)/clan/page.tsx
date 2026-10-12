@@ -53,7 +53,7 @@ export default async function ClanPage() {
     }),
     prisma.clanPost.count({ where: { status: "approved" } }),
     prisma.clanActivity.findMany({
-      where: { status: { in: ["upcoming", "ongoing"] } },
+      where: { status: { in: ["upcoming", "ongoing"] }, reviewStatus: "approved" },
       orderBy: { startAt: "asc" },
       take: 2,
     }),
@@ -87,7 +87,7 @@ export default async function ClanPage() {
           <Link
             key={f.href}
             href={f.href}
-            className="group rounded-xl border border-gray-100 bg-white p-6 transition hover:border-accent-300 hover:shadow-sm"
+            className="group rounded-xl border border-brand-200 bg-brand-100/70 p-6 transition hover:border-accent-300 hover:shadow-sm"
           >
             <div className="text-3xl">{f.icon}</div>
             <h2 className="mt-3 text-lg font-semibold text-brand-900">{f.title}</h2>
@@ -104,7 +104,7 @@ export default async function ClanPage() {
           <h2 className="mb-3 text-lg font-semibold text-brand-900">近期宗族活动</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             {activities.map((a) => (
-              <div key={a.id} className="rounded-xl border border-gray-100 bg-white p-5">
+              <div key={a.id} className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
                 <div className="text-sm font-semibold text-brand-900">{a.title}</div>
                 <div className="mt-1 text-xs text-brand-400">
                   {new Date(a.startAt).toLocaleString("zh-CN")} · {a.location}
@@ -115,7 +115,7 @@ export default async function ClanPage() {
         </section>
       )}
 
-      <div className="mt-10 grid grid-cols-2 gap-4 rounded-xl border border-gray-100 bg-white p-6 text-center sm:grid-cols-4">
+      <div className="mt-10 grid grid-cols-2 gap-4 rounded-xl border border-brand-200 bg-brand-100/70 p-6 text-center sm:grid-cols-4">
         <div>
           <div className="text-2xl font-semibold text-accent-600">{genealogyCount}</div>
           <div className="text-xs text-brand-400">数字化族谱（部）</div>

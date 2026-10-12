@@ -34,7 +34,7 @@ export default async function RealnamePage() {
         <span className="text-brand-600">实名认证</span>
         <a
           href="/"
-          className="ml-auto rounded-md border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+          className="ml-auto rounded-md border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
         >
           ← 返回首页
         </a>

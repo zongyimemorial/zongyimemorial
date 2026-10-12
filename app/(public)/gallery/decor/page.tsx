@@ -5,11 +5,12 @@ import { TEMPLATES } from "@/lib/hall-decor";
 import { CLAN_TEMPLATES } from "@/lib/clan-decor";
 import { suiteItemSlug } from "@/lib/decor-suites";
 import type { DecorTemplate } from "@/lib/hall-decor";
+import Reveal from "@/components/site/Reveal";
 
 export const metadata: Metadata = {
   title: "装修案例厅 · 纪念馆与宗祠主题模板",
   description:
-    "34 套纪念馆与宗祠装修主题：素白、星河、金殿、朱漆祠堂……免费起步，按需升级。看看别人家怎么装，为你的纪念空间找到一束合适的光。",
+    "43 套纪念馆与宗祠装修主题：素白、星河、金殿、朱漆祠堂……免费起步，按需升级。看看别人家怎么装，为你的纪念空间找到一束合适的光。",
   alternates: { canonical: "/gallery/decor" },
 };
 
@@ -26,6 +27,23 @@ const TIER_CLS: Record<string, string> = {
   points: "bg-amber-100 text-amber-700",
   buyout: "bg-brand-100 text-brand-700",
   premium: "bg-purple-100 text-purple-700",
+};
+
+/**
+ * 空间形态中文标签：与 lib/decor-3d.ts 的 SpaceKind 注释口径一致。
+ * 每一套主题都用 `space` 字段引用其中一种 3D 空间形态，这里把「形态名」直接
+ * 透出到卡片上，让装修案例厅的 43 套主题与已升级的 3D 空间（纪念馆 Hall3DStage、
+ * 宗祠 ClanHall3DTour、底层 8 种 SPACES）形成可视关联。
+ */
+const SPACE_LABEL: Record<string, string> = {
+  classic: "正厅",
+  niche: "壁龛纪念墙",
+  shrine: "寝堂牌位墙",
+  courtyard: "庭院天井",
+  gate: "山门",
+  hall: "享堂",
+  pond: "莲池",
+  starfield: "星河",
 };
 
 /**
@@ -71,12 +89,20 @@ function mallHref(t: DecorTemplate, target: "hall" | "clan"): string {
 }
 
 function TemplateCard({ t, target }: { t: DecorTemplate; target: "hall" | "clan" }) {
-  const is3d = (t.space ?? "classic") !== "classic";
+  const space = t.space ?? "classic";
+  const is3d = space !== "classic";
+  const spaceLabel = SPACE_LABEL[space] ?? space;
   // 免费档 = 赠品，无商城商品页 → 渲染为不可点击卡片
   const isFree = t.tier === "free";
   const badge = (
     <div className="flex flex-wrap items-center gap-2">
       <h3 className="text-sm font-semibold text-brand-900">{t.name}</h3>
+      <span
+        className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600"
+        title={`空间形态：${spaceLabel}`}
+      >
+        {spaceLabel}
+      </span>
       {is3d && (
         <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-600">
           3D 立体
@@ -101,7 +127,7 @@ function TemplateCard({ t, target }: { t: DecorTemplate; target: "hall" | "clan"
 
   if (isFree) {
     return (
-      <div className="block overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+      <div className="shine block overflow-hidden rounded-xl border border-brand-200 bg-brand-100/70 shadow-sm">
         {preview}
         <div className="p-4">
           {badge}
@@ -118,11 +144,11 @@ function TemplateCard({ t, target }: { t: DecorTemplate; target: "hall" | "clan"
   }
 
   return (
-    <Link
-      href={mallHref(t, target)}
-      className="group block overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm transition hover:border-brand-300 hover:shadow-md"
-    >
-      {/* 静态大预览：纯 CSS 渐变 + icon，零 3D 渲染、零图片加载（34 套一次列出也不卡） */}
+      <Link
+        href={mallHref(t, target)}
+        className="shine group block overflow-hidden rounded-xl border border-brand-200 bg-brand-100/70 shadow-sm transition hover:border-brand-300 hover:shadow-md"
+      >
+      {/* 静态大预览：纯 CSS 渐变 + icon，零 3D 渲染、零图片加载（43 套一次列出也不卡） */}
       {preview}
       <div className="p-4">
         {badge}
@@ -151,7 +177,7 @@ export default function DecorGalleryPage() {
     <>
       <section className="bg-brand-800 py-14 text-white">
         <div className="container-page text-center">
-          <p className="text-sm tracking-[0.3em] text-amber-200">装修案例厅</p>
+          <p className="text-sm tracking-[0.3em] text-accent-300">装修案例厅</p>
           <h1 className="mt-4 text-3xl font-bold md:text-4xl">
             {hallTemplates.length + clanTemplates.length} 套主题，为纪念空间找到一束光
           </h1>
@@ -181,29 +207,33 @@ export default function DecorGalleryPage() {
         <div className="mb-8 text-center">
           <h2 className="text-2xl font-semibold text-brand-900">纪念馆主题</h2>
           <p className="mt-2 text-sm text-brand-500">
-            共 {hallTemplates.length} 套 · 建馆赠品「清霜壁龛」免费可用
+            共 {hallTemplates.length} 套 · 建馆赠品「壁龛纪念堂」免费可用
           </p>
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {hallTemplates.map((t) => (
-            <TemplateCard key={t.id} t={t} target="hall" />
+          {hallTemplates.map((t, i) => (
+            <Reveal key={t.id} delay={(i % 4) * 70}>
+              <TemplateCard t={t} target="hall" />
+            </Reveal>
           ))}
         </div>
       </section>
 
       {/* 宗祠模板 */}
-      <section className="border-t border-gray-100 bg-brand-50/40 py-14">
+      <section className="border-t border-brand-200 bg-brand-50/40 py-14">
         <div className="container-page">
           <div className="mb-8 text-center">
             <h2 className="text-2xl font-semibold text-brand-900">宗祠主题</h2>
             <p className="mt-2 text-sm text-brand-500">
-              共 {clanTemplates.length} 套 · 建祠赠品「素朴祖祠」免费可用
+              共 {clanTemplates.length} 套 · 建祠赠品「祖德流芳」免费可用
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {clanTemplates.map((t) => (
-              <TemplateCard key={t.id} t={t} target="clan" />
-            ))}
+          {clanTemplates.map((t, i) => (
+            <Reveal key={t.id} delay={(i % 4) * 70}>
+              <TemplateCard t={t} target="clan" />
+            </Reveal>
+          ))}
           </div>
         </div>
       </section>
@@ -219,7 +249,7 @@ export default function DecorGalleryPage() {
         <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-3">
           <Link
             href="/suites"
-            className="rounded-xl border border-gray-100 bg-white p-6 text-center transition hover:border-brand-300 hover:shadow-sm"
+            className="rounded-xl border border-brand-200 bg-brand-100/70 p-6 text-center transition hover:border-brand-300 hover:shadow-sm"
           >
             <div className="text-2xl">🎁</div>
             <div className="mt-2 font-semibold text-brand-900">三层九档套装</div>
@@ -227,7 +257,7 @@ export default function DecorGalleryPage() {
           </Link>
           <Link
             href="/mall"
-            className="rounded-xl border border-gray-100 bg-white p-6 text-center transition hover:border-brand-300 hover:shadow-sm"
+            className="rounded-xl border border-brand-200 bg-brand-100/70 p-6 text-center transition hover:border-brand-300 hover:shadow-sm"
           >
             <div className="text-2xl">🛍️</div>
             <div className="mt-2 font-semibold text-brand-900">装修商城</div>
@@ -235,7 +265,7 @@ export default function DecorGalleryPage() {
           </Link>
           <Link
             href="/guide/decor"
-            className="rounded-xl border border-gray-100 bg-white p-6 text-center transition hover:border-brand-300 hover:shadow-sm"
+            className="rounded-xl border border-brand-200 bg-brand-100/70 p-6 text-center transition hover:border-brand-300 hover:shadow-sm"
           >
             <div className="text-2xl">📖</div>
             <div className="mt-2 font-semibold text-brand-900">装修指南</div>

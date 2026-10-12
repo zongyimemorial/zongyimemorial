@@ -14,7 +14,9 @@
  * 本套件要守住的核心不变量：
  *   §0 迁移落地：ServiceFulfillment 表存在、索引存在
  *   §1 源码层：simulatePay 与 redeemItem 均真实调用 isServiceProduct / createServiceFulfillment
- *   §2 现金支付：cloud-worship 真实下单→模拟支付→DB 出现 1 张 ServiceFulfillment(status=pending, orderId 非空)
+ *   §2 现金支付：cloud-worship 真实下单→跳支付页（行为断言）→模拟支付→
+ *      DB 出现 1 张 ServiceFulfillment(status=pending, orderId 非空)。
+ *      订单号从 **DB** 取（不自拼，也不拿 URL 当数据源）
  *   §3 积分兑换：服务商品兑换→积分已扣 + 出现 1 张 ServiceFulfillment(redemptionId 非空)
  *   §4 控制台可见：#services 渲染该受理单；提交 intake 后 DB intake 更新
  *   §5 后台受理：admin 标记 done 后 DB status=done、控制台徽标更新
@@ -24,6 +26,29 @@
  *
  * ⚠️ 本脚本**会写数据**（造受理单、下单、兑换），收尾删除测试数据 ——
  *    与兄弟套件共享 user@test.com，必须自清理。
+ *
+ * ============================================================================
+ * 历史缺陷（出在**本套件自己身上**，产品代码无责）
+ *
+ * H1 **日上限被测试自己顶爆 → §3 三条假红**
+ *    日兑换上限的唯一判据是 lib/points.ts 的 dailyRedeemedPoints()：
+ *      sum("PointLog".amount) where kind='redeem' and createdAt >= 当日 0 点
+ *    而 §3 清场删的是 "PointRedemption" —— 那张表**不参与**上限判定，等于没清。
+ *    同一天多跑几遍，5 万日名额被测试自己耗光，兑换被服务端拦下，
+ *    §3「积分已扣 / redemptionId 受理单 / 受理单净增」三条一起变红。
+ *    → 已改为删当日 `kind='redeem'` 的 **"PointLog"**，
+ *      且时间窗口与产品同口径（Node 本地 0 点；psql 的 current_date 是
+ *      DB 时区 = UTC，与 Node 的 Asia/Shanghai 差 8 小时，夜跑会错清一天）。
+ *
+ * H2 **吞掉导航失败 → 假绿 + 库留垃圾单**
+ *    原 §2 写的是 `.waitForURL(...).catch(() => {})` + `check(!!orderNo2)`。
+ *    一旦导航超时，page.url() 还停在 /mall/cloud-worship，
+ *    `split("/").pop()` 取到的是 **slug**，而 `!!orderNo2` 依然为真 —— 失败被记成绿；
+ *    收尾又按这个"slug"去删订单，什么也没删，库里累积 pending 垃圾单
+ *    （实测一次运行残留 MJ1791797503545339995）。
+ *    → 已拆成两条：导航行为单独断言（失败即红，判据清晰）；
+ *      订单号改从 DB 取（权威来源，导航失败也拿得到真单号，收尾不漏删）。
+ *    → 同时把"支付是否落地"从固定 waitForTimeout(2000) 改为轮询 DB（≤20s）。
  *
  * ============================================================================
  * 反向验证记录（证明断言有效，不是"恒真"）
@@ -83,6 +108,26 @@ function psql(sql) {
 
 function q(s) {
   return String(s).replace(/'/g, "''");
+}
+
+/** JS Date → DB 可比的 UTC 字面量（"Order"."createdAt" 是 timestamp without time zone，按 UTC 落库） */
+function utcTs(d) {
+  return new Date(d).toISOString().replace("T", " ").replace("Z", "");
+}
+
+/**
+ * 轮询直到回调返回真值（默认 15s）。同步 psql 也能用：每轮之间让出事件循环。
+ * 用途：把"支付是否落地"这类异步结果从"固定 waitForTimeout(2000)"改成
+ * "等到条件成立或明确超时" —— 固定毫秒在慢机器上必然偶发假红。
+ */
+async function waitFor(fn, { timeout = 15000, interval = 300 } = {}) {
+  const t0 = Date.now();
+  for (;;) {
+    const v = fn();
+    if (v) return v;
+    if (Date.now() - t0 > timeout) return null;
+    await new Promise((r) => setTimeout(r, interval));
+  }
 }
 
 function login(page, email, password) {
@@ -177,16 +222,40 @@ async function main() {
   if (!cloudSlug) {
     check("§2 存在在售 cloud_worship 商品", false, "未找到");
   } else {
+    const cloudPid = psql(`SELECT id FROM "Product" WHERE slug='${q(cloudSlug)}'`);
     const before2 = svcCount();
+    const tStart2 = Date.now();
     const ctx = await authedContext(browser);
     const page = await ctx.newPage();
     await login(page, OWNER.email, OWNER.password);
 
     await page.goto(`${BASE}/mall/${cloudSlug}`, { waitUntil: "domcontentloaded" });
     await page.click('button:has-text("立即购买")');
-    await page.waitForURL(/\/pay\/[A-Za-z0-9-]+$/, { timeout: 20000 }).catch(() => {});
-    const orderNo2 = page.url().split("/").pop();
-    check("§2 下单跳转到支付页（orderNo 从 URL 抓）", !!orderNo2, `orderNo=${orderNo2}`);
+
+    /*
+      ⚠️ 这里**不能**写成 `.waitForURL(...).catch(() => {})` + `check(!!orderNo2)`。
+      踩过的坑：catch 把导航超时吞掉后，page.url() 还停在 `/mall/cloud-worship`，
+      `split("/").pop()` 拿到的是 **slug 而不是订单号**，而 `!!orderNo2` 照样为真 ——
+      于是一次真实的导航失败被记成"绿"，后续 §2/§4/§5 连锁变红，
+      收尾又按 slug 去删订单（什么也没删），库里留下 pending 垃圾单。
+
+      现在的分工：
+        · 「点购买 → 进支付页」这条**产品行为**单独断言，失败就是明确的红；
+        · 订单号一律从 **DB**（权威记录）取，URL 只用来断言，不当数据源 ——
+          导航失败也拿得到真实单号，收尾不会漏删。
+    */
+    const navigated = await page
+      .waitForURL(/\/pay\/[A-Za-z0-9-]+$/, { timeout: 20000 })
+      .then(() => true)
+      .catch(() => false);
+    check("§2 点击「立即购买」跳转到支付页", navigated, `URL=${page.url()}`);
+
+    const orderNo2 = psql(
+      `SELECT o."orderNo" FROM "Order" o JOIN "OrderItem" oi ON oi."orderId"=o.id ` +
+        `WHERE o."userId"='${uid}' AND oi."productId"='${q(cloudPid)}' ` +
+        `AND o."createdAt" >= '${utcTs(tStart2)}' ORDER BY o."createdAt" DESC LIMIT 1`,
+    );
+    check("§2 本次下单已落库（orderNo 取 DB，不自拼）", !!orderNo2, `orderNo=${orderNo2 || "空"}`);
 
     const payBtn = page.locator('button:has-text("模拟支付"), button:has-text("确认支付"), button:has-text("立即支付")');
     if (await payBtn.count()) {
@@ -196,9 +265,13 @@ async function main() {
         await fetch(`/api/payments/simulate/${no}`, { method: "POST" });
       }, orderNo2);
     }
-    await page.waitForTimeout(2000);
 
-    const paidStatus = psql(`SELECT status FROM "Order" WHERE "orderNo"='${q(orderNo2)}'`);
+    // 等"落库为 paid"，而不是固定等 2 秒（慢机器上必然偶发假红）
+    const paidStatus =
+      (await waitFor(() => {
+        const s = orderNo2 ? psql(`SELECT status FROM "Order" WHERE "orderNo"='${q(orderNo2)}'`) : "";
+        return s === "paid" ? s : null;
+      }, { timeout: 20000 })) || (orderNo2 ? psql(`SELECT status FROM "Order" WHERE "orderNo"='${q(orderNo2)}'`) : "（无订单号）");
     check("§2 订单状态变为 paid", paidStatus === "paid", paidStatus);
 
     const orderId = psql(`SELECT id FROM "Order" WHERE "orderNo"='${q(orderNo2)}'`);
@@ -238,8 +311,18 @@ async function main() {
     await login(page, OWNER.email, OWNER.password);
     await page.goto(`${BASE}/points`, { waitUntil: "networkidle" });
 
-    // 清掉该用户当日的该商品兑换记录，避免重复兑换/累计干扰
-    psql(`DELETE FROM "PointRedemption" WHERE "userId"='${uid}' AND "productId"=(SELECT id FROM "Product" WHERE slug='${q(redeemSlug)}') AND "createdAt" >= current_date`);
+    // 清掉该用户当日的积分兑换**流水**，避免同一天多次运行累计触发日上限（50000）误判。
+    // ⚠️ 判据是 lib/points.ts 的 dailyRedeemedPoints()，它读 "PointLog"
+    //    （kind='redeem'），**不读 "PointRedemption"** —— 删后者等于没清，
+    //    同日重复运行会把日名额耗光，§3 三条断言一起假红（产品代码无责）。
+    // ⚠️ 窗口与产品同口径：用 Node 本地 0 点（startOfToday 语义），
+    //    不用 psql 的 current_date（DB 时区 UTC，与 Node Asia/Shanghai 差 8 小时）。
+    //    列是 timestamp without time zone、按 UTC 落库，故传 UTC 字面量。
+    const dayStart3 = new Date();
+    dayStart3.setHours(0, 0, 0, 0);
+    const dayStart3Sql = dayStart3.toISOString().replace("T", " ").replace("Z", "");
+    psql(`DELETE FROM "PointLog" WHERE "userId"='${uid}' AND kind='redeem' AND "createdAt" >= '${dayStart3Sql}'`);
+    console.log(`  · 兑换目标 ${redeemSlug}（${redeemPts} 分）；已重置当日兑换流水，隔离日上限干扰`);
 
     const pid = await page.evaluate((nm) => {
       const h3 = [...document.querySelectorAll("h3")].find((x) => x.textContent.trim() === nm);

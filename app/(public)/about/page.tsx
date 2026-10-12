@@ -108,7 +108,7 @@ export default function AboutPage() {
 
 function ValueCard({ t, d }: { t: string; d: string }) {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-5 shadow-sm">
+    <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-5 shadow-sm">
       <div className="font-semibold text-brand-900">{t}</div>
       <p className="mt-2 text-sm leading-6 text-brand-500">{d}</p>
     </div>

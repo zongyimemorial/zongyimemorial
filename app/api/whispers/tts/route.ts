@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
-import { loadProfile, gateProfile, greetingFor } from "@/lib/whisper-service";
+import { loadProfile, gateProfile, greetingFor, resolveTtsVoiceId, toSpeakableText, TTS_SPEED } from "@/lib/whisper-service";
 import { safeSynthesize, formatLabel } from "@/lib/ai/index";
 import { saveGeneratedAudio } from "@/lib/upload";
 import { getQuota } from "@/lib/whisper";
@@ -51,7 +51,12 @@ export async function POST(req: Request) {
   const text = String(body.text || "").trim().slice(0, 300) || greetingFor(profile!);
 
   try {
-    const tts = await safeSynthesize({ text, voiceId: profile!.voiceId ?? undefined });
+    const tts = await safeSynthesize({
+      text: toSpeakableText(text),
+      voiceId: await resolveTtsVoiceId(profile!.voiceId),
+      emotion: "neutral",
+      speed: TTS_SPEED,
+    });
     const audioUrl = await saveGeneratedAudio(tts.buffer, profile!.id, tts.mimeType);
     return NextResponse.json({ ok: true, audioUrl, label: formatLabel(tts.label), text });
   } catch (e) {

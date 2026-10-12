@@ -4,7 +4,7 @@ import { useState } from "react";
 import { saveHallProfile } from "@/app/console/halls/[id]/actions";
 
 const field =
-  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
+  "w-full rounded-md border border-brand-200 px-3 py-2 text-sm focus:border-accent-400 focus:outline-none";
 
 export default function HallProfileForm({
   hallId,
@@ -12,6 +12,7 @@ export default function HallProfileForm({
 }: {
   hallId: string;
   initial: {
+    deceasedName: string;
     coupletLeft: string;
     coupletRight: string;
     coupletHorizontal: string;
@@ -28,7 +29,7 @@ export default function HallProfileForm({
   return (
     <div className="space-y-6">
       {/* 挽联横版配置 + 故人数字档案 */}
-      <section className="rounded-xl border border-gray-100 bg-white p-6">
+      <section className="rounded-xl border border-brand-200 bg-brand-100/70 p-6">
         <h2 className="text-sm font-semibold text-brand-900">挽联横版配置</h2>
         <p className="mb-4 mt-1 text-xs text-brand-400">上联、下联各不超过30字，横批不超过8字；留空则不显示挽联。</p>
         <form
@@ -43,6 +44,22 @@ export default function HallProfileForm({
           }}
         >
           <input type="hidden" name="hallId" value={hallId} />
+          {/*
+            逝者名讳：正堂匾额（Hall3DStage）渲染为「姓名 + 千古」，
+            留空时匾额回退「音容宛在」。此前只能在建馆时填写，
+            馆主没有修改入口 —— 现补在这里。
+          */}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-brand-700">逝者姓名（匾额名讳）</label>
+            <input
+              name="deceasedName"
+              required
+              maxLength={30}
+              defaultValue={initial.deceasedName}
+              className={field}
+              placeholder="如：张老先生（正堂匾额显示为「张老先生 千古」）"
+            />
+          </div>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-brand-700">上联（右轴）</label>

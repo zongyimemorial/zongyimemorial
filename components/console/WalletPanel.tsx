@@ -67,7 +67,7 @@ export default function WalletPanel({ tiers, createOrder }: WalletPanelProps) {
   }
 
   return (
-    <div className="rounded-lg border border-gray-100 bg-white p-5" data-wallet-panel>
+    <div className="rounded-lg border border-brand-200 bg-brand-100/70 p-5" data-wallet-panel>
       <h2 className="mb-1 text-base font-semibold text-brand-900">充值福币</h2>
       <p className="mb-4 text-xs text-brand-500">
         1 福币 = 1 元人民币，永久有效。最低充值 {MIN_TOPUP} 元，最高 {MAX_TOPUP} 元。
@@ -90,7 +90,7 @@ export default function WalletPanel({ tiers, createOrder }: WalletPanelProps) {
               className={`rounded-lg border px-4 py-2 text-sm transition ${
                 active
                   ? "border-accent-400 bg-accent-50 font-semibold text-accent-700"
-                  : "border-gray-200 text-brand-700 hover:border-accent-400"
+                  : "border-brand-200 text-brand-700 hover:border-accent-400"
               }`}
             >
               {p} 元
@@ -118,7 +118,7 @@ export default function WalletPanel({ tiers, createOrder }: WalletPanelProps) {
           value={custom}
           onChange={(e) => onCustomChange(e.target.value)}
           placeholder={`如 150（按不超过该金额的最高档赠送）`}
-          className="w-56 rounded-md border border-gray-300 px-3 py-2 text-sm text-brand-900 outline-none focus:border-accent-400"
+          className="w-56 rounded-md border border-brand-300 px-3 py-2 text-sm text-brand-900 outline-none focus:border-accent-400"
         />
       </div>
 
@@ -149,7 +149,7 @@ export default function WalletPanel({ tiers, createOrder }: WalletPanelProps) {
       {err && <p className="mt-2 text-xs text-red-500">{err}</p>}
 
       {/* 阶梯政策表 */}
-      <div className="mt-6 border-t border-gray-100 pt-4">
+      <div className="mt-6 border-t border-brand-200 pt-4">
         <h3 className="mb-2 text-xs font-medium text-brand-600">充值优惠政策</h3>
         <table className="w-full text-xs" data-topup-tiers>
           <tbody>

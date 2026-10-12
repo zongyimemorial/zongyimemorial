@@ -56,7 +56,7 @@ export default async function GenealogyPage({
       <div className="mt-5 flex flex-wrap gap-2">
         <Link
           href="/clan/genealogy"
-          className={`rounded-full border px-3 py-1 text-xs ${!surname ? "border-accent-400 bg-accent-50 text-accent-700" : "border-gray-200 text-brand-500"}`}
+          className={`rounded-full border px-3 py-1 text-xs ${!surname ? "border-accent-400 bg-accent-50 text-accent-700" : "border-brand-200 text-brand-500"}`}
         >
           全部
         </Link>
@@ -64,7 +64,7 @@ export default async function GenealogyPage({
           <Link
             key={s.surname}
             href={`/clan/genealogy?surname=${encodeURIComponent(s.surname)}`}
-            className={`rounded-full border px-3 py-1 text-xs ${surname === s.surname ? "border-accent-400 bg-accent-50 text-accent-700" : "border-gray-200 text-brand-500 hover:border-accent-300"}`}
+            className={`rounded-full border px-3 py-1 text-xs ${surname === s.surname ? "border-accent-400 bg-accent-50 text-accent-700" : "border-brand-200 text-brand-500 hover:border-accent-300"}`}
           >
             {s.surname}氏
           </Link>
@@ -78,7 +78,7 @@ export default async function GenealogyPage({
           name="q"
           defaultValue={q}
           placeholder="检索堂号 / 祖籍 / 字辈 / 迁徙源流…"
-          className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+          className="w-full rounded-md border border-brand-200 px-3 py-2 text-sm"
         />
         <button className="rounded-md bg-brand-800 px-5 py-2 text-sm text-white hover:bg-brand-700">
           检索
@@ -87,7 +87,7 @@ export default async function GenealogyPage({
 
       <div className="mt-6 space-y-4">
         {rows.map((g) => (
-          <div key={g.id} className="rounded-xl border border-gray-100 bg-white p-5">
+          <div key={g.id} className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
             <div className="flex items-baseline justify-between">
               <h2 className="font-semibold text-brand-900">
                 {g.surname}氏族谱{g.hallName ? ` · ${g.hallName}` : ""}
@@ -115,7 +115,7 @@ export default async function GenealogyPage({
           </div>
         ))}
         {rows.length === 0 && (
-          <div className="rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center text-sm text-brand-400">
+          <div className="rounded-xl border border-dashed border-brand-200 bg-brand-100/70 p-10 text-center text-sm text-brand-400">
             暂无符合条件的族谱，欢迎上传首部数字化族谱
           </div>
         )}

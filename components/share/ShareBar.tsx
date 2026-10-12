@@ -99,9 +99,9 @@ export function ShareBar({
     <>
       <div
         data-share-bar={scope}
-        className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white/70 p-3"
+        className="mt-6 flex flex-wrap items-center gap-2 rounded-2xl border border-brand-200/80 bg-brand-100/50 p-3"
       >
-        <span className="mr-1 text-sm font-medium text-slate-700">分享</span>
+        <span className="mr-1 text-sm font-medium text-brand-800">分享</span>
 
         {/* 主按钮：手机唤起系统面板、桌面弹二维码 */}
         <button
@@ -124,7 +124,7 @@ export function ShareBar({
           type="button"
           onClick={() => setQrOpen(true)}
           data-share-qr
-          className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-sm text-slate-700 transition hover:border-brand-400 hover:text-brand-700"
+          className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 bg-brand-50 px-3.5 py-1.5 text-sm text-brand-700 transition hover:border-brand-400 hover:text-brand-700"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -139,7 +139,7 @@ export function ShareBar({
           type="button"
           onClick={onCopy}
           data-share-copy-link
-          className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-sm text-slate-700 transition hover:border-brand-400 hover:text-brand-700"
+          className="inline-flex items-center gap-1.5 rounded-full border border-brand-300 bg-brand-50 px-3.5 py-1.5 text-sm text-brand-700 transition hover:border-brand-400 hover:text-brand-700"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M10 13a5 5 0 007.5.5l3-3a5 5 0 00-7-7l-1.5 1.5" />
@@ -155,7 +155,7 @@ export function ShareBar({
             target="_blank"
             rel="noopener noreferrer"
             data-share-platform={p.key}
-            className="rounded-full border border-slate-200 px-3 py-1.5 text-sm text-slate-500 transition hover:border-slate-400 hover:text-slate-800"
+            className="rounded-full border border-brand-200 px-3 py-1.5 text-sm text-brand-500 transition hover:border-brand-400 hover:text-brand-800"
           >
             {p.label}
           </a>

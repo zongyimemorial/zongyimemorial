@@ -8,8 +8,8 @@
 #      边缘 503 打红。这不是代码问题，故单列并标注为"公网噪声"。
 cd /workspace || exit 1
 
-MJS="verify-p0-growth verify-offering-panel verify-product-pricing verify-clan verify-clan-e2e verify-hall-niche verify-hall-niche-noportrait verify-home-button verify-admin-review verify-clan-tribute-e2e verify-memorial-tribute-mask verify-whisper-console verify-whispers-e2e verify-console verify-decor-3d verify-decor-draft-save verify-decor-pricing-v2 verify-decor-prop3d verify-decor-public-v2 verify-decor-scene-engine verify-decor-skin verify-decor-studio-v2 verify-decor-studio-v3 verify-guides verify-portrait-unify verify-premium-unify verify-mobile verify-community verify-decor-suites verify-section-order verify-share verify-brand-palette verify-auth-security verify-obituary verify-service-fulfillment verify-hall-review"
-MTS="verify-clan-tribute smoke-clan-tribute verify-whisper-compliance verify-whisper-billing verify-compliance-v2 verify-decor-ornaments verify-lease verify-storage"
+MJS="verify-p0-growth verify-offering-panel verify-product-pricing verify-clan verify-clan-e2e verify-hall-niche verify-hall-niche-noportrait verify-home-button verify-admin-review verify-clan-tribute-e2e verify-poem-stock-gray verify-memorial-tribute-mask verify-whisper-console verify-whispers-e2e verify-whisper-guide verify-console verify-decor-3d verify-decor-draft-save verify-decor-pricing-v2 verify-decor-prop3d verify-decor-public-v2 verify-decor-scene-engine verify-decor-skin verify-decor-studio-v2 verify-decor-studio-v3 verify-guides verify-portrait-unify verify-premium-unify verify-mobile verify-community verify-clan-activities verify-decor-suites verify-section-order verify-share verify-brand-palette verify-auth-security verify-obituary verify-service-fulfillment verify-hall-review verify-single-source verify-password-eye verify-live-guide verify-live-admin verify-lottie"
+MTS="verify-clan-tribute smoke-clan-tribute verify-whisper-compliance verify-whisper-billing verify-whisper-ethics verify-whisper-delete verify-whisper-mood verify-whisper-history verify-compliance-v2 verify-decor-ornaments verify-lease verify-storage"
 # 公网隧道套件：503 属已知噪声，仅提示、不计入红绿
 PUBLIC="verify-public-login"
 

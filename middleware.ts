@@ -11,6 +11,7 @@ const ALLOWED_PREFIXES = [
   // 安全性由令牌本身保证（HMAC 签名 + 10 分钟有效期，见 lib/quick-login.ts）。
   "/quick-login",
   "/login",
+  "/forgot-password",
   "/api/auth",
   // 已上传的图片资源：由 /uploads/[...path] 路由读盘返回。
   // 图片本身不是敏感内容（链接不可枚举），放行可避免 <img> 被 307 挡住。
@@ -99,11 +100,28 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   if (ALLOWED_PREFIXES.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    const res = NextResponse.next();
+    // 登录页与找回密码页禁止缓存：避免重新部署后浏览器沿用旧 HTML/JS 缓存，
+    // 导致登录/重置提交仍走已失效的逻辑而无限“登录中…”。
+    if (pathname === "/login" || pathname === "/forgot-password") {
+      res.headers.set(
+        "Cache-Control",
+        "no-store, no-cache, must-revalidate, max-age=0"
+      );
+    }
+    return res;
   }
 
   const authed = req.cookies.get("preview_auth")?.value;
   if (authed === "1") {
+    return NextResponse.next();
+  }
+
+  // 已登录用户（持有会话令牌）等同已通过内测，
+  // 直接放行受保护页，避免「登录成功 → 跳 /console → 被 307 弹回口令页」的断裂体验。
+  // 内测门是软性挡访客，不是安全边界；私有页由 auth() 独立校验，伪造令牌进不去。
+  const session = req.cookies.get("authjs.session-token")?.value;
+  if (session) {
     return NextResponse.next();
   }
 

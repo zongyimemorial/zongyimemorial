@@ -20,7 +20,7 @@ export default function GlobalError({
     <html lang="zh-CN">
       <body>
         <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-brand-100 bg-white p-8 text-center shadow-sm">
+          <div className="w-full max-w-md rounded-2xl border border-brand-100 bg-brand-100/70 p-8 text-center shadow-sm">
             <h1 className="text-xl font-semibold text-brand-900">页面加载遇到问题</h1>
             <p className="mt-2 text-sm text-brand-500">
               网络似乎出现了短暂波动，请重试或返回首页。
@@ -34,7 +34,7 @@ export default function GlobalError({
               </button>
               <a
                 href="/"
-                className="w-full rounded-lg border border-gray-300 py-3 font-medium text-brand-700 transition hover:bg-gray-50"
+                className="w-full rounded-lg border border-brand-300 py-3 font-medium text-brand-700 transition hover:bg-gray-50"
               >
                 返回首页
               </a>

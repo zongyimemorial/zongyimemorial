@@ -15,6 +15,7 @@ enum UserRole {
   user
   editor
   admin
+  super_admin // 最高级别账户：拥有全部后台权限，含「账号管理」「操作审计」两个仅超管可见模块
 }
 
 enum UserStatus {
@@ -122,6 +123,11 @@ model User {
   idCardEncrypted String?
   idVerified      Boolean    @default(false)
   role            UserRole   @default(user)
+  // 按用户存储的细粒度模块权限（后台模块 key 列表）。
+  // 空数组 [] → 回退到角色默认权限（ROLE_PERMISSIONS[role]）。
+  // 非空 → 作为该用户的「有效权限集合」，覆盖角色默认。详见 lib/permissions.ts 的 effectivePermKeys。
+  // ⚠️ Prisma 不支持可选列表（String[]?），此处用必填列表，缺省即空数组=回退角色默认。
+  permissions     String[]
   status          UserStatus @default(active)
   points          Int        @default(0) // 积分余额（12 个月有效，见 PointLog.expireAt）
   // 福币余额：整数福币，语义就是「元」（1 福币 = 1 人民币），不做 /100。
@@ -147,12 +153,12 @@ model User {
   fortuneLogs      FortuneLog[]
   pointRedemptions PointRedemption[]
   comments         ArticleComment[]
-  reservations     HallReservation[]
   genealogies      Genealogy[]
   clanHalls        ClanHall[]
   clanTributes     ClanTribute[]
   clanPosts        ClanPost[]
   clanSignups      ClanActivitySignup[]
+  clanActivities   ClanActivity[]       @relation("ClanActivityCreator")
   clanReplies      ClanPostReply[]
   whisperProfiles  WhisperProfile[]
   whisperSessions  WhisperSession[]
@@ -180,6 +186,9 @@ model User {
 
   // 服务受理单（cloud_worship / 非讣告纪念服务 的履约载体）
   serviceFulfillments ServiceFulfillment[]
+
+  // 敬献大花圈记录
+  wreaths HallWreath[]
 
   // 建馆审核举报（HallReport 多态）：我发起的举报 / 我处理的举报
   reportsMade     HallReport[] @relation("ReportReporter")
@@ -429,7 +438,6 @@ model MemorialHall {
   updatedAt      DateTime   @updatedAt
 
   tributes     MemorialTribute[]
-  reservations HallReservation[]
   whisper      WhisperProfile?
 
   altarOfferings OfferingOnAltar[]
@@ -442,8 +450,33 @@ model MemorialHall {
   // 电子讣告：可挂在本馆下（可选；不挂则为独立讣告）
   obituaries Obituary[]
 
+  // 敬献大花圈（付费祭献，遗像下方展示，3 天后自动消失）
+  wreaths HallWreath[]
+
   // 建馆审核举报（HallReport，对应本馆）
   reports HallReport[]
+}
+
+// ===========================================================================
+// 敬献大花圈：付费祭献实体感陈列。
+//   - 展示端只认「未撤下且未过期」的记录，最多 2 个（写入时校验 + 展示时取 2）；
+//   - 过期不做定时任务：读侧懒清理（updateMany 置 removedAt）+ 查询条件双保险；
+//   - removedAt 是履约撤下位（过期/手动撤下共用），与 clearedAt 语义同源。
+// ===========================================================================
+model HallWreath {
+  id        String       @id @default(cuid())
+  hallId    String
+  hall      MemorialHall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId   String? // 支付订单号（溯源）
+  message   String?      // 挽言（选填，展示在花圈缎带上）
+  createdAt DateTime     @default(now())
+  expiresAt DateTime // 祭献后 3 天
+  removedAt DateTime? // 过期/撤下时间；null = 仍在馆内陈列
+
+  @@index([hallId, removedAt, expiresAt])
+  @@index([userId, createdAt])
 }
 
 model MemorialTribute {
@@ -488,7 +521,19 @@ model SmsOtp {
   id        String   @id @default(cuid())
   phone     String
   code      String
-  purpose   String   @default("login") // login | realname
+  purpose   String   @default("login") // login | realname | reset
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+/// 邮箱验证码（找回密码 / 绑定邮箱）。与 SmsOtp 平行，purpose 区分用途。
+/// 内测期真实邮件由 lib/mail.ts 在缺 SMTP 配置时 mock（验证码回显到响应与日志）。
+model EmailOtp {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  purpose   String   @default("reset") // login | realname | reset
   expiresAt DateTime
   consumed  Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -542,23 +587,6 @@ model ArticleComment {
   @@index([articleId, status])
 }
 
-// 纪念馆祭拜分时预约（清明/冬至等高峰期人流控制）
-model HallReservation {
-  id        String       @id @default(cuid())
-  hallId    String
-  hall      MemorialHall @relation(fields: [hallId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date      DateTime // 预约日期
-  timeSlot  String // 时段：09:00-11:00 等
-  name      String // 预约人
-  phone     String
-  status    String       @default("confirmed") // confirmed | cancelled
-  createdAt DateTime     @default(now())
-
-  @@index([hallId, date])
-}
-
 // ============ 板块三：宗亲文化交流 ============
 // 族谱数字化数据库（支持各姓氏族谱上传、数字化存储与检索）
 model Genealogy {
@@ -602,13 +630,13 @@ model ClanHall {
   sectionOrder   Json?    // 祠主在控制台拖拽重排的「板块顺序」；null = 沿用默认序（= 现状 DOM 顺序），永不删除板块
   coverImage     String?
   archive        Json? // { photos: string[], portrait?: string }
-  proofs         Json? // 宗祠基建佐证材料（标准通道）：
+  proofs         Json? // 宗祠佐证材料（三通道通用）：
                   // { applicantRealName?, applicantIdCard, applicantPhone, relation,
                   //   relationProof?, materials: [{type,label,value?,url?}], promiseSigned? }
-  // —— 建馆审核（宗祠仅标准通道）——
-  reviewChannel  String   @default("standard") // 宗祠恒为 standard
-  supplementDeadline DateTime? // 预留字段（宗祠当前不使用）
-  supplementedAt DateTime? // 预留字段（宗祠当前不使用）
+  // —— 建馆审核（宗祠与纪念馆同构：三通道分层）——
+  reviewChannel  String   @default("standard") // standard | alternative | appeal（见 lib/hall-review.ts 的 CLAN_CHANNEL_META）
+  supplementDeadline DateTime? // appeal 通道：建馆后 60 天补传截止（实时判定，无 cron）
+  supplementedAt DateTime? // owner 声明材料补齐时刻（appeal 补传后转公开）
   isPublic       Boolean    @default(false) // 修正：先审后显，pending 不得直接公开
   status         HallStatus @default(pending) // 建档后先审后显
   premiumUntil   DateTime? // 高级会员到期时间
@@ -633,6 +661,9 @@ model ClanHall {
 
   // 建馆审核举报（HallReport，对应本祠）
   reports HallReport[]
+
+  // 本祠主办的活动
+  activities ClanActivity[]
 
   @@index([surname, status])
   @@index([ownerUserId])
@@ -681,11 +712,23 @@ model ClanActivity {
   startAt     DateTime
   capacity    Int      @default(100)
   signupCount Int      @default(0)
-  status      String   @default("upcoming") // upcoming | ongoing | finished
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      String   @default("upcoming") // upcoming | ongoing | finished（活动进程态）
+  // —— 发布归属 ——
+  clanHallId      String? // 主办宗祠（空=平台级活动）
+  clanHall        ClanHall? @relation(fields: [clanHallId], references: [id], onDelete: SetNull)
+  createdByUserId String? // 发布者（祠主或平台管理员）
+  createdBy       User?   @relation("ClanActivityCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  // —— 审核态（与 status 正交；先审后显）——
+  reviewStatus ModerationStatus @default(approved) // 存量活动默认已过审；新发布 pending
+  reviewedAt   DateTime?
+  reviewNote   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   signups ClanActivitySignup[]
+
+  @@index([clanHallId, reviewStatus])
+  @@index([reviewStatus, startAt])
 }
 
 // 活动报名
@@ -734,22 +777,30 @@ model WhisperProfile {
 
   // ---- 配置 ----
   voiceId  String? // 当前选用声线 WhisperVoice.id
-  avatarId String? // 当前选用形象 WhisperAvatar.id
-  mode     String  @default("voice") // voice（纯语音）| avatar（语音+形象）
+  mode     String  @default("voice") // 预留：voice（纯语音）。形象能力已按合规取舍移除
 
   // ---- 状态：必须通过家属授权 + 人工审核才能开启 ----
   isPublic Boolean    @default(false)
   enabled  Boolean    @default(false)
   status   HallStatus @default(pending)
 
+  // ---- 伦理审查：涉及声音克隆时，须经伦理审查通过方可上线 ----
+  ethicsStatus    String    @default("not_required") // not_required | pending | approved | rejected
+  ethicsReviewer  String?
+  ethicsReviewedAt DateTime?
+  ethicsNote      String?   @db.Text
+
   // ---- 隐式标识：生成所用的模型与版本，用于元数据溯源 ----
   engineLabel String? // 如 "mock-1.0" / "deepseek-chat+volcano-tts"
+
+  // ---- 克隆资格：已支付 ¥10 克隆资格申请（工本费/漏斗入口） ----
+  // 真实克隆训练由订阅档 cloneLimit 承载；本标记打通「¥10 购买 / 积分兑换」→ 解锁克隆的链路
+  cloneApplied Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   voices   WhisperVoice[]
-  avatars  WhisperAvatar[]
   sessions WhisperSession[]
   consent  WhisperConsent?
 
@@ -779,23 +830,6 @@ model WhisperVoice {
   @@index([profileId])
 }
 
-/// 数字形象（形象选择；视频为按需生成，非实时）
-model WhisperAvatar {
-  id         String         @id @default(cuid())
-  profileId  String
-  profile    WhisperProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  name       String
-  style      String         @default("portrait") // portrait | fullbody | silhouette
-  imageUrl   String?
-  preset     String? // 预设形象 id
-  tier       String         @default("free") // free | points | premium
-  points     Int?
-  isSelected Boolean        @default(false)
-  createdAt  DateTime       @default(now())
-
-  @@index([profileId])
-}
-
 /// 对话会话
 model WhisperSession {
   id          String         @id @default(cuid())
@@ -803,9 +837,12 @@ model WhisperSession {
   profile     WhisperProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   userId      String
   user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mode        String         @default("voice") // voice | avatar | text
+  mode        String         @default("voice") // voice | text
   minutesUsed Int            @default(0)
   roundsUsed  Int            @default(0)
+  // ---- 情感状态标记：来访者自选心情，供回顾与危机干预参考 ----
+  mood        String? // calm | missing | grief | guilty | joyous | blank
+  moodNote    String?
   createdAt   DateTime       @default(now())
   endedAt     DateTime?
 
@@ -1251,4 +1288,179 @@ model HallReport {
   @@index([status])
   @@index([hallId])
   @@index([clanHallId])
+}
+
+// ============================================================================
+// 运营分析采集（P0 · 2026-11）
+//
+// 自建轻量分析层：数据落本平台 Postgres，不外发。服务于两个目的——
+//   ① 了解网站实际运营状况（流量/活跃/营收/转化/健康度）
+//   ② 为今后推广收集与分析数据（渠道来源/渠道质量/留存/裂变/节奏）
+//
+// 合规边界：仅存随机 visitorId、粗略省份、channel；**不存姓名/手机/邮箱**；
+// 页面级聚合展示；仅 admin/editor 可见。留存/DAU 依赖已登录用户 pageview
+// 回填 userId（由 /api/collect 解析 session 得到），匿名访客计入 UV 但不计入登录留存。
+// ============================================================================
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  ts        DateTime @default(now())
+  // pageview | visit_start | register | create_hall | create_clan | first_pay | share_open | share_click
+  type      String
+  channel   String   @default("direct") // direct | search | social | share | referral | paid
+  source    String? // 来源域名 / utm_source
+  medium    String? // utm_medium / 渠道细分
+  region    String? // 省份（粗略，离线 GeoIP）
+  device    String   @default("unknown") // mobile | desktop | tablet
+  path      String?
+  visitorId String?
+  sessionId String?
+  userId    String?
+  valueFen  Int? // first_pay 时记订单金额（分）
+
+  @@index([ts])
+  @@index([type, ts])
+  @@index([channel, ts])
+  @@index([userId, ts])
+  @@index([region, ts])
+}
+
+// ============ 公益纪念堂（Public Welfare Memorial） ============
+// 合规隔离：独立于收费纪念馆体系，永久免费、零付费引导；须家属授权 + 权威来源核验
+// + 人工审核 + 留言先审后发 + 可撤回下架（详见 lib/memorial-review.ts）。
+enum MemorialCategory {
+  CELEBRITY // 名人
+  HEROIC // 见义勇为献身者
+  GOOD_DEED // 好人好事者
+}
+
+enum PublicMemorialStatus {
+  PENDING // 申请待审核
+  APPROVED // 已通过 / 已上线
+  REJECTED // 已驳回
+  TAKEN_DOWN // 已下架（家属撤回或违规）
+}
+
+/// 公益纪念堂申请（家属提交，进审核队列）。
+/// consentConfirmed 必须为 true 方受理——满足民法典994近亲属同意与个保法处理基础。
+model PublicMemorialApplication {
+  id               String               @id @default(cuid())
+  applicantName    String // 申请人（近亲属）姓名
+  applicantRelation String // 与逝者关系（配偶/子女/父母/其他近亲属）
+  applicantContact  String // 联系方式（手机或邮箱）
+  consentConfirmed  Boolean // 已阅读并同意《家属授权书》
+  deceasedName     String // 逝者姓名
+  category         MemorialCategory
+  birthYear        Int?
+  deathYear        Int?
+  honorTitle       String // 一句话称号（如「舍己救人的好青年」）
+  summary          String   @db.Text // 简介
+  story            String   @db.Text // 事迹详述
+  sourceUrl        String? // 权威来源（官方通报/主流媒体报道/评定文书）
+  portraitUrl      String? // 遗像（可选，审核后展示）
+  status           PublicMemorialStatus @default(PENDING)
+  reviewNote       String? // 驳回/下架原因
+  reviewedById     String?
+  reviewedAt       DateTime?
+  createdAt        DateTime @default(now())
+
+  memorial   PublicMemorial? @relation(fields: [memorialId], references: [id])
+  memorialId String? @unique
+
+  @@index([status, createdAt])
+}
+
+/// 公益纪念堂（通过后生成，对公众公开缅怀）。
+/// grade 仅表达视觉庄重度（"imperial"=最高级别），不与付费纪念馆档位耦合。
+model PublicMemorial {
+  id          String               @id @default(cuid())
+  slug        String               @unique
+  name        String
+  category    MemorialCategory
+  birthYear   Int?
+  deathYear   Int?
+  honorTitle  String
+  summary     String   @db.Text
+  story       String   @db.Text
+  sourceUrl   String?
+  portraitUrl String?
+  // 挽联（上联/下联/横批），公益馆由平台在馆务管理页统一配置，与收费纪念馆 couplet 同结构
+  couplet     Json?
+  grade       String   @default("imperial")
+  lightCount  Int      @default(0) // 公众献花/点亮计数（匿名）
+  viewCount   Int      @default(0)
+
+  // —— 平台赠礼（公益板块零付费，由平台统一赠予顶级装修方案 + 旗舰存储） ——
+  // 顶级套装 id（对应 lib/decor-suites.ts 的 HALL_SUITES，默认赠「传世典藏」尊享层）；
+  // 旗舰存储容量（GB），默认 500GB。两项均为数据化声明，全站公益馆统一享有。
+  giftSuiteId   String @default("suite-hall-prem-ultimate")
+  giftStorageGb Int    @default(500)
+  // 公众免费祭品献祭计数（白菊/清香/长明灯等，免登录、随时可献、无每日上限）
+  offeringCount Int    @default(0)
+
+  status      PublicMemorialStatus @default(APPROVED)
+  takedownReason String?
+  approvedById String?
+  approvedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  application PublicMemorialApplication?
+  messages    PublicMemorialMessage[]
+  wreaths     PublicMemorialWreath[]
+  offerings   PublicMemorialOffering[]
+
+  @@index([status])
+  @@index([category, status])
+}
+
+// ===========================================================================
+// 公益纪念堂·公众敬献大花圈（平台免费提供，免登录、免付费）
+// ---------------------------------------------------------------------------
+// 与纪念馆 HallWreath 同口径：同馆同时最多 2 个有效花圈（写入 + 展示双重校验），
+// 祭献后陈列 3 天，到期自动消失（读侧懒清理，不跑 cron）。
+// 区别：公益馆花圈**完全免费、无需登录、平台统一提供**，不绑定 userId / 订单。
+// ===========================================================================
+model PublicMemorialWreath {
+  id         String         @id @default(cuid())
+  memorialId String
+  memorial   PublicMemorial @relation(fields: [memorialId], references: [id], onDelete: Cascade)
+  nickname   String? // 公众匿名可留名（可不填）
+  message    String? // 挽言（选填，展示在花圈缎带上）
+  createdAt  DateTime       @default(now())
+  expiresAt  DateTime // 祭献后 3 天
+  removedAt  DateTime? // 过期/撤下时间；null = 仍在陈列
+
+  @@index([memorialId, removedAt, expiresAt])
+}
+
+// ===========================================================================
+// 公益纪念堂·公众免费祭品（平台免费祭品，免登录、随时可献、无每日上限）
+// ---------------------------------------------------------------------------
+// 与纪念馆「每日免费祭品」同源，但面向公众开放：不要求登录、不做每日配额，
+// 真正做到「平台的免费祭品公众随时都可以献祭」。
+// ===========================================================================
+model PublicMemorialOffering {
+  id        String         @id @default(cuid())
+  memorialId String
+  memorial  PublicMemorial @relation(fields: [memorialId], references: [id], onDelete: Cascade)
+  type      String // 免费祭品类型：flower / incense / candle / elegy 等（见 lib/memorial.ts）
+  label     String // 展示名（如 白菊 / 清香 / 长明灯）
+  nickname  String? // 公众匿名可留名（可不填）
+  createdAt DateTime       @default(now())
+
+  @@index([memorialId, createdAt])
+}
+
+/// 公益纪念堂公众留言（先审后发：pending → approved 才展示）。
+model PublicMemorialMessage {
+  id          String               @id @default(cuid())
+  memorialId  String
+  memorial    PublicMemorial @relation(fields: [memorialId], references: [id], onDelete: Cascade)
+  nickname    String? // 留空 = 匿名缅怀
+  content     String   @db.Text
+  status      PublicMemorialStatus @default(PENDING)
+  reviewedById String?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([memorialId, status])
 }

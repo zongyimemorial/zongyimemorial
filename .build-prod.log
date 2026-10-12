@@ -1,0 +1,145 @@
+
+> lingji-memorial-platform@0.1.0 build
+> prisma generate && next build
+
+Environment variables loaded from .env
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 295ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+   ▲ Next.js 15.5.26
+   - Environments: .env
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 13.3s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/64) ...
+   Generating static pages (16/64) 
+   Generating static pages (32/64) 
+   Generating static pages (48/64) 
+ ✓ Generating static pages (64/64)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                    Size  First Load JS
+┌ ƒ /                                       1.26 kB         112 kB
+├ ○ /_not-found                               215 B         103 kB
+├ ƒ /about                                    183 B         111 kB
+├ ƒ /admin                                    903 B         107 kB
+├ ƒ /admin/accounts                         2.75 kB         105 kB
+├ ƒ /admin/articles                           238 B         106 kB
+├ ƒ /admin/articles/[id]                     2.4 kB         105 kB
+├ ƒ /admin/articles/new                      2.4 kB         105 kB
+├ ƒ /admin/audit                              215 B         103 kB
+├ ƒ /admin/ledger/clans                       238 B         106 kB
+├ ƒ /admin/ledger/clans/[id]                  238 B         106 kB
+├ ƒ /admin/ledger/halls                       238 B         106 kB
+├ ƒ /admin/ledger/halls/[id]                  238 B         106 kB
+├ ƒ /admin/live                               238 B         106 kB
+├ ƒ /admin/live/new                           215 B         103 kB
+├ ƒ /admin/orders                             215 B         103 kB
+├ ƒ /admin/points                             238 B         106 kB
+├ ƒ /admin/products                           238 B         106 kB
+├ ƒ /admin/products/new                       215 B         103 kB
+├ ƒ /admin/review                             467 B         106 kB
+├ ƒ /admin/services                           215 B         103 kB
+├ ƒ /admin/whispers                           215 B         103 kB
+├ ƒ /api/admin/articles                       215 B         103 kB
+├ ƒ /api/admin/articles/[id]                  215 B         103 kB
+├ ƒ /api/admin/articles/ai-generate           215 B         103 kB
+├ ƒ /api/auth/[...nextauth]                   215 B         103 kB
+├ ƒ /api/auth/sms/send                        215 B         103 kB
+├ ƒ /api/clan-halls/[id]/upload               215 B         103 kB
+├ ƒ /api/collect                              215 B         103 kB
+├ ƒ /api/community/upload                     215 B         103 kB
+├ ƒ /api/customer-service                     215 B         103 kB
+├ ƒ /api/halls/[id]/upload                    215 B         103 kB
+├ ƒ /api/obituary/[id]/unlock                 215 B         103 kB
+├ ƒ /api/orders                               215 B         103 kB
+├ ƒ /api/payments/simulate/[orderNo]          215 B         103 kB
+├ ƒ /api/preview-unlock                       215 B         103 kB
+├ ƒ /api/proof-upload                         215 B         103 kB
+├ ƒ /api/whispers/[id]/upload                 215 B         103 kB
+├ ƒ /api/whispers/asr                         215 B         103 kB
+├ ƒ /api/whispers/chat                        215 B         103 kB
+├ ƒ /api/whispers/tts                         215 B         103 kB
+├ ƒ /clan                                     238 B         106 kB
+├ ƒ /clan/activities                        1.23 kB         107 kB
+├ ƒ /clan/community                         1.94 kB         108 kB
+├ ƒ /clan/genealogy                         1.77 kB         108 kB
+├ ƒ /clan/genealogy/[id]                      238 B         106 kB
+├ ƒ /clan/genealogy/[id]/design             8.27 kB         114 kB
+├ ƒ /clan/halls                               575 B         112 kB
+├ ƒ /clan/halls/[id]                        11.4 kB         122 kB
+├ ƒ /clan/halls/[id]/community                128 B         109 kB
+├ ƒ /clan/halls/guide                         238 B         106 kB
+├ ƒ /clan/halls/new                         4.64 kB         111 kB
+├ ƒ /clan/roots                             1.97 kB         108 kB
+├ ƒ /console                                  238 B         106 kB
+├ ƒ /console/account                         1.8 kB         104 kB
+├ ƒ /console/clan-halls/[id]                9.43 kB         186 kB
+├ ƒ /console/halls/[id]                     1.83 kB         179 kB
+├ ƒ /console/obituaries                       238 B         106 kB
+├ ƒ /console/obituaries/[id]                2.98 kB         109 kB
+├ ƒ /console/obituaries/new                 2.27 kB         108 kB
+├ ƒ /console/realname                       1.54 kB         108 kB
+├ ƒ /console/wallet                         1.95 kB         126 kB
+├ ƒ /console/whispers/[id]                  10.2 kB         116 kB
+├ ƒ /faq                                      238 B         106 kB
+├ ƒ /feed.xml                                 215 B         103 kB
+├ ƒ /festivals                                238 B         106 kB
+├ ƒ /gallery/decor                            552 B         107 kB
+├ ƒ /guide/decor                              238 B         106 kB
+├ ƒ /halls                                    575 B         112 kB
+├ ƒ /halls/[id]                             15.2 kB         159 kB
+├ ƒ /halls/[id]/community                     127 B         109 kB
+├ ƒ /halls/guide                              183 B         111 kB
+├ ƒ /halls/new                              4.44 kB         110 kB
+├ ƒ /live                                     575 B         112 kB
+├ ƒ /live/[id]                                386 B         103 kB
+├ ƒ /live/guide                               238 B         106 kB
+├ ƒ /login                                  2.44 kB         108 kB
+├ ƒ /mall                                     575 B         112 kB
+├ ƒ /mall/[slug]                            84.7 kB         229 kB
+├ ƒ /news                                     575 B         112 kB
+├ ƒ /news/[slug]                            2.01 kB         114 kB
+├ ƒ /news/contribute                          215 B         103 kB
+├ ƒ /obituary/[id]                           1.2 kB         112 kB
+├ ƒ /pay/[orderNo]                            767 B         103 kB
+├ ƒ /points                                   879 B         107 kB
+├ ƒ /points/guide                             183 B         111 kB
+├ ƒ /preview-gate                             877 B         103 kB
+├ ƒ /quick-login                              943 B         104 kB
+├ ○ /register                               1.46 kB         107 kB
+├ ○ /robots.txt                               215 B         103 kB
+├ ƒ /search                                   238 B         106 kB
+├ ○ /sitemap.xml                              215 B         103 kB
+├ ƒ /suites                                   238 B         106 kB
+├ ƒ /suites/[id]                              238 B         106 kB
+├ ƒ /uploads/[...path]                        215 B         103 kB
+├ ƒ /whispers                                 238 B         106 kB
+├ ƒ /whispers/[hallId]                      5.68 kB         112 kB
+├ ƒ /whispers/[hallId]/history                238 B         106 kB
+├ ƒ /whispers/[hallId]/history/[sessionId]    238 B         106 kB
+└ ƒ /whispers/guide                           238 B         106 kB
++ First Load JS shared by all                103 kB
+  ├ chunks/1255-0f12d1d68e0b5948.js         46.4 kB
+  ├ chunks/4bd1b696-f785427dddbba9fb.js     54.2 kB
+  └ other shared chunks (total)             1.97 kB
+
+
+ƒ Middleware                                34.9 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

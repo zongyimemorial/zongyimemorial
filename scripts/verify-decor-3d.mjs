@@ -458,9 +458,17 @@ const decorModules = [
 const offender = decorModules.find((p) => /from\s+"@\/lib\/offerings"/.test(src(p)));
 check("装修模块不 import 供奉模块", !offender, offender ? `${offender} 引用了 offerings` : "");
 
-// 供奉体系的几个常量必须原样（改动它们会破坏"免费/收费馆同规则"的承诺）
+/*
+  供奉体系的这几个常量必须原样存在，且**与用户可见文案口径一致**
+  （改动它们会破坏"免费/收费馆同规则"的承诺）。
+  ⚠️ 早先这里把数值写死成 3。产品后来把每日配额调成 1 份并同步改了面板文案，
+  这条断言却没跟着走，于是成了"产品改对了、断言还红着"的假红灯。
+  现在只校验"常量存在 + 与文案一致"，数值本身由产品决定（见 verify-product-pricing）。
+*/
 const offeringsSrc = src("lib/offerings.ts");
-check("FREE_DAILY_QUOTA 仍为 3", /FREE_DAILY_QUOTA\s*=\s*3/.test(offeringsSrc));
+const quotaConst = Number((offeringsSrc.match(/FREE_DAILY_QUOTA\s*=\s*(\d+)/) || [])[1] || 0);
+const quotaCopy = Number((src("components/hall/WorshipPanel.tsx").match(/自动补足每日\s*(\d+)\s*份/) || [])[1] || 0);
+check("FREE_DAILY_QUOTA 存在且与面板文案一致", quotaConst > 0 && quotaConst === quotaCopy, `常量=${quotaConst} 文案=${quotaCopy}`);
 const hallPageSrc = src("app/(public)/halls/[id]/page.tsx");
 check("纪念馆页仍用 ALTAR_MAX_ITEMS", /ALTAR_MAX_ITEMS/.test(hallPageSrc));
 
@@ -772,6 +780,24 @@ if (ownerHall) {
     `SELECT coalesce("templateConfig"->'decor'->>'templateId','') FROM "MemorialHall" WHERE id='${ownerHall}';`,
   );
 
+  /*
+    备货：本步要验"换模板后遗像仍在场景里"，所以这座馆**必须真有遗像**。
+    实测踩过：user@test.com 这座馆的 archive.portrait 是 NULL —— 于是切到
+    tpl-starry3d 后 {portraitUrl && <PortraitNiche/>} 整块不渲染，
+    "遗像仍以 img 叠加在场景里" 直接红。看着像"换模板把遗像弄丢了"，
+    其实是**测试前提没搭起来**（AGENTS.md：断言前显式备货，别赌库里的状态）。
+    这里临时挂一张确定存在的本地图，收尾随模板一起还原。
+  */
+  const portraitBefore = psql(
+    `SELECT coalesce("archive"->>'portrait','') FROM "MemorialHall" WHERE id='${ownerHall}';`,
+  );
+  const TEST_PORTRAIT = "/assets/scene-portrait.jpg";
+  psqlFile(`
+UPDATE "MemorialHall" SET archive = jsonb_set(coalesce(archive,'{}'), '{portrait}', '"${TEST_PORTRAIT}"'::jsonb, true)
+WHERE id='${ownerHall}';
+`);
+  console.log(`[setup] 原遗像 = ${portraitBefore || "(无)"}，已临时挂上 ${TEST_PORTRAIT}`);
+
   // tpl-starry3d 的 space=starfield，与赠品的 niche 差异极大，属性上一眼可辨
   const TARGET = "tpl-starry3d";
   const targetSpace = "starfield";
@@ -807,7 +833,7 @@ WHERE id='${ownerHall}';
   check("3D 场景带空间角标", /data-space-badge/.test(afterHtml));
   check("遗像仍以 img 叠加在场景里", (await page.locator("img[alt*='遗像']").count()) > 0);
 
-  // 还原：templateId 回到原值，并把测试用的解锁键移除（保证脚本可重复跑）
+  // 还原：templateId 回到原值、移除测试用的解锁键、遗像回原样（保证脚本可重复跑）
   psqlFile(`
 UPDATE "MemorialHall" SET "templateConfig" = jsonb_set(
   jsonb_set(coalesce("templateConfig",'{}'), '{decor}', coalesce("templateConfig"->'decor','{}')),
@@ -818,12 +844,24 @@ UPDATE "MemorialHall" SET "templateConfig" = jsonb_set(
   coalesce("templateConfig",'{}'), '{decor,unlocked}',
   coalesce("templateConfig"->'decor'->'unlocked','[]'::jsonb) - 'tpl:${TARGET}', true)
 WHERE id='${ownerHall}';
+
+UPDATE "MemorialHall" SET archive =
+  CASE WHEN ${portraitBefore ? `'${portraitBefore}'` : "NULL"}::text IS NULL
+       THEN archive - 'portrait'
+       ELSE jsonb_set(coalesce(archive,'{}'), '{portrait}', ${portraitBefore ? `'"${portraitBefore}"'` : "NULL"}::jsonb, true)
+  END
+WHERE id='${ownerHall}';
 `);
 
   const restored = psql(
     `SELECT coalesce("templateConfig"->'decor'->>'templateId','') FROM "MemorialHall" WHERE id='${ownerHall}';`,
   );
   check("测试后模板已还原（脚本可重复跑）", restored === before, `${restored} vs ${before}`);
+
+  const portraitNow = psql(
+    `SELECT coalesce("archive"->>'portrait','') FROM "MemorialHall" WHERE id='${ownerHall}';`,
+  );
+  check("测试后遗像已还原（不留测试数据）", portraitNow === portraitBefore, `${portraitNow || "(无)"} vs ${portraitBefore || "(无)"}`);
 }
 
 // ---------------------------------------------------------------------------

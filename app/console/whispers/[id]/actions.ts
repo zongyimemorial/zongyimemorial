@@ -1,14 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { isPremium } from "@/lib/premium";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { spendPoints } from "@/lib/points";
 import { encrypt } from "@/lib/crypto";
-import { removeHallImage, saveWhisperAudio } from "@/lib/upload";
+import { removeHallImage, saveWhisperAudio, removeWhisperProfileDir } from "@/lib/upload";
 import { WHISPER_POINTS, PLAN_SPECS, type WhisperPlan } from "@/lib/whisper";
 import { buildSystemPrompt, retrieveMemories, currentEngineLabel } from "@/lib/ai/index";
+import { SAMPLE_RETENTION_NOTE } from "@/lib/whisper-safety";
 
 export type ActionResult = {
   ok: boolean;
@@ -32,11 +33,12 @@ interface ProfileRow {
   relationships: unknown;
   systemPrompt: string | null;
   voiceId: string | null;
-  avatarId: string | null;
   mode: string;
   status: string;
   enabled: boolean;
   engineLabel: string | null;
+  cloneApplied: boolean;
+  ethicsStatus: string;
 }
 
 async function loadProfile(id: string) {
@@ -236,16 +238,21 @@ export async function uploadVoiceSample(formData: FormData): Promise<ActionResul
     return { ok: false, message: "请选择声音样本文件" };
   }
 
-  // 套餐校验：克隆数量上限
+  // 套餐校验：克隆数量上限。
+  // 克隆资格闸门 = 订阅档 cloneLimit>0（basic/premium 自带）OR 已支付 ¥10 资格申请（cloneApplied）。
   const quota = await prisma.whisperQuota.findUnique({ where: { userId: ctx.user.id! } });
   const plan = (quota?.plan as WhisperPlan) ?? "free";
   const limit = PLAN_SPECS[plan]?.cloneLimit ?? 0;
+  const hasApplied = profile.cloneApplied;
   const existing = await prisma.whisperVoice.count({
     where: { profileId: id, isPreset: false },
   });
 
-  if (limit === 0 && plan !== "free") {
-    return { ok: false, message: "当前套餐不支持声音克隆，请升级套餐或使用积分兑换。" };
+  if (limit === 0 && !hasApplied) {
+    return {
+      ok: false,
+      message: "尚未解锁声音克隆资格：订阅「基础版/尊享版」即可克隆，或支付 ¥10 资格申请工本费。",
+    };
   }
   if (limit > 0 && existing >= limit) {
     return {
@@ -263,11 +270,15 @@ export async function uploadVoiceSample(formData: FormData): Promise<ActionResul
 
   // 创建声线记录，状态 pending（真实环境此处提交训练任务）
   const engine = currentEngineLabel();
+  const isMock = engine.includes("mock");
   await prisma.whisperVoice.create({
     data: {
       profileId: id,
       name,
-      provider: engine.includes("mock") ? "mock" : "volcano",
+      provider: isMock ? "mock" : "volcano",
+      // 样本脱敏（B3）：Mock 引擎下样本对生成无贡献，
+      // 仅保留文件用于"试听"，但清空数据库引用前先登记留存策略；
+      // 真实引擎需样本做增量训练，故保留引用。
       sampleUrl,
       sampleSeconds: Number(formData.get("sampleSeconds") || 0) || 0,
       status: "ready", // Mock 模式下即时可用
@@ -277,7 +288,12 @@ export async function uploadVoiceSample(formData: FormData): Promise<ActionResul
   });
 
   refresh(id);
-  return { ok: true, message: `已创建声线「${name}」，样本已保存` };
+  return {
+    ok: true,
+    message: isMock
+      ? `已创建声线「${name}」，样本已保存。${SAMPLE_RETENTION_NOTE}`
+      : `已创建声线「${name}」，样本已提交云端训练。${SAMPLE_RETENTION_NOTE}`,
+  };
 }
 
 /** 选用某个声线 */
@@ -305,22 +321,21 @@ export async function unlockCloneWithPoints(formData: FormData): Promise<ActionR
   const paid = await spendPoints({
     userId: ctx.user.id!,
     amount: cost,
-    reason: "兑换「午夜悄悄话」声音克隆资格",
+    reason: "兑换「午夜悄悄话」声音克隆资格申请",
     refId: id,
   });
   if (!paid) {
-    return { ok: false, message: `积分不足，克隆资格需 ${cost} 积分` };
+    return { ok: false, message: `积分不足，克隆资格申请需 ${cost} 积分` };
   }
 
-  // 提升配额里的克隆上限（标记位：把 plan 保持，但记录已单独解锁）
-  await prisma.whisperQuota.upsert({
-    where: { userId: ctx.user.id! },
-    create: { userId: ctx.user.id!, plan: "free", extraMins: 0, monthlyRounds: 30, monthlyMins: 0 },
-    update: {},
+  // 置克隆资格申请标记：解锁克隆入口（真实克隆训练由订阅档 cloneLimit 承载）。
+  await prisma.whisperProfile.update({
+    where: { id },
+    data: { cloneApplied: true },
   });
 
   refresh(id);
-  return { ok: true, message: `已用 ${cost} 积分解锁声音克隆资格` };
+  return { ok: true, message: `已用 ${cost} 积分完成克隆资格申请，可上传样本复刻声线` };
 }
 
 /** 删除声线（同时删除样本文件） */
@@ -354,91 +369,7 @@ export async function deleteVoice(formData: FormData): Promise<ActionResult> {
   return { ok: true, message: `已删除声线「${voice.name}」及其样本文件` };
 }
 
-// ---------------------------------------------------------------- 3. 数字形象
-
-/** 选用形象 */
-export async function selectAvatar(formData: FormData): Promise<ActionResult> {
-  const id = String(formData.get("profileId") || "");
-  const avatarId = String(formData.get("avatarId") || "");
-  const ctx = await loadProfile(id);
-  if ("error" in ctx) return { ok: false, message: ctx.error };
-
-  const avatar = await prisma.whisperAvatar.findFirst({ where: { id: avatarId, profileId: id } });
-  if (!avatar) return { ok: false, message: "形象不存在" };
-
-  // 收费形象需已解锁（premium 用户直接可用）
-  if (avatar.tier === "premium") {
-    const u = await prisma.user.findUnique({
-      where: { id: ctx.user.id! },
-      select: { premiumUntil: true },
-    });
-    const isPrem = isPremium(u);
-    if (!isPrem) {
-      return { ok: false, message: "该形象需开通高级订阅后使用。" };
-    }
-  }
-
-  await prisma.$transaction([
-    prisma.whisperAvatar.updateMany({
-      where: { profileId: id },
-      data: { isSelected: false },
-    }),
-    prisma.whisperAvatar.update({ where: { id: avatarId }, data: { isSelected: true } }),
-    prisma.whisperProfile.update({ where: { id }, data: { avatarId } }),
-  ]);
-
-  refresh(id);
-  return { ok: true, message: `已选用形象「${avatar.name}」` };
-}
-
-/** 用积分解锁收费形象 */
-export async function unlockAvatar(formData: FormData): Promise<ActionResult> {
-  const id = String(formData.get("profileId") || "");
-  const avatarId = String(formData.get("avatarId") || "");
-  const ctx = await loadProfile(id);
-  if ("error" in ctx) return { ok: false, message: ctx.error };
-
-  const avatar = await prisma.whisperAvatar.findFirst({ where: { id: avatarId, profileId: id } });
-  if (!avatar) return { ok: false, message: "形象不存在" };
-  if (avatar.tier !== "points") return { ok: false, message: "该形象无需兑换" };
-
-  const cost = avatar.points ?? WHISPER_POINTS.AVATAR_UNLOCK;
-  const paid = await spendPoints({
-    userId: ctx.user.id!,
-    amount: cost,
-    reason: `兑换数字形象「${avatar.name}」`,
-    refId: id,
-  });
-  if (!paid) return { ok: false, message: `积分不足，需 ${cost} 积分` };
-
-  await prisma.whisperAvatar.update({
-    where: { id: avatarId },
-    data: { tier: "free", points: null },
-  });
-
-  refresh(id);
-  return { ok: true, message: `已用 ${cost} 积分解锁形象「${avatar.name}」` };
-}
-
-// ---------------------------------------------------------------- 4. 模式与开关
-
-/** 切换对话模式（voice / avatar） */
-export async function setMode(formData: FormData): Promise<ActionResult> {
-  const id = String(formData.get("profileId") || "");
-  const mode = String(formData.get("mode") || "voice");
-  const ctx = await loadProfile(id);
-  if ("error" in ctx) return { ok: false, message: ctx.error };
-
-  if (mode !== "voice" && mode !== "avatar") {
-    return { ok: false, message: "模式不合法" };
-  }
-
-  await prisma.whisperProfile.update({ where: { id }, data: { mode } });
-  refresh(id);
-  return { ok: true, message: mode === "avatar" ? "已切换为形象模式" : "已切换为纯语音模式" };
-}
-
-// ---------------------------------------------------------------- 5. 家属授权
+// ---------------------------------------------------------------- 4. 家属授权
 
 /**
  * 保存家属授权链。
@@ -581,4 +512,55 @@ export async function toggleEnabled(formData: FormData): Promise<ActionResult> {
 
   refresh(id);
   return { ok: true, message: "已开启追思对话，家人现在可以进入交流。" };
+}
+
+// ---------------------------------------------------------------- 7. 数据删除权
+
+/**
+ * 删除追思装置（行使《个人信息保护法》第 47 条数据删除权）。
+ *
+ * 删除范围（含级联）：
+ *   - WhisperProfile 本体
+ *   - WhisperVoice（声线）+ 样本音频文件
+ *   - WhisperConsent（家属授权记录，含加密身份证号）
+ *   - WhisperSession + WhisperMessage（全部对话历史）
+ *   - 磁盘上的 whispers/<profileId>/ 整棵目录（样本 + 生成音频）
+ *
+ * 安全：仅装置所有者本人可删；不校验前端传入的名称（服务端以 ownerUserId 为准）。
+ */
+export async function deleteProfile(formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get("profileId") || "");
+  const user = await getCurrentUser();
+  if (!user?.id) return { ok: false, message: "请先登录" };
+
+  const profile = await prisma.whisperProfile.findUnique({
+    where: { id },
+    select: { id: true, ownerUserId: true, personaName: true },
+  });
+  if (!profile) return { ok: false, message: "装置不存在或已被删除" };
+  if (profile.ownerUserId !== user.id) return { ok: false, message: "无权删除该装置" };
+
+  // 1) 先落审计日志——删库后 profileId 就不存在了，必须先记
+  await prisma.auditLog.create({
+    data: {
+      userId: user.id,
+      action: `whisper_delete:${profile.personaName}`,
+      entity: "WhisperProfile",
+      entityId: id,
+    },
+  });
+
+  // 2) 删库（子表 onDelete: Cascade 自动级联）
+  await prisma.whisperProfile.delete({ where: { id } });
+
+  // 3) 删磁盘文件（样本音频 + 生成音频）；失败不影响主流程
+  try {
+    await removeWhisperProfileDir(id);
+  } catch {
+    /* 文件层失败不阻塞——库记录已删，文件属遗留垃圾，可事后清理 */
+  }
+
+  revalidatePath("/console");
+  revalidatePath("/whispers");
+  redirect("/console?whisperDeleted=1");
 }

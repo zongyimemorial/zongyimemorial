@@ -22,6 +22,16 @@ a {
   text-decoration: none;
 }
 
+/* 表单控件统一暖底：输入框/文本框/下拉本无背景，会露出浏览器默认纯白，
+   与墨金暖米体系脱节。这里兜底为 brand-50 暖米白，覆盖全站（含未来新增表单），
+   也确保文字在暖底上保持足够对比。深底区域（3D 舞台等）的玻璃态用 <p> 而非表单控件，不受影响。 */
+input:not([type="color"]):not([type="range"]):not([type="file"]),
+textarea,
+select {
+  background-color: #faf8f4;
+  color: #241d0f;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -173,3 +183,154 @@ a {
   100% { transform: scale(2.4); opacity: 0; }
 }
 .firework-burst { animation: firework-burst 2.4s ease-out both; }
+
+/* ===== 公网站点动效（克制冷静 · 墨金体系） ===== */
+/* 滚动入场淡入上浮 —— 由 components/site/Reveal.tsx 用 IO 触发 .is-visible */
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+  will-change: opacity, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* 悬停光泽：克制的香槟金微光扫过图片 / 卡片（需外层 relative + overflow-hidden） */
+.shine {
+  position: relative;
+  overflow: hidden;
+}
+.shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 38%,
+    rgba(232, 197, 109, 0.22) 50%,
+    transparent 62%
+  );
+  transform: translateX(-120%);
+  transition: transform 0.9s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+.shine:hover::after {
+  transform: translateX(120%);
+}
+
+/* Hero 星夜流光：缓慢游移的暖金光晕，叠在深色 Hero 背景上 */
+@keyframes aurora-flow {
+  0%, 100% { background-position: 0% 50%; opacity: 0.45; }
+  50% { background-position: 100% 50%; opacity: 0.7; }
+}
+.aurora {
+  background-image:
+    radial-gradient(60% 80% at 28% 18%, rgba(232, 197, 109, 0.16), transparent 60%),
+    radial-gradient(55% 75% at 78% 72%, rgba(125, 106, 24, 0.20), transparent 62%);
+  background-size: 200% 200%;
+  animation: aurora-flow 16s ease-in-out infinite;
+}
+
+/* 尊重系统「减少动态效果」偏好：所有站点动效降级为静态 */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .shine::after { display: none; }
+  .aurora { animation: none; opacity: 0.5; }
+  .star-twinkle { animation: none; opacity: 0.9; }
+}
+
+/* ===== LivingScene 真实动态场景层 ===== */
+/* 图片缓推（无视频时的生命感替代） */
+@keyframes living-kenburns {
+  0% { transform: scale(1) translateY(0); }
+  100% { transform: scale(1.08) translateY(-1.5%); }
+}
+.living-kenburns { animation: living-kenburns 26s ease-in-out infinite alternate; }
+
+/* 浮光粒子：萤火般的暖金光点缓缓上升漂移 */
+@keyframes living-particle {
+  0% { transform: translate(0, 0); opacity: 0; }
+  12% { opacity: var(--p-opacity, 0.7); }
+  85% { opacity: var(--p-opacity, 0.7); }
+  100% { transform: translate(var(--p-drift, 20px), -130px); opacity: 0; }
+}
+.living-particle {
+  animation: living-particle var(--p-dur, 9s) linear infinite;
+  animation-delay: var(--p-delay, 0s);
+}
+
+/* 薄雾流动：低空雾气左右缓慢漂移 */
+@keyframes living-mist {
+  0% { transform: translateX(-6%); }
+  100% { transform: translateX(6%); }
+}
+.living-mist { animation: living-mist 24s ease-in-out infinite alternate; }
+
+/* 暖金呼吸光晕：烛光/香火的暖色中心缓慢明暗 */
+@keyframes living-glow {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+.living-glow { animation: living-glow 7s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .living-kenburns, .living-particle, .living-mist, .living-glow { animation: none; }
+  .living-particle { opacity: 0; }
+  .living-glow { opacity: 0.7; }
+}
+
+/* ============================================================
+   纪念馆 3D 舞台（Hall3DStage）动效
+   ============================================================ */
+
+/* 烛焰摇曳：高度+透明度小幅度抖动，模拟真实火苗 */
+@keyframes hall3d-flame {
+  0%, 100% { transform: scaleY(1) translateY(0); opacity: 0.9; }
+  25% { transform: scaleY(1.15) translateY(-1px); opacity: 1; }
+  55% { transform: scaleY(0.92) translateY(1px); opacity: 0.8; }
+  80% { transform: scaleY(1.08) translateY(-1px); opacity: 0.95; }
+}
+.hall3d-flame { animation: hall3d-flame 1.8s ease-in-out infinite; transform-origin: bottom center; }
+
+/* 檐下灯笼/帷幔轻摆 */
+@keyframes hall3d-sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+.hall3d-sway { animation: hall3d-sway 5.2s ease-in-out infinite; transform-origin: top center; }
+
+/* 遗像暖金光晕呼吸（装修过的空间才点亮） */
+@keyframes hall3d-halo {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
+}
+.hall3d-halo { animation: hall3d-halo 6.5s ease-in-out infinite; }
+
+/* 花圈缎带微动：极轻的摆动，庄重不花哨 */
+@keyframes hall3d-wreath {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-2px) rotate(-0.8deg); }
+}
+.hall3d-wreath { animation: hall3d-wreath 4.6s ease-in-out infinite; }
+
+/* 挽联飘带：自花环垂落、随风轻摆（居中由外层定位负责，此处只摆动） */
+@keyframes hall3d-ribbon {
+  0%, 100% { transform: rotate(-2.4deg); }
+  50% { transform: rotate(2.4deg); }
+}
+.hall3d-ribbon { animation: hall3d-ribbon 5.8s ease-in-out infinite; transform-origin: top center; }
+
+/* 香烟缭绕：细烟柱缓慢上升漂移 */
+@keyframes hall3d-smoke {
+  0% { transform: translateY(0) scaleX(1); opacity: 0; }
+  20% { opacity: 0.5; }
+  100% { transform: translateY(-56px) scaleX(1.6); opacity: 0; }
+}
+.hall3d-smoke { animation: hall3d-smoke 5s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .hall3d-flame, .hall3d-sway, .hall3d-halo, .hall3d-wreath, .hall3d-ribbon, .hall3d-smoke { animation: none; }
+}

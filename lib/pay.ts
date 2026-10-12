@@ -1,5 +1,6 @@
 import { isPremiumUntil } from "@/lib/premium";
 import { prisma } from "@/lib/db";
+import { track, acqChannelFromCookie } from "@/lib/analytics";
 import { issueGrant } from "@/lib/decor-grant";
 import { issueDecorEntitlement, resolveDecorEntitlement } from "@/lib/decor-products";
 import { earnPoints, pointsFromSpend } from "@/lib/points";
@@ -9,6 +10,11 @@ import { nextExpiry } from "@/lib/hall-decor";
 import { STORAGE_PLANS, GB, type StorageKind } from "@/lib/storage";
 import { grantObituaryQuota } from "@/lib/obituary";
 import { isServiceProduct, createServiceFulfillment } from "@/lib/service";
+import {
+  WREATH_PRODUCT_SLUG,
+  WREATH_MAX_PER_HALL,
+  WREATH_TTL_MS,
+} from "@/lib/wreaths";
 import type { Order } from "@prisma/client";
 
 /**
@@ -214,19 +220,13 @@ export async function simulatePay(orderNo: string): Promise<Order> {
             data: { premiumUntil: new Date(base.getTime() + 30 * qty * 86400000) },
           });
         } else if (slug === "whisper-clone") {
-          // 声音克隆资格：写进该用户最新装置的备注位（解锁标记）
-          const profile = await tx.whisperProfile.findFirst({
+          // 声音克隆资格申请：支付后置 cloneApplied=true，解锁克隆入口。
+          // 真实克隆训练由订阅档 cloneLimit 承载；内测 Mock 引擎零成本。
+          // 资格属用户级权益：对该用户名下全部追思装置一并解锁（避免多装置只开最新一个）。
+          await tx.whisperProfile.updateMany({
             where: { ownerUserId: order.userId },
-            orderBy: { createdAt: "desc" },
+            data: { cloneApplied: true },
           });
-          if (profile) {
-            await tx.whisperProfile.update({
-              where: { id: profile.id },
-              data: {
-                engineLabel: profile.engineLabel ?? "pending",
-              },
-            });
-          }
         }
       }
 
@@ -236,7 +236,13 @@ export async function simulatePay(orderNo: string): Promise<Order> {
       // 直接穿透、没有任何副作用，买完只剩一条 OrderItem 行，
       // 等于「付了钱却拿不到东西」。现在购买即入库存，祭拜时再消耗。
       // 数量用 increment（购买是叠加）；免费品的每日补货才用覆盖写。
-      if (item.product.type === "virtual_flower" || item.product.type === "tribute_item") {
+      //
+      // ⚠️ 敬献大花圈（grand-wreath）虽是 tribute_item，但**不入库存**：
+      //    它是「付钱即陈列」的一次性祭献，履约 = 在目标馆立一条 3 天有效花圈记录。
+      if (
+        item.product.type === "virtual_flower" ||
+        (item.product.type === "tribute_item" && item.product.slug !== WREATH_PRODUCT_SLUG)
+      ) {
         const qty = Math.max(1, item.quantity);
         await tx.offeringHolding.upsert({
           where: {
@@ -245,6 +251,32 @@ export async function simulatePay(orderNo: string): Promise<Order> {
           create: { userId: order.userId, productId: item.productId, quantity: qty },
           update: { quantity: { increment: qty } },
         });
+      }
+
+      /*
+        敬献大花圈：支付成功 = 花圈入馆陈列 3 天。
+        履约时**在事务内复查**「最多 2 个」—— 下单与支付之间可能隔了几分钟，
+        别人可能已经把名额用掉；超出的那单不再补立花圈（钱已付，属于极端并发，
+        由展示端取最近 2 个兜底，这里不退款）。
+        必须传 tx —— 订单回滚不能留下花圈。
+      */
+      if (item.product.slug === WREATH_PRODUCT_SLUG) {
+        const tid = order.targetHallId;
+        if (tid) {
+          const active = await tx.hallWreath.count({
+            where: { hallId: tid, removedAt: null, expiresAt: { gt: new Date() } },
+          });
+          if (active < WREATH_MAX_PER_HALL) {
+            await tx.hallWreath.create({
+              data: {
+                hallId: tid,
+                userId: order.userId,
+                orderId: order.id,
+                expiresAt: new Date(Date.now() + WREATH_TTL_MS),
+              },
+            });
+          }
+        }
       }
 
       /*
@@ -428,6 +460,24 @@ export async function simulatePay(orderNo: string): Promise<Order> {
         userId,
         amount: earned,
         reason: `消费返积分（订单 ${orderNo}）`,
+      });
+    }
+    // 首单转化埋点：用户首笔已付非充值订单（之前无含实物/服务的已付订单）
+    const priorPaid = await prisma.order.count({
+      where: {
+        userId,
+        status: "paid",
+        id: { not: updated.id },
+        items: { some: { product: { type: { not: "fortune_topup" } } } },
+      },
+    });
+    if (priorPaid === 0) {
+      await track({
+        type: "first_pay",
+        userId,
+        channel: await acqChannelFromCookie(),
+        valueFen: payAmount,
+        path: "/pay",
       });
     }
   }
