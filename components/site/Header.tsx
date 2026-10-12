@@ -5,7 +5,8 @@ import NavLinks from "@/components/site/NavLinks";
 
 /**
  * 两行式页头：
- * - 顶行：品牌 logo + 登录/注册（或 控制台/退出），独占最右侧、与导航栏分离；
+ * - 顶行：左侧品牌 logo，中部品牌铭句（gold 细线 + 传统铭句，呼应纪念主题），
+ *   右侧登录/注册（或 控制台/退出）独占最右，与导航栏分离；中部铭句在窄屏隐藏；
  * - 第二行：全站导航均匀铺开，当前页由 NavLinks 按真实路径做墨色高亮
  *   （「午夜悄悄话」不再永久高亮，避免误导）。
  */
@@ -14,8 +15,8 @@ export default async function Header() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-brand-200 bg-brand-100/90 backdrop-blur">
-      <div className="container-page flex h-16 items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5">
+      <div className="container-page flex h-16 items-center justify-between gap-4">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/assets/logo.png"
@@ -26,6 +27,26 @@ export default async function Header() {
             宗忆堂
           </span>
         </Link>
+
+        {/* 顶行中部品牌铭句：填补空白，呼应纪念主题（窄屏隐藏） */}
+        <div className="hidden flex-1 items-center justify-center gap-3 md:flex">
+          <span
+            aria-hidden="true"
+            className="h-px w-10 bg-gradient-to-r from-transparent to-accent-300"
+          />
+          <div className="text-center leading-tight">
+            <p className="font-serif text-[15px] tracking-[0.3em] text-brand-800">
+              慎终追远 · 民德归厚
+            </p>
+            <p className="mt-0.5 text-[11px] tracking-widest text-brand-400">
+              数字纪念馆 · 宗亲文化 · 云端追思
+            </p>
+          </div>
+          <span
+            aria-hidden="true"
+            className="h-px w-10 bg-gradient-to-l from-transparent to-accent-300"
+          />
+        </div>
 
         {/* 登录区独占右上角，与导航栏分离 */}
         <div className="flex items-center gap-3 text-sm">
