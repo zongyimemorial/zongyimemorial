@@ -25,7 +25,9 @@ import {
   STORAGE_PLANS,
   storageSubBytesOf,
 } from "@/lib/storage";
-import { createStorageOrder, saveHallSectionOrder, supplementHallMaterials } from "./actions";
+import { createStorageOrder, deleteMemorialHall, saveHallSectionOrder, setHallPublic, supplementHallMaterials } from "./actions";
+import HallDangerZone from "@/components/console/HallDangerZone";
+import HallVisibilityZone from "@/components/console/HallVisibilityZone";
 import {
   CHANNEL_META,
   MATERIAL_TYPES,
@@ -134,7 +136,7 @@ export default async function HallManagePage({
         <span className="text-brand-600">馆务管理</span>
         <a
           href="/"
-          className="ml-auto rounded-md border border-gray-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
+          className="ml-auto rounded-md border border-brand-300 px-3 py-1.5 text-brand-700 hover:bg-gray-50"
         >
           ← 返回首页
         </a>
@@ -153,7 +155,7 @@ export default async function HallManagePage({
 
       <div className="mt-6 space-y-6">
         {/* 审核状态 / 通道 / 补传横幅 */}
-        <div className="rounded-xl border border-gray-100 bg-white p-5">
+        <div className="rounded-xl border border-brand-200 bg-brand-100/70 p-5">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-medium text-brand-900">审核状态：</span>
             <span
@@ -206,7 +208,7 @@ export default async function HallManagePage({
                           <input
                             name={`sup_${type}`}
                             maxLength={200}
-                            className="min-w-[160px] flex-1 rounded border border-gray-200 px-2 py-1 text-sm"
+                            className="min-w-[160px] flex-1 rounded border border-brand-200 px-2 py-1 text-sm"
                             placeholder="编号 / 说明"
                           />
                           <input
@@ -279,6 +281,7 @@ export default async function HallManagePage({
         <HallProfileForm
           hallId={hall.id}
           initial={{
+            deceasedName: hall.deceasedName,
             coupletLeft: couplet.left ?? "",
             coupletRight: couplet.right ?? "",
             coupletHorizontal: couplet.horizontal ?? "",
@@ -296,6 +299,25 @@ export default async function HallManagePage({
           initialOrder={hallOrder}
           labels={HALL_SECTION_LABELS}
           action={saveHallSectionOrder}
+        />
+
+        {/* 4.5 下架 / 撤回为私密草稿（可逆，置于删除之前） */}
+        <HallVisibilityZone
+          hallId={hall.id}
+          kindLabel="纪念馆"
+          idField="hallId"
+          isPublic={hall.isPublic}
+          status={hall.status}
+          action={setHallPublic}
+        />
+
+        {/* 5. 删除纪念馆（危险操作，置于最后） */}
+        <HallDangerZone
+          hallId={hall.id}
+          hallName={hall.name}
+          kindLabel="纪念馆"
+          idField="hallId"
+          action={deleteMemorialHall}
         />
 
       </div>

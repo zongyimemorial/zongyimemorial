@@ -5,7 +5,13 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { spendPoints } from "@/lib/points";
-import { removeHallImage, saveHallImage, statManagedUpload } from "@/lib/upload";
+import {
+  removeHallAssetsDir,
+  removeHallImage,
+  removeWhisperProfileDir,
+  saveHallImage,
+  statManagedUpload,
+} from "@/lib/upload";
 import { MATERIAL_TYPES, normalizeProofs } from "@/lib/hall-review";
 import {
   DEFAULT_DECOR,
@@ -124,6 +130,14 @@ export async function saveHallProfile(formData: FormData) {
   if ("error" in ctx) return { ok: false, message: ctx.error };
   const { hall } = ctx;
 
+  /*
+    逝者名讳：正堂匾额（Hall3DStage）与馆内多处文案都取这个字段。
+    建馆时填写后馆主原本无处可改 —— 这里一并收进挽联/档案表单。
+    名讳必填：空值会让匾额回退「音容宛在」，与"必填"的表单承诺不符。
+  */
+  const deceasedName = String(formData.get("deceasedName") || "").trim().slice(0, 30);
+  if (!deceasedName) return { ok: false, message: "逝者姓名不能为空" };
+
   const couplet = {
     left: String(formData.get("coupletLeft") || "").slice(0, 30),
     right: String(formData.get("coupletRight") || "").slice(0, 30),
@@ -149,6 +163,7 @@ export async function saveHallProfile(formData: FormData) {
   await prisma.memorialHall.update({
     where: { id: hallId },
     data: {
+      deceasedName,
       couplet,
       archive: { ...prevArchive, epitaph, hometown, timeline, career, quote },
     },
@@ -685,4 +700,132 @@ export async function supplementHallMaterials(formData: FormData) {
   revalidatePath(`/console/halls/${id}`);
   revalidatePath(`/halls/${id}`);
   redirect(`/console/halls/${id}?supplemented=1`);
+}
+
+// ===========================================================================
+// 下架 / 撤回为私密草稿（馆主行使软撤回权，可逆）
+// ===========================================================================
+/**
+ * 切换纪念馆公开状态 —— 「下架 / 撤回为私密草稿」的可逆操作。
+ *
+ * 与永久删除（deleteMemorialHall）的区别：
+ *   · 这里**只翻 isPublic**，馆内一切数据（照片/装修/社区/祭拜记录/花圈/讣告）
+ *     原样保留，磁盘文件一个不动；
+ *   · effectivePublic() 在 isPublic=false 时直接返回 false → 公页对非馆主
+ *     notFound()、列表页过滤、SEO noindex，但馆主在控制台与公页（isOwner 分支）
+ *     仍可见可改，随时可重新公开；
+ *   · 先落审计日志再改库（与删除同构），满足《个人信息保护法》第 47 条对
+ *     「撤回同意 / 限制处理」的可追溯要求。
+ *
+ * 语义：active 馆设 isPublic=true 即重新公开（内容已审过，无需再送审）；
+ *       pending/rejected 馆即便设 true 也因 status 不满足而不公开，仅作标记。
+ */
+export async function setHallPublic(formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get("hallId") || "");
+  const isPublic = String(formData.get("isPublic") || "") === "1";
+  const ctx = await loadHall(id);
+  if ("error" in ctx) return { ok: false, message: ctx.error };
+
+  const info = await prisma.memorialHall.findUnique({ where: { id }, select: { name: true } });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: ctx.user.id!,
+      action: isPublic
+        ? `memorial_hall_republish:${info?.name ?? id}`
+        : `memorial_hall_withdraw:${info?.name ?? id}`,
+      entity: "MemorialHall",
+      entityId: id,
+    },
+  });
+
+  await prisma.memorialHall.update({ where: { id }, data: { isPublic } });
+
+  refresh(id);
+  revalidatePath(`/halls/${id}`);
+  revalidatePath("/console");
+  return {
+    ok: true,
+    message: isPublic ? "已重新公开，访客可访问本馆" : "已撤回为私密草稿，仅你可见（数据完整保留）",
+  };
+}
+
+// ===========================================================================
+// 删除纪念馆（馆主行使删除权）
+// ===========================================================================
+/**
+ * 删除纪念馆（馆主行使数据删除权）。
+ *
+ * 删除范围（显式级联清理 + 磁盘清除）：
+ *   - MemorialHall 本体
+ *   - MemorialTribute（祭拜 / 祭祀记录）
+ *   - OfferingOnAltar（供台陈设）
+ *   - WhisperProfile（关联的追思装置）+ 其全部子表（声线/授权/对话历史）+ 磁盘音频目录
+ *   - CommunityMember / CommunityPost（交流社区）
+ *   - Obituary（挂在本馆的电子讣告）
+ *   - HallWreath（敬献大花圈）
+ *   - HallReport（建馆审核举报）
+ *   - 磁盘 uploads/halls/<id>/ 整棵目录（照片 + 证明材料）
+ *
+ * 安全：仅馆主本人可删；先落审计日志再删库（删后 id 不存在，日志必须先行）。
+ * 显式清理所有子表，确保无论 schema 级联设置如何，删父表都不会触发外键约束。
+ */
+export async function deleteMemorialHall(formData: FormData): Promise<ActionResult> {
+  const id = String(formData.get("hallId") || "");
+  const ctx = await loadHall(id);
+  if ("error" in ctx) return { ok: false, message: ctx.error };
+
+  const info = await prisma.memorialHall.findUnique({
+    where: { id },
+    select: { name: true },
+  });
+
+  // 1) 先落审计日志
+  await prisma.auditLog.create({
+    data: {
+      userId: ctx.user.id!,
+      action: `memorial_hall_delete:${info?.name ?? id}`,
+      entity: "MemorialHall",
+      entityId: id,
+    },
+  });
+
+  // 2) 关联追思装置：先清磁盘音频目录，再级联删库（其子表 onDelete: Cascade）
+  const profiles = await prisma.whisperProfile.findMany({
+    where: { hallId: id },
+    select: { id: true },
+  });
+  for (const p of profiles) {
+    try {
+      await removeWhisperProfileDir(p.id);
+    } catch {
+      /* 文件层失败不阻塞——库记录随后会删，文件遗留可事后清理 */
+    }
+  }
+  if (profiles.length) {
+    await prisma.whisperProfile.deleteMany({ where: { hallId: id } });
+  }
+
+  // 3) 显式清理其余子表（无论 schema 是否级联）
+  await prisma.memorialTribute.deleteMany({ where: { hallId: id } });
+  await prisma.offeringOnAltar.deleteMany({ where: { hallId: id } });
+  await prisma.communityMember.deleteMany({ where: { hallId: id } });
+  await prisma.communityPost.deleteMany({ where: { hallId: id } });
+  await prisma.obituary.deleteMany({ where: { hallId: id } });
+  await prisma.hallWreath.deleteMany({ where: { hallId: id } });
+  await prisma.hallReport.deleteMany({ where: { hallId: id } });
+
+  // 4) 磁盘清理（照片 + 证明材料）；失败不影响主流程
+  try {
+    await removeHallAssetsDir(id, "halls");
+  } catch {
+    /* 文件层失败不阻塞 */
+  }
+
+  // 5) 删本体
+  await prisma.memorialHall.delete({ where: { id } });
+
+  revalidatePath("/console");
+  revalidatePath(`/halls/${id}`);
+  redirect("/console?hallDeleted=1");
 }

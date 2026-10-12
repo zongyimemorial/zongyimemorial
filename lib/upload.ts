@@ -1,4 +1,5 @@
 import { promises as fs } from "fs";
+import { existsSync } from "fs";
 import path from "path";
 import crypto from "crypto";
 
@@ -239,4 +240,89 @@ export async function statManagedUpload(url: string): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+/** profileId 允许的字符集：cuid() 产出的小写字母 + 数字 + 连字符 */
+const PROFILE_ID_RE = /^[a-z0-9-]+$/;
+
+/**
+ * 删除某追思装置名下的整个上传目录（样本音频 + 生成的 TTS 音频）。
+ *
+ * 用途：用户行使「数据删除权」（《个人信息保护法》第 47 条）时，
+ * 连同声纹样本、合成音频一并物理删除，而非仅置空数据库引用。
+ *
+ * 安全：profileId 必须是 cuid 形态（小写字母/数字/连字符），
+ * 否则直接拒绝——这是防目录穿越的关键闸门，不可放宽。
+ */
+export async function removeWhisperProfileDir(profileId: string): Promise<{ removed: boolean; bytes: number }> {
+  if (!PROFILE_ID_RE.test(profileId)) return { removed: false, bytes: 0 };
+
+  const dir = path.join(UPLOAD_ROOT, "whispers", profileId);
+  // 二次防穿越：规范化后必须仍在 whispers/ 之下
+  const base = path.join(UPLOAD_ROOT, "whispers");
+  if (!dir.startsWith(base + path.sep)) return { removed: false, bytes: 0 };
+
+  const bytes = await dirSize(dir);
+  // 目录本就不存在：视为"已无残留"，removed=false 便于调用方区分
+  if (!existsSync(dir)) return { removed: false, bytes: 0 };
+  try {
+    await fs.rm(dir, { recursive: true, force: true });
+  } catch {
+    return { removed: false, bytes: 0 };
+  }
+  return { removed: true, bytes };
+}
+
+/**
+ * 删除某座纪念馆 / 宗祠名下的整个上传目录（照片 + 证明材料等）。
+ *
+ * 用途：馆主行使删除权时，连同磁盘上的全部托管文件一起物理清除，
+ * 而非仅置空数据库引用（与 removeWhisperProfileDir 同款合规处理）。
+ *
+ * 安全：hallId 必须是 cuid 形态（小写字母/数字/连字符）；
+ * 规范化后必须仍在 `uploads/<kind>/` 之下，否则拒绝——防目录穿越。
+ *
+ * @param kind "halls"（纪念馆）或 "clan-halls"（宗祠），对应上传子目录
+ */
+export async function removeHallAssetsDir(
+  hallId: string,
+  kind: "halls" | "clan-halls",
+): Promise<{ removed: boolean; bytes: number }> {
+  if (!PROFILE_ID_RE.test(hallId)) return { removed: false, bytes: 0 };
+
+  const dir = path.join(UPLOAD_ROOT, kind, hallId);
+  const base = path.join(UPLOAD_ROOT, kind);
+  // 二次防穿越：规范化后必须仍在 <kind>/ 之下
+  if (!dir.startsWith(base + path.sep)) return { removed: false, bytes: 0 };
+
+  const bytes = await dirSize(dir);
+  if (!existsSync(dir)) return { removed: false, bytes: 0 };
+  try {
+    await fs.rm(dir, { recursive: true, force: true });
+  } catch {
+    return { removed: false, bytes: 0 };
+  }
+  return { removed: true, bytes };
+}
+
+/** 递归统计目录字节数（不存在 → 0） */
+async function dirSize(dir: string): Promise<number> {
+  let total = 0;
+  try {
+    const entries = await fs.readdir(dir, { withFileTypes: true });
+    for (const e of entries) {
+      const full = path.join(dir, e.name);
+      if (e.isDirectory()) total += await dirSize(full);
+      else {
+        try {
+          total += (await fs.stat(full)).size;
+        } catch {
+          /* 忽略竞态删除 */
+        }
+      }
+    }
+  } catch {
+    return 0;
+  }
+  return total;
 }
