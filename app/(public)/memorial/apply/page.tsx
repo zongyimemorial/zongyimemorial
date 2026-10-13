@@ -10,7 +10,7 @@ export default function MemorialApplyPage() {
         <h1 className="text-2xl font-semibold text-brand-900">申请创建公益纪念堂</h1>
         <p className="mx-auto mt-3 max-w-xl text-sm text-brand-500">
           本堂由平台在征得家属同意后，
-          <b className="text-brand-700">免费</b>为已故名人、见义勇为者与好人好事者创建最高级别的纪念馆。
+          <b className="text-brand-700">免费</b>为已故名人、民族英雄、见义勇为者与好人好事者创建最高级别的纪念馆。
           请由近亲属提交，并附权威来源以核验真实性。
         </p>
       </header>

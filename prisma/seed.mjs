@@ -450,6 +450,30 @@ async function main() {
     },
   });
 
+  await prisma.publicMemorial.upsert({
+    where: { slug: "example-minzu-yingxiong" },
+    update: { couplet: { left: "护国安邦倾碧血", right: "垂勋青史慰忠魂", horizontal: "民族脊梁" } },
+    create: {
+      slug: "example-minzu-yingxiong",
+      name: "（示例）卫国先烈·群体",
+      category: "NATIONAL_HERO",
+      birthYear: 1920,
+      deathYear: 1951,
+      honorTitle: "为民族独立与人民解放英勇献身的先烈",
+      summary:
+        "（本条目为演示数据，人物与事迹均为虚构）在民族危亡之际，他们挺身而出、舍生取义，用生命捍卫家国。",
+      story:
+        "（示例数据）本条目用于演示公益纪念堂中「民族英雄」类别的呈现形态。此处所指为虚构群体，不代表任何特定真实人物或事件；真实英烈的评定与纪念以权威部门发布的名单与史料为准。我们谨以此板块，致敬所有为民族独立、人民解放和国家尊严献出生命的先辈。",
+      sourceUrl: null,
+      grade: "imperial",
+      couplet: { left: "护国安邦倾碧血", right: "垂勋青史慰忠魂", horizontal: "民族脊梁" },
+      lightCount: 512,
+      viewCount: 1208,
+      status: "APPROVED",
+      approvedAt: new Date(),
+    },
+  });
+
   // 示例留言（已审核通过，用于演示留言板形态）
   const demoMemorial = await prisma.publicMemorial.findUnique({
     where: { slug: "example-jianguo" },

@@ -9,6 +9,7 @@ type CatKey = MemorialCategory | "ALL";
 
 const TABS: { key: CatKey; label: string }[] = [
   { key: "ALL", label: "全部" },
+  { key: "NATIONAL_HERO", label: CATEGORY_LABEL.NATIONAL_HERO },
   { key: "HEROIC", label: CATEGORY_LABEL.HEROIC },
   { key: "GOOD_DEED", label: CATEGORY_LABEL.GOOD_DEED },
   { key: "CELEBRITY", label: CATEGORY_LABEL.CELEBRITY },
@@ -18,7 +19,7 @@ const TABS: { key: CatKey; label: string }[] = [
 const CREATE_STEPS = [
   {
     title: "确认资格",
-    desc: "由逝者近亲属为已故名人、英烈、见义勇为者或好人好事者提出申请。",
+    desc: "由逝者近亲属为已故名人、民族英雄、英烈、见义勇为者或好人好事者提出申请。",
   },
   {
     title: "准备材料",
@@ -46,7 +47,7 @@ export default async function MemorialListPage({
     category?: MemorialCategory;
     name?: { contains: string; mode: "insensitive" };
   } = { status: "APPROVED" };
-  if (cat === "HEROIC" || cat === "GOOD_DEED" || cat === "CELEBRITY") {
+  if (cat === "HEROIC" || cat === "GOOD_DEED" || cat === "CELEBRITY" || cat === "NATIONAL_HERO") {
     where.category = cat;
   }
   if (q && q.trim()) {
@@ -68,7 +69,7 @@ export default async function MemorialListPage({
         <h1 className="text-3xl font-semibold text-brand-900">公益纪念堂</h1>
         <p className="mx-auto mt-3 max-w-2xl text-brand-500">
           致敬平凡微光 · 缅怀时代英模。本堂由平台在征得家属同意后，
-          <b className="text-brand-700">免费</b>为已故名人、见义勇为者与好人好事者创建最高级别的纪念馆，
+          <b className="text-brand-700">免费</b>为已故名人、民族英雄、见义勇为者与好人好事者创建最高级别的纪念馆，
           供公众公开缅怀。纯公益、零付费引导。
         </p>
         <div className="mt-6">

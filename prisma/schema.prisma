@@ -1331,6 +1331,7 @@ enum MemorialCategory {
   CELEBRITY // 名人
   HEROIC // 见义勇为献身者
   GOOD_DEED // 好人好事者
+  NATIONAL_HERO // 民族英雄
 }
 
 enum PublicMemorialStatus {

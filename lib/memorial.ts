@@ -4,7 +4,7 @@
 import { prisma } from "@/lib/db";
 import { findSuite } from "@/lib/decor-suites";
 
-export type MemorialCategory = "CELEBRITY" | "HEROIC" | "GOOD_DEED";
+export type MemorialCategory = "CELEBRITY" | "HEROIC" | "GOOD_DEED" | "NATIONAL_HERO";
 export type PublicMemorialStatus =
   | "PENDING"
   | "APPROVED"
@@ -15,6 +15,7 @@ export const CATEGORY_LABEL: Record<MemorialCategory, string> = {
   CELEBRITY: "名人",
   HEROIC: "见义勇为",
   GOOD_DEED: "好人好事",
+  NATIONAL_HERO: "民族英雄",
 };
 
 export const STATUS_LABEL: Record<PublicMemorialStatus, string> = {

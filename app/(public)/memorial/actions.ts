@@ -11,7 +11,7 @@ import {
   freeOfferingType,
 } from "@/lib/memorial";
 
-const CATEGORIES: MemorialCategory[] = ["CELEBRITY", "HEROIC", "GOOD_DEED"];
+const CATEGORIES: MemorialCategory[] = ["CELEBRITY", "HEROIC", "GOOD_DEED", "NATIONAL_HERO"];
 
 export interface SubmitResult {
   ok: boolean;

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { submitApplication } from "@/app/(public)/memorial/actions";
 import { CATEGORY_LABEL, type MemorialCategory } from "@/lib/memorial";
 
-const CATEGORIES: MemorialCategory[] = ["CELEBRITY", "HEROIC", "GOOD_DEED"];
+const CATEGORIES: MemorialCategory[] = ["CELEBRITY", "HEROIC", "GOOD_DEED", "NATIONAL_HERO"];
 
 export default function ApplyForm() {
   const [errors, setErrors] = useState<string[]>([]);
