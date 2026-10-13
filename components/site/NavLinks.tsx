@@ -16,6 +16,7 @@ const ITEMS: { href: string; label: string; exact?: boolean; moon?: boolean }[] 
   { href: "/whispers", label: "午夜悄悄话", moon: true },
   { href: "/clan", label: "宗亲文化" },
   { href: "/memorial", label: "公益纪念" },
+  { href: "/memorial?cat=NATIONAL_HERO", label: "民族英雄" },
   { href: "/mall", label: "虚拟祭品" },
   { href: "/festivals", label: "追思节日" },
   { href: "/live", label: "云直播" },

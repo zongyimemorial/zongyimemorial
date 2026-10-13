@@ -14,9 +14,10 @@ import {
 } from "@/components/site/FeatureIcons";
 import Reveal from "@/components/site/Reveal";
 import LivingScene from "@/components/site/LivingScene";
+import { CATEGORY_LABEL } from "@/lib/memorial";
 
 export default async function HomePage() {
-  const [articles, products, lives] = await Promise.all([
+  const [articles, products, lives, heroMemorials] = await Promise.all([
     listPublishedArticles({ take: 3 }),
     // 首页「热门数字纪念服务」只展示付费商品：
     // 免费礼器的入口在纪念馆祭拜面板，摆在这里会显示成 ¥0.00。
@@ -28,6 +29,12 @@ export default async function HomePage() {
     prisma.liveSession.findMany({
       where: { isPublic: true, status: { in: ["live", "scheduled"] } },
       orderBy: { createdAt: "desc" },
+      take: 3,
+    }),
+    // 公益纪念堂 · 民族英雄：首页推荐位直接呈现该类别已上线纪念堂
+    prisma.publicMemorial.findMany({
+      where: { status: "APPROVED", category: "NATIONAL_HERO" },
+      orderBy: [{ lightCount: "desc" }, { createdAt: "desc" }],
       take: 3,
     }),
   ]);
@@ -258,6 +265,68 @@ export default async function HomePage() {
           <Link href="/live" className="text-sm font-medium text-brand-700 hover:underline">
             进入云直播大厅 →
           </Link>
+        </div>
+      </section>
+
+      {/* 公益纪念堂 · 民族英雄（首页推荐位：直接链到该类别筛选结果） */}
+      <section className="bg-brand-50 py-16">
+        <div className="container-page">
+          <SectionTitle
+            title="公益纪念堂 · 致敬民族英雄"
+            sub="平台在征得家属同意后，免费为已故名人、民族英雄、英烈与见义勇为者建立公开纪念空间"
+          />
+          <div className="mb-9 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/memorial?cat=NATIONAL_HERO"
+              className="rounded-md bg-accent-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-600"
+            >
+              浏览民族英雄纪念堂
+            </Link>
+            <Link
+              href="/memorial/apply"
+              className="rounded-md border border-brand-300 px-5 py-2.5 text-sm font-medium text-brand-700 hover:bg-brand-100"
+            >
+              家属免费申请建堂
+            </Link>
+          </div>
+          {heroMemorials.length > 0 ? (
+            <div className="grid gap-6 md:grid-cols-3">
+              {heroMemorials.map((m, i) => (
+                <Reveal key={m.id} delay={i * 80}>
+                  <Link
+                    href={`/memorial/${m.slug}`}
+                    className="shine block group overflow-hidden rounded-xl border border-brand-200/80 bg-brand-100/70 shadow-sm transition hover:shadow-md"
+                  >
+                    <div className="relative aspect-[16/9] w-full overflow-hidden bg-brand-100">
+                      <Image
+                        src="/assets/scene-hall.jpg"
+                        alt={`${m.name}纪念空间`}
+                        fill
+                        sizes="(min-width: 768px) 33vw, 100vw"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="p-5">
+                      <span className="rounded bg-accent-50 px-2 py-0.5 text-xs text-accent-700">
+                        {CATEGORY_LABEL[m.category]}
+                      </span>
+                      <h3 className="mt-2 text-lg font-semibold text-brand-900">
+                        {m.name}纪念空间
+                      </h3>
+                      <p className="mt-1 text-sm text-brand-500">逝者：{m.name}</p>
+                      <p className="mt-2 line-clamp-2 text-sm text-gray-600">
+                        {m.honorTitle ? `${m.honorTitle}。` : ""}此处收录其生平与亲友追思。
+                      </p>
+                    </div>
+                  </Link>
+                </Reveal>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-sm text-brand-400">
+              暂无已上线的民族英雄纪念堂。如您是家属，欢迎免费申请为值得铭记的人建一座。
+            </p>
+          )}
         </div>
       </section>
 
