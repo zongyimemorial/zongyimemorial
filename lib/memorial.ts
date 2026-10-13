@@ -37,6 +37,18 @@ export function slugify(name: string): string {
   return `${base || "memorial"}-${tail}`;
 }
 
+/**
+ * 凭申请人管理凭证（manageToken）查找申请，并附带已上线纪念堂。
+ * 用于免登录的申请人管理页。token 无效/缺失返回 null。
+ */
+export async function findAppByToken(token?: string | null) {
+  if (!token) return null;
+  return prisma.publicMemorialApplication.findUnique({
+    where: { manageToken: token },
+    include: { memorial: true },
+  });
+}
+
 /** 生卒年展示，如「1958 – 2021」；缺失年份省略 */
 export function lifeSpan(birth?: number | null, death?: number | null): string {
   if (!birth && !death) return "";

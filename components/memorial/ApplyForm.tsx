@@ -10,6 +10,7 @@ export default function ApplyForm() {
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [manageToken, setManageToken] = useState<string | null>(null);
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -19,6 +20,7 @@ export default function ApplyForm() {
     const res = await submitApplication(fd);
     setSubmitting(false);
     if (res.ok) {
+      setManageToken(res.token ?? null);
       setDone(true);
     } else {
       setErrors(res.errors ?? ["提交失败，请稍后再试"]);
@@ -26,14 +28,50 @@ export default function ApplyForm() {
   }
 
   if (done) {
+    const manageUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/memorial/apply/manage?token=${manageToken ?? ""}`
+        : `/memorial/apply/manage?token=${manageToken ?? ""}`;
     return (
-      <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-8 text-center">
+      <div className="space-y-4 rounded-xl border border-emerald-200 bg-emerald-50 p-8 text-center">
         <div className="text-4xl">✅</div>
         <h2 className="mt-3 text-lg font-semibold text-emerald-800">申请已提交</h2>
         <p className="mt-2 text-sm text-emerald-700">
           已进入人工审核队列。平台将在核验家属授权与权威来源后决定是否上线，
           审核结果不会主动通知，可在数个工作日后回访本板块查看。
         </p>
+
+        {manageToken && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-4 text-left">
+            <p className="text-sm font-semibold text-amber-800">
+              ⚠ 请保存您的「管理凭证」链接
+            </p>
+            <p className="mt-1 text-xs text-amber-700">
+              凭此链接，您可随时<b>撤回或删除</b>本申请，以及通过审核后上线的纪念堂。
+              链接中包含私密凭证，请妥善保存；一旦丢失，将无法自行管理，需联系平台。
+            </p>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <code className="flex-1 break-all rounded border border-amber-200 bg-white px-2 py-1.5 text-xs text-amber-900">
+                {manageUrl}
+              </code>
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard?.writeText(manageUrl);
+                }}
+                className="shrink-0 rounded-md border border-amber-400 px-3 py-1.5 text-xs text-amber-800 hover:bg-amber-100"
+              >
+                复制链接
+              </button>
+            </div>
+            <a
+              href={manageUrl}
+              className="mt-3 inline-block rounded-md bg-amber-600 px-4 py-2 text-xs font-medium text-white hover:bg-amber-700"
+            >
+              立即打开管理页 →
+            </a>
+          </div>
+        )}
       </div>
     );
   }

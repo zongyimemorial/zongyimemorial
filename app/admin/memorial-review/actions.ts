@@ -165,3 +165,79 @@ export async function rejectMessage(formData: FormData) {
 
   revalidatePath("/admin/memorial-review");
 }
+
+/**
+ * 管理员永久删除纪念堂（硬删除）：解除申请引用、删除纪念堂及其留言/花圈/祭品。
+ * 与申请人删除语义一致，但受后台角色守卫（admin / super_admin）。
+ */
+export async function deleteMemorialAdmin(formData: FormData) {
+  const user = await requireStaff();
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  const memorial = await prisma.publicMemorial.findUnique({ where: { id } });
+  if (!memorial) return;
+  const app = await prisma.publicMemorialApplication.findFirst({ where: { memorialId: id } });
+
+  await prisma.$transaction(async (tx) => {
+    if (app) {
+      // 先解除引用，否则 FK 阻止删除纪念堂
+      await tx.publicMemorialApplication.update({
+        where: { id: app.id },
+        data: { memorialId: null, status: "REJECTED" },
+      });
+    }
+    await tx.publicMemorial.delete({ where: { id } });
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: user.id,
+      action: "memorial_admin_delete",
+      entity: "PublicMemorial",
+      entityId: id,
+    },
+  });
+
+  revalidatePath("/admin/memorial-review");
+  revalidatePath("/memorial");
+}
+
+/**
+ * 管理员永久删除申请（硬删除）：若申请已关联上线纪念堂，则一并删除纪念堂；
+ * 否则仅删除申请记录。
+ */
+export async function deleteApplicationAdmin(formData: FormData) {
+  const user = await requireStaff();
+  const id = String(formData.get("id") || "");
+  if (!id) return;
+
+  const app = await prisma.publicMemorialApplication.findUnique({
+    where: { id },
+    include: { memorial: true },
+  });
+  if (!app) return;
+
+  await prisma.$transaction(async (tx) => {
+    if (app.memorialId && app.memorial) {
+      await tx.publicMemorialApplication.update({
+        where: { id },
+        data: { memorialId: null },
+      });
+      await tx.publicMemorial.delete({ where: { id: app.memorial.id } });
+    }
+    await tx.publicMemorialApplication.delete({ where: { id } });
+  });
+
+  await prisma.auditLog.create({
+    data: {
+      userId: user.id,
+      action: "memorial_admin_delete_app",
+      entity: "PublicMemorialApplication",
+      entityId: id,
+    },
+  });
+
+  revalidatePath("/admin/memorial-review");
+  revalidatePath("/memorial");
+}

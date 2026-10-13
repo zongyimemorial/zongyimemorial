@@ -4,10 +4,13 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { CATEGORY_LABEL, lifeSpan } from "@/lib/memorial";
 import DecisionButton from "@/components/admin/DecisionButton";
+import ConfirmActionButton from "@/components/admin/ConfirmActionButton";
 import {
   approveApplication,
   rejectApplication,
   takedownMemorial,
+  deleteMemorialAdmin,
+  deleteApplicationAdmin,
   approveMessage,
   rejectMessage,
 } from "./actions";
@@ -19,7 +22,7 @@ export default async function MemorialReviewPage() {
   if (!user) redirect("/login");
   if (user.role !== "admin" && user.role !== "super_admin") redirect("/console");
 
-  const [apps, pendingMsgs, approved] = await Promise.all([
+  const [apps, pendingMsgs, approved, takenDown] = await Promise.all([
     prisma.publicMemorialApplication.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "desc" },
@@ -33,6 +36,11 @@ export default async function MemorialReviewPage() {
     }),
     prisma.publicMemorial.findMany({
       where: { status: "APPROVED" },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    }),
+    prisma.publicMemorial.findMany({
+      where: { status: "TAKEN_DOWN" },
       orderBy: { createdAt: "desc" },
       take: 100,
     }),
@@ -110,6 +118,12 @@ export default async function MemorialReviewPage() {
                   className="rounded bg-red-600 px-3 py-1.5 text-sm text-white hover:bg-red-700"
                 />
               </form>
+              <ConfirmActionButton
+                action={deleteApplicationAdmin}
+                id={a.id}
+                label="删除"
+                confirmText="确认删除该申请记录？此操作不可恢复。"
+              />
             </div>
           </div>
         ))}
@@ -205,10 +219,54 @@ export default async function MemorialReviewPage() {
                 label="下架"
                 className="rounded border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
               />
+              <ConfirmActionButton
+                action={deleteMemorialAdmin}
+                id={m.id}
+                label="删除（永久）"
+                confirmText="确认永久删除该纪念堂及其全部缅怀数据？此操作不可恢复。"
+              />
             </form>
           </div>
         ))}
         {approved.length === 0 && <p className="text-sm text-brand-400">暂无已上线纪念堂。</p>}
+      </div>
+
+      {/* 已下架纪念堂（可永久删除） */}
+      <h2 className="mb-1 mt-10 text-xl font-semibold text-brand-900">
+        已下架纪念堂（可永久删除）{takenDown.length > 0 ? `（${takenDown.length}）` : ""}
+      </h2>
+      <p className="mb-4 text-sm text-brand-500">
+        家属撤回或违规巡查下架的纪念堂。下架后公开页 404、保留记录；如需彻底清除，可在此永久删除。
+      </p>
+      <div className="space-y-3">
+        {takenDown.map((m) => (
+          <div key={m.id} className="rounded-lg border border-brand-200 bg-brand-100/70 p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-brand-900">
+                {m.name}
+                <span className="ml-2 rounded bg-accent-50 px-2 py-0.5 text-xs text-accent-700">
+                  {CATEGORY_LABEL[m.category]}
+                </span>
+                <span className="ml-2 text-xs font-normal text-brand-400">
+                  🕯️ {m.lightCount} · {m.viewCount} 次缅怀
+                </span>
+              </div>
+              <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-brand-500">已下架</span>
+            </div>
+            {m.takedownReason && (
+              <div className="mt-1 text-xs text-brand-400">下架原因：{m.takedownReason}</div>
+            )}
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <ConfirmActionButton
+                action={deleteMemorialAdmin}
+                id={m.id}
+                label="删除（永久）"
+                confirmText="确认永久删除该已下架纪念堂及其全部缅怀数据？此操作不可恢复。"
+              />
+            </div>
+          </div>
+        ))}
+        {takenDown.length === 0 && <p className="text-sm text-brand-400">暂无已下架纪念堂。</p>}
       </div>
     </div>
   );

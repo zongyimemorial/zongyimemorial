@@ -1364,6 +1364,10 @@ model PublicMemorialApplication {
   reviewedAt       DateTime?
   createdAt        DateTime @default(now())
 
+  // 申请人撤回/删除凭证：提交时生成的不可猜测随机串，凭它免登录管理本申请的撤回/删除。
+  // 可空唯一：历史/种子行无需填；PostgreSQL 允许多个 NULL 共存。
+  manageToken String? @unique
+
   memorial   PublicMemorial? @relation(fields: [memorialId], references: [id])
   memorialId String? @unique
 

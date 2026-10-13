@@ -1,5 +1,6 @@
 "use server";
 
+import { randomBytes } from "crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import {
@@ -16,6 +17,8 @@ const CATEGORIES: MemorialCategory[] = ["CELEBRITY", "HEROIC", "GOOD_DEED", "NAT
 export interface SubmitResult {
   ok: boolean;
   errors?: string[];
+  /** 申请人管理凭证：凭它免登录撤回/删除本申请（及后续上线的纪念堂） */
+  token?: string;
 }
 
 /**
@@ -58,6 +61,9 @@ export async function submitApplication(formData: FormData): Promise<SubmitResul
   const birthYear = birthRaw ? Number(birthRaw) : null;
   const deathYear = deathRaw ? Number(deathRaw) : null;
 
+  // 申请人管理凭证：48 位 hex 随机串，免登录撤回/删除用，不可猜测。
+  const manageToken = randomBytes(24).toString("hex");
+
   await prisma.publicMemorialApplication.create({
     data: {
       deceasedName,
@@ -73,11 +79,12 @@ export async function submitApplication(formData: FormData): Promise<SubmitResul
       birthYear: birthYear && !Number.isNaN(birthYear) ? birthYear : null,
       deathYear: deathYear && !Number.isNaN(deathYear) ? deathYear : null,
       status: "PENDING",
+      manageToken,
     },
   });
 
   revalidatePath("/admin/memorial-review");
-  return { ok: true };
+  return { ok: true, token: manageToken };
 }
 
 /** 公众献花点亮（匿名计数，无内容）。返回最新点亮数。 */
