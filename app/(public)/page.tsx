@@ -268,54 +268,72 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 公益纪念堂 · 民族英雄（首页推荐位：直接链到该类别筛选结果） */}
-      <section className="bg-brand-50 py-16">
-        <div className="container-page">
-          <SectionTitle
-            title="公益纪念堂 · 致敬民族英雄"
-            sub="平台在征得家属同意后，免费为已故名人、民族英雄、英烈与见义勇为者建立公开纪念空间"
-          />
-          <div className="mb-9 flex flex-wrap items-center justify-center gap-4">
-            <Link
-              href="/memorial?cat=NATIONAL_HERO"
-              className="rounded-md bg-accent-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-accent-600"
-            >
-              浏览民族英雄纪念堂
-            </Link>
-            <Link
-              href="/memorial/apply"
-              className="rounded-md border border-brand-300 px-5 py-2.5 text-sm font-medium text-brand-700 hover:bg-brand-100"
-            >
-              家属免费申请建堂
-            </Link>
+      {/* 公益纪念堂 · 民族英雄：庄重致敬区（深墨底 + 香槟金描金 + 背景图，
+          示例纪念堂置顶为视觉主体，契合纪念英烈的肃穆基调） */}
+      <section className="relative overflow-hidden bg-brand-900 py-20 text-white">
+        {/* 背景图 + 深墨叠层，营造庄重肃穆氛围 */}
+        <Image
+          src="/assets/scene-hall.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover opacity-20"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-900/85 via-brand-900/70 to-brand-900/90" />
+        {/* 顶部描金细线 */}
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent-400/60 to-transparent"
+        />
+
+        <div className="container-page relative z-10">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="mb-3 text-xs tracking-[0.4em] text-accent-300">公益纪念堂</p>
+            <h2 className="text-3xl font-bold text-white md:text-4xl">
+              致敬<span className="text-accent-200">民族英雄</span>
+            </h2>
+            <span
+              aria-hidden
+              className="mx-auto mt-4 block h-px w-20 bg-gradient-to-r from-transparent via-accent-400 to-transparent"
+            />
+            <p className="mt-5 leading-7 text-brand-100">
+              平台在征得家属同意后，免费为已故名人、民族英雄、英烈与见义勇为者建立公开纪念空间，
+              让他们的名字被长久铭记。
+            </p>
           </div>
+
+          {/* 置顶示例纪念堂（视觉主体） */}
           {heroMemorials.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="mt-12 grid gap-6 md:grid-cols-3">
               {heroMemorials.map((m, i) => (
                 <Reveal key={m.id} delay={i * 80}>
                   <Link
                     href={`/memorial/${m.slug}`}
-                    className="shine block group overflow-hidden rounded-xl border border-brand-200/80 bg-brand-100/70 shadow-sm transition hover:shadow-md"
+                    className="shine group block overflow-hidden rounded-xl border border-accent-400/30 bg-brand-800/60 shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-accent-300 hover:shadow-lg"
                   >
-                    <div className="relative aspect-[16/9] w-full overflow-hidden bg-brand-100">
+                    <div className="relative aspect-[16/10] w-full overflow-hidden bg-brand-800">
                       <Image
-                        src="/assets/scene-hall.jpg"
+                        src={m.portraitUrl || "/assets/scene-hall.jpg"}
                         alt={`${m.name}纪念空间`}
                         fill
                         sizes="(min-width: 768px) 33vw, 100vw"
-                        className="object-cover"
+                        className="object-cover opacity-90 transition duration-500 group-hover:scale-105"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-900/80 via-brand-900/10 to-transparent" />
                     </div>
                     <div className="p-5">
-                      <span className="rounded bg-accent-50 px-2 py-0.5 text-xs text-accent-700">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-accent-400/40 px-2.5 py-0.5 text-xs text-accent-200">
                         {CATEGORY_LABEL[m.category]}
                       </span>
-                      <h3 className="mt-2 text-lg font-semibold text-brand-900">
-                        {m.name}纪念空间
-                      </h3>
-                      <p className="mt-1 text-sm text-brand-500">逝者：{m.name}</p>
-                      <p className="mt-2 line-clamp-2 text-sm text-gray-600">
-                        {m.honorTitle ? `${m.honorTitle}。` : ""}此处收录其生平与亲友追思。
+                      <h3 className="mt-3 text-lg font-semibold text-white">{m.name}</h3>
+                      {m.honorTitle && (
+                        <p className="mt-1 text-sm text-accent-200/90">{m.honorTitle}</p>
+                      )}
+                      <p className="mt-2 line-clamp-2 text-sm text-brand-100/80">
+                        {m.summary || "此处收录其生平与亲友追思。"}
+                      </p>
+                      <p className="mt-3 text-xs text-brand-100/60">
+                        {m.lightCount} 次献灯 · {m.viewCount} 次瞻仰
                       </p>
                     </div>
                   </Link>
@@ -323,10 +341,29 @@ export default async function HomePage() {
               ))}
             </div>
           ) : (
-            <p className="text-center text-sm text-brand-400">
-              暂无已上线的民族英雄纪念堂。如您是家属，欢迎免费申请为值得铭记的人建一座。
-            </p>
+            <div className="mx-auto mt-12 max-w-2xl rounded-xl border border-accent-400/30 bg-brand-800/50 p-8 text-center backdrop-blur-sm">
+              <p className="text-base font-semibold text-white">为值得被永远铭记的人，留一座丰碑</p>
+              <p className="mt-2 text-sm text-brand-100/80">
+                该类别示例纪念堂正在筹备中。如您是家属，欢迎免费申请为值得铭记的人建一座。
+              </p>
+            </div>
           )}
+
+          {/* 操作入口（置于示例之后） */}
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/memorial?cat=NATIONAL_HERO"
+              className="rounded-md bg-gradient-to-r from-accent-300 to-accent-200 px-5 py-2.5 text-sm font-medium text-brand-900 shadow-sm ring-1 ring-accent-400/60 transition hover:shadow-md"
+            >
+              浏览民族英雄纪念堂
+            </Link>
+            <Link
+              href="/memorial/apply"
+              className="rounded-md border border-accent-200/50 px-5 py-2.5 text-sm font-medium text-accent-100 transition hover:bg-white/10"
+            >
+              家属免费申请建堂
+            </Link>
+          </div>
         </div>
       </section>
 
